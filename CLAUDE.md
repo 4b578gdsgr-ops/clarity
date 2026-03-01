@@ -7,7 +7,7 @@ Love > Money is a nonpartisan corporate transparency web app built by One Love O
 - **Framework:** Next.js 14 with App Router
 - **Styling:** Tailwind CSS with custom earthy/nature color palette
 - **Deployment:** Vercel (auto-deploys on push to main)
-- **Database (current):** Static seed data in `lib/companies.js` (60 companies)
+- **Database (current):** Static seed data in `lib/companies.js` (61 companies)
 - **Database (planned):** Supabase (free tier)
 - **Domain:** clarity-pi-ten.vercel.app (will move to lovemoney.oneloveoutdoors.org)
 
@@ -61,7 +61,7 @@ Search matches against: company name, ticker symbol, sector, subsidiary brands, 
 
 ## Current Companies (60)
 **Cycling — Bikes (19):** Specialized, Trek, Giant, Santa Cruz, Yeti, Guerrilla Gravity, Ibis Cycles, Evil Bikes, Pivot Cycles, Transition, Kona, Marin, Rocky Mountain, Norco, Chromag, Canyon, QBP/Surly
-**Cycling — Components (6):** Shimano, SRAM, Fox Factory, Chris King, We Are One, Industry Nine, Hope Technology
+**Cycling — Components (7):** Shimano, SRAM, Fox Factory, Chris King, We Are One, Industry Nine, Hope Technology, Onyx Racing Products
 **Cycling — Tires (3):** Maxxis, Continental (cycling), Vittoria
 **Cycling — Apparel/Helmets/Footwear (5):** Pearl Izumi, Giro (Bell), POC, Troy Lee Designs, Five Ten (Adidas)
 **Outdoor (5):** Patagonia, REI, Cotopaxi, The North Face, Dr. Bronner's
