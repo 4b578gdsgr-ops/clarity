@@ -9,6 +9,7 @@ const QUOTES = [
   { text: "Without love in the dream it'll never come true", attribution: "Grateful Dead, Help on the Way" },
   { text: "Put your gold money where your love is, baby", attribution: "Grateful Dead, Deal" },
   { text: "If your cup is full may it be again", attribution: "Grateful Dead, Ripple" },
+  { text: "Heartless powers try to tell us what to think, if the spirit's sleeping then the flesh is ink", attribution: "Grateful Dead, Throwing Stones" },
 ];
 
 export default function LoveMoneyApp() {
