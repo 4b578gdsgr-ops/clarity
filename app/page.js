@@ -3,6 +3,47 @@
 import { useState, useEffect, useRef } from 'react';
 import CompanyResult from './components/CompanyResult';
 
+// Grateful Dead-style split heart with lightning bolt divider
+function HeartBolt({ size = 42 }) {
+  // Heart path in 100x100 viewBox
+  const heart = "M 50 28 C 50 22 42 14 31 14 C 14 14 14 33 14 33 C 14 53 33 67 50 86 C 67 67 86 53 86 33 C 86 33 86 14 69 14 C 58 14 50 22 50 28 Z";
+
+  // Lightning bolt edges — left and right of the zigzag center line
+  // Center line: (50,14)→(62,36)→(38,54)→(62,72)→(50,86)
+  const boltLeft  = "46,14 58,36 34,54 58,72 46,86";
+  const boltRight = "54,14 66,36 42,54 66,72 54,86";
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{display:'inline-block', verticalAlign:'middle', flexShrink:0}}>
+      <defs>
+        {/* Clip to full heart shape */}
+        <clipPath id="hb-heart">
+          <path d={heart} />
+        </clipPath>
+        {/* Left half: everything left of the bolt's right edge */}
+        <clipPath id="hb-left">
+          <polygon points={`-10,-10 ${boltRight} -10,110`} />
+        </clipPath>
+        {/* Right half: everything right of the bolt's left edge */}
+        <clipPath id="hb-right">
+          <polygon points={`110,-10 ${boltLeft} 110,110`} />
+        </clipPath>
+      </defs>
+
+      {/* Red left half */}
+      <path d={heart} fill="#e74c3c" clipPath="url(#hb-left)" />
+      {/* Blue right half */}
+      <path d={heart} fill="#3b5fc0" clipPath="url(#hb-right)" />
+      {/* White lightning bolt — clipped to heart boundary */}
+      <polygon
+        points={`${boltLeft} ${boltRight.split(' ').reverse().join(' ')}`}
+        fill="white"
+        clipPath="url(#hb-heart)"
+      />
+    </svg>
+  );
+}
+
 // EDIT THESE QUOTES MANUALLY - replace placeholders with your chosen quotes
 const QUOTES = [
   { text: "Love's real, not fade away", attribution: "Grateful Dead, Not Fade Away" },
@@ -97,9 +138,9 @@ export default function LoveMoneyApp() {
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
           <div className="mb-4 select-none">
             <h1 className="leading-none">
-              {/* ♥ Love */}
+              {/* Heart + Love */}
               <div className="flex items-center justify-center gap-2.5 mb-1">
-                <span aria-hidden="true" style={{color:'#e17055', fontSize:'1.75rem', lineHeight:1}}>♥</span>
+                <HeartBolt size={42} />
                 <span style={{fontFamily:'Playfair Display, serif', color:'#e17055', fontSize:'3rem', fontWeight:900, lineHeight:1}}>Love</span>
               </div>
               {/* over */}
