@@ -65,16 +65,16 @@ export default function CompanyPage({ params }) {
         />
       )}
       <div className="min-h-screen relative">
-        <div className="fixed inset-0 pointer-events-none" style={{background:'radial-gradient(ellipse at 50% 0%, #0d2818, #0f1a14 70%)'}} />
+        <div className="fixed inset-0 pointer-events-none" style={{background:'radial-gradient(ellipse at 50% 0%, #e8f5ee, #faf9f6 70%)'}} />
         <div className="fixed inset-0 nature-bg pointer-events-none" />
 
         <div className="relative z-10 px-4 py-8 max-w-2xl mx-auto">
           <div className="mb-6 flex items-center justify-between">
             <Link href="/" className="text-xs font-bold tracking-wider uppercase"
-              style={{color:'#4a6b52'}}>
+              style={{color:'#2d8653'}}>
               ← Love Over Money
             </Link>
-            <span className="text-[10px]" style={{color:'#2a4a38'}}>A One Love Outdoors 501(c)(3) project</span>
+            <span className="text-[10px]" style={{color:'#9ca3af'}}>A One Love Outdoors 501(c)(3) project</span>
           </div>
 
           {company ? (
@@ -82,10 +82,10 @@ export default function CompanyPage({ params }) {
           ) : (
             <div className="text-center py-20">
               <div className="text-4xl mb-4">🌱</div>
-              <h2 className="text-white text-lg font-bold mb-2">Company not found</h2>
-              <p className="text-sm mb-6" style={{color:'#6b8f71'}}>We don't have data on this one yet.</p>
+              <h2 className="text-lg font-bold mb-2" style={{color:'#2d3436'}}>Company not found</h2>
+              <p className="text-sm mb-6" style={{color:'#636e72'}}>We don't have data on this one yet.</p>
               <Link href="/" className="px-5 py-2.5 rounded-lg text-white text-sm font-bold"
-                style={{background:'linear-gradient(135deg, #166534, #15803d)'}}>
+                style={{background:'linear-gradient(135deg, #2d8653, #1a6e3f)'}}>
                 Search all companies
               </Link>
             </div>

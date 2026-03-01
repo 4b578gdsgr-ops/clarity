@@ -5,17 +5,17 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap');
 
 :root {
-  --bg: #0f1a14;
-  --card: #0d1f15;
-  --border: #1a3328;
-  --accent: #4ade80;
-  --warm: #f59e0b;
+  --bg: #faf9f6;
+  --card: #ffffff;
+  --border: #e5e0d8;
+  --accent: #2d8653;
+  --warm: #d97706;
   --heart: #f472b6;
 }
 
 body {
   background: var(--bg);
-  color: #e8efe8;
+  color: #2d3436;
   font-family: 'Inter', -apple-system, sans-serif;
 }
 
@@ -39,11 +39,11 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2a4a38; }
+::-webkit-scrollbar-thumb:hover { background: #c8c0b4; }
 
 .nature-bg {
-  background-image: 
-    radial-gradient(ellipse at 20% 50%, rgba(74, 222, 128, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(244, 114, 182, 0.02) 0%, transparent 50%);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(45, 134, 83, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(217, 119, 6, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(244, 114, 182, 0.03) 0%, transparent 50%);
 }
