@@ -209,7 +209,7 @@ export default function LoveMoneyApp() {
               </div>
             </div>
             <div className="text-center mt-4 text-[11px]" style={{color:'#9ca3af'}}>
-              63 companies · 200+ brands & subsidiaries searchable
+              76 companies · 200+ brands & subsidiaries searchable
             </div>
             {communityCount > 0 && (
               <div className="text-center mt-1 text-[11px]" style={{color:'#b0b8b4'}}>
