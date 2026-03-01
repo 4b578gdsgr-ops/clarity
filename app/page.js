@@ -3,6 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import CompanyResult from './components/CompanyResult';
 
+// EDIT THESE QUOTES MANUALLY - replace placeholders with your chosen quotes
+const QUOTES = [
+  { text: "Love's real, not fade away", attribution: "Grateful Dead, Not Fade Away" },
+  { text: "Without love in the dream it'll never come true", attribution: "Grateful Dead, Help on the Way" },
+  { text: "Put your gold money where your love is, baby", attribution: "Grateful Dead, Deal" },
+  { text: "If your cup is full may it be again", attribution: "Grateful Dead, Ripple" },
+];
+
 export default function LoveMoneyApp() {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState(null);
@@ -14,9 +22,17 @@ export default function LoveMoneyApp() {
   const [requestSent, setRequestSent] = useState(false);
   const [requestNumber, setRequestNumber] = useState(null);
   const [communityCount, setCommunityCount] = useState(null);
+  const [quote, setQuote] = useState(null);
+  const [quoteVisible, setQuoteVisible] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    setQuote(q);
+    setTimeout(() => setQuoteVisible(true), 50);
+  }, []);
 
   useEffect(() => {
     fetch('/api/request')
@@ -237,6 +253,16 @@ export default function LoveMoneyApp() {
         )}
 
         <div className="text-center pt-8 pb-4">
+          {quote && (
+            <div className="mb-3" style={{opacity: quoteVisible ? 1 : 0, transition: 'opacity 1.2s ease'}}>
+              <p style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#6b8f71', fontSize:'12px', lineHeight:'1.6'}}>
+                🌹 {quote.text}
+              </p>
+              <p style={{color:'#2a4a38', fontSize:'10px', marginTop:'4px'}}>
+                — {quote.attribution}
+              </p>
+            </div>
+          )}
           <div className="text-[10px]" style={{color:'#1a3328'}}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
         </div>
       </div>
