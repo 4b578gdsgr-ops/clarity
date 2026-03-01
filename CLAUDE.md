@@ -9,7 +9,7 @@ Love > Money is a nonpartisan corporate transparency web app built by One Love O
 - **Deployment:** Vercel (auto-deploys on push to main)
 - **Database (current):** Static seed data in `lib/companies.js` (65 companies)
 - **Database (planned):** Supabase (free tier)
-- **Domain:** clarity-pi-ten.vercel.app (will move to lovemoney.oneloveoutdoors.org)
+- **Domain:** clarity-pi-ten.vercel.app (will move to loveovermoney.oneloveoutdoors.org)
 
 ## Project Structure
 ```

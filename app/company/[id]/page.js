@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
     : company.karmaScore >= 50 ? 'Mixed Impact'
     : company.karmaScore >= 25 ? 'Mostly Harmful' : 'Harmful';
   const spending = fmt(company.totalPoliticalSpending);
-  const url = `https://lovemoney.oneloveoutdoors.org/company/${params.id}`;
+  const url = `https://loveovermoney.oneloveoutdoors.org/company/${params.id}`;
 
   return {
     title: `${company.name} · Karma ${company.karmaScore}/100 — Love > Money`,
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }) {
     twitter: {
       card: 'summary',
       title: `${company.name} · Karma ${company.karmaScore}/100`,
-      description: `${kLabel}. Political spending: ${spending}. See what your money really supports — lovemoney.oneloveoutdoors.org`,
+      description: `${kLabel}. Political spending: ${spending}. See what your money really supports — loveovermoney.oneloveoutdoors.org`,
     },
     alternates: { canonical: url },
   };

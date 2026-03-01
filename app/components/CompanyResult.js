@@ -103,7 +103,7 @@ export default function CompanyResult({ data }) {
   useEffect(() => { setVisible(false); setTab('karma'); setTimeout(() => setVisible(true), 50); }, [data]);
 
   const handleShare = () => {
-    navigator.clipboard.writeText(`https://lovemoney.oneloveoutdoors.org/company/${data.id}`);
+    navigator.clipboard.writeText(`https://loveovermoney.oneloveoutdoors.org/company/${data.id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
