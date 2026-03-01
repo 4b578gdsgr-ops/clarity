@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import CompanyResult from './components/CompanyResult';
+
+const BTC_ADDRESS = 'bc1qct0yly9yc2gj4s76y0ey5sqvugh4kt3g6n43fs';
 
 // Split heart: left half warm red, right half blue — clean vertical divide
 function Heart({ size = 36 }) {
@@ -40,6 +43,7 @@ export default function LoveMoneyApp() {
   const [communityCount, setCommunityCount] = useState(null);
   const [quoteIndex, setQuoteIndex] = useState(null);
   const [quoteVisible, setQuoteVisible] = useState(false);
+  const [btcCopied, setBtcCopied] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -287,6 +291,50 @@ export default function LoveMoneyApp() {
             )}
           </div>
         )}
+
+        {/* Donation section */}
+        <div className="mt-10 mb-6 text-center">
+          <div className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{color:'#b0b8b4'}}>Support the work</div>
+          <p className="text-xs mb-4 max-w-xs mx-auto leading-relaxed" style={{color:'#9ca3af'}}>
+            Love Over Money is free, ad-free, and nonprofit. Help us keep it that way.
+          </p>
+          <a href="https://oneloveoutdoors.org/donate" target="_blank" rel="noopener noreferrer"
+            className="inline-block px-5 py-2.5 rounded-lg text-sm font-bold text-white mb-6"
+            style={{background:'linear-gradient(135deg, #c0392b, #a93226)'}}>
+            ♥ Donate at oneloveoutdoors.org
+          </a>
+
+          {/* Bitcoin */}
+          <div className="pt-5" style={{borderTop:'1px solid #f0ede8'}}>
+            <div className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{color:'#c4bdb5'}}>
+              or donate with Bitcoin
+            </div>
+            <div className="inline-block p-3 rounded-xl mb-3" style={{background:'#ffffff', border:'1px solid #e5e0d8'}}>
+              <QRCodeSVG
+                value={`bitcoin:${BTC_ADDRESS}`}
+                size={120}
+                bgColor="#ffffff"
+                fgColor="#2d3436"
+                level="M"
+              />
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-[10px] font-mono" style={{color:'#b0b8b4'}}>
+                {BTC_ADDRESS.slice(0, 10)}…{BTC_ADDRESS.slice(-6)}
+              </span>
+              <button
+                onClick={() => { navigator.clipboard.writeText(BTC_ADDRESS); setBtcCopied(true); setTimeout(() => setBtcCopied(false), 2000); }}
+                className="text-[10px] px-2 py-0.5 rounded transition-all"
+                style={{
+                  border: `1px solid ${btcCopied ? '#c0392b40' : '#e5e0d8'}`,
+                  color: btcCopied ? '#c0392b' : '#b0b8b4',
+                  background: btcCopied ? '#fdf2f1' : 'transparent',
+                }}>
+                {btcCopied ? 'copied ♥' : 'copy'}
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="text-center pt-8 pb-4">
           {quoteIndex !== null && (
