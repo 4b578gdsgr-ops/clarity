@@ -83,7 +83,7 @@ export default function AboutPage() {
               style={{background:'#faf9f6', border:'1px solid #e5e0d8', color:'#2d8653'}}>
               Visit oneloveoutdoors.org →
             </a>
-            <a href="https://oneloveoutdoors.org/donate" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.paypal.com/donate?token=CVMQXpC4Y4SF0ukiHSLS3V-Msw4syFCNKFF6RQBn6H7F1FqpSH4W1uriTp_sewt1T8moT7FzP7eQPShz" target="_blank" rel="noopener noreferrer"
               className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white"
               style={{background:'linear-gradient(135deg, #2d8653, #1a6e3f)'}}>
               ♥ Support the work
