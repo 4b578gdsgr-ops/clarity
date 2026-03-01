@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CryptoDonate from '../components/CryptoDonate';
 
 export const metadata = {
   title: 'Why This Exists — Love Over Money',
@@ -90,6 +91,8 @@ export default function AboutPage() {
             </a>
           </div>
         </div>
+
+        <CryptoDonate />
 
         {/* Footer */}
         <div className="text-center pt-4 pb-8">
