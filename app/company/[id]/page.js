@@ -74,9 +74,12 @@ export default function CompanyPage({ params }) {
               style={{color:'#2d8653'}}>
               ← Love Over Money
             </Link>
-            <div className="text-right">
-              <div className="text-[10px]" style={{color:'#9ca3af'}}>A One Love Outdoors 501(c)(3) project</div>
-              <Link href="/methodology" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>How we score</Link>
+            <div className="text-right flex flex-col items-end gap-0.5">
+              <span className="text-[10px]" style={{color:'#9ca3af'}}>A One Love Outdoors 501(c)(3) project</span>
+              <div className="flex gap-3">
+                <Link href="/about" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>About</Link>
+                <Link href="/methodology" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>How we score</Link>
+              </div>
             </div>
           </div>
 

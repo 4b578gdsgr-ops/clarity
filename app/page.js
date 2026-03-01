@@ -290,7 +290,10 @@ export default function LoveMoneyApp() {
             </div>
           )}
           <div className="text-[10px]" style={{color:'#c4bdb5'}}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
-          <a href="/methodology" className="text-[10px] mt-1 inline-block hover:underline" style={{color:'#b0b8b4'}}>How we score companies</a>
+          <div className="flex justify-center gap-4 mt-1">
+            <a href="/about" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>Why this exists</a>
+            <a href="/methodology" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>How we score</a>
+          </div>
         </div>
       </div>
     </div>
