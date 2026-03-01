@@ -95,11 +95,17 @@ export default function LoveMoneyApp() {
       <div className="relative z-10 px-4 py-8 max-w-2xl mx-auto">
         {/* Header */}
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
-          <div className="mb-3">
-            <h1 className="text-4xl font-black tracking-tight" style={{fontFamily:'Playfair Display, serif'}}>
-              <span style={{color:'#f472b6'}}>Love</span>
-              <span className="mx-2 text-2xl" style={{color:'#2d8653'}}>{'>'}</span>
-              <span style={{color:'#2d8653'}}>Money</span>
+          <div className="mb-4 select-none">
+            <h1 className="leading-none">
+              {/* ♥ Love */}
+              <div className="flex items-center justify-center gap-2.5 mb-1">
+                <span aria-hidden="true" style={{color:'#e17055', fontSize:'1.75rem', lineHeight:1}}>♥</span>
+                <span style={{fontFamily:'Playfair Display, serif', color:'#e17055', fontSize:'3rem', fontWeight:900, lineHeight:1}}>Love</span>
+              </div>
+              {/* over */}
+              <div style={{color:'#c4bdb5', fontSize:'10px', letterSpacing:'0.35em', textTransform:'uppercase', marginBottom:'4px'}}>over</div>
+              {/* Money — muted, gently struck through */}
+              <div style={{fontFamily:'Playfair Display, serif', color:'#b0a89e', fontSize:'2.1rem', fontWeight:900, lineHeight:1, textDecoration:'line-through', textDecorationColor:'#c4bdb5', textDecorationThickness:'2px'}}>Money</div>
             </h1>
           </div>
           <p className="text-sm max-w-md mx-auto leading-relaxed" style={{color:'#636e72'}}>
