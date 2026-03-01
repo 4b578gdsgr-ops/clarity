@@ -22,6 +22,12 @@ const COINS = [
     address: '284EBCMF3yDQvsoQ4if6UQnEXFN2np5JekCNmr2sZQ1N',
     color: '#7c5cbf',
   },
+  {
+    symbol: 'USDC',
+    name: 'USD Coin (ETH)',
+    address: '0x3a42E3c805f1F2856fd86cFF28d5f9053bbe47D0',
+    color: '#2775ca',
+  },
 ];
 
 function CoinCard({ symbol, name, address, color }) {
@@ -73,7 +79,7 @@ export default function CryptoDonate() {
           <span className="text-sm font-bold" style={{color:'#2d3436'}}>Crypto donations</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wide"
             style={{background:'#f0faf5', color:'#2d8653', border:'1px solid #d1ead9'}}>
-            BTC · ETH · SOL
+            BTC · ETH · SOL · USDC
           </span>
         </div>
         <span className="text-base font-light" style={{color:'#b0b8b4'}}>{open ? '−' : '+'}</span>
@@ -84,7 +90,7 @@ export default function CryptoDonate() {
           <p className="text-xs mb-4 text-center" style={{color:'#636e72'}}>
             Support the mission — permissionless donations
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {COINS.map(c => <CoinCard key={c.symbol} {...c} />)}
           </div>
           <p className="text-[10px] mt-4 text-center leading-relaxed" style={{color:'#9ca3af'}}>
