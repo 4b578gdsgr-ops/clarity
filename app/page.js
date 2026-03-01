@@ -83,7 +83,7 @@ export default function LoveMoneyApp() {
 
   const handleInput = (val) => { setQuery(val); setShowSuggestions(true); fetchSuggestions(val); };
 
-  const cyclingBrands = ['Specialized', 'Trek', 'Santa Cruz', 'SRAM', 'Shimano', 'Yeti', 'Chris King', 'Canyon', 'FOX', 'Guerrilla Gravity'];
+  const cyclingBrands = ['Specialized', 'Trek', 'Santa Cruz', 'SRAM', 'Shimano', 'Yeti', 'Chris King', 'Canyon', 'FOX', 'Ibis'];
   const outdoorBrands = ['Patagonia', 'REI', 'Cotopaxi', 'The North Face', 'Dr. Bronner\'s'];
   const otherBrands = ['AMZN', 'TSLA', 'UNH', 'LMT', 'META', 'BLK', 'Nestlé', 'Costco'];
 
@@ -194,7 +194,7 @@ export default function LoveMoneyApp() {
               </div>
             </div>
             <div className="text-center mt-4 text-[11px]" style={{color:'#2a4a38'}}>
-              65 companies · 200+ brands & subsidiaries searchable
+              63 companies · 200+ brands & subsidiaries searchable
             </div>
             {communityCount > 0 && (
               <div className="text-center mt-1 text-[11px]" style={{color:'#2a4a38'}}>
