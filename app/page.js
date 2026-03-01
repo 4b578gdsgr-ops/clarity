@@ -12,9 +12,18 @@ export default function LoveMoneyApp() {
   const [mounted, setMounted] = useState(false);
   const [requestName, setRequestName] = useState('');
   const [requestSent, setRequestSent] = useState(false);
+  const [requestNumber, setRequestNumber] = useState(null);
+  const [communityCount, setCommunityCount] = useState(null);
   const searchRef = useRef(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    fetch('/api/request')
+      .then(r => r.json())
+      .then(d => setCommunityCount(d.count))
+      .catch(() => {});
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -158,8 +167,13 @@ export default function LoveMoneyApp() {
               </div>
             </div>
             <div className="text-center mt-4 text-[11px]" style={{color:'#2a4a38'}}>
-              35 companies · 150+ brands & subsidiaries searchable
+              65 companies · 200+ brands & subsidiaries searchable
             </div>
+            {communityCount > 0 && (
+              <div className="text-center mt-1 text-[11px]" style={{color:'#2a4a38'}}>
+                {communityCount} {communityCount === 1 ? 'company' : 'companies'} requested by the community
+              </div>
+            )}
           </div>
         )}
 
@@ -187,7 +201,21 @@ export default function LoveMoneyApp() {
                     placeholder={query || "Company name"}
                     className="flex-1 px-3 py-2 rounded-lg text-sm text-white outline-none"
                     style={{background:'#0a1810', border:'1px solid #1a3328'}} />
-                  <button onClick={() => { setRequestSent(true); }}
+                  <button onClick={async () => {
+                      const name = (requestName || query).trim();
+                      if (!name) return;
+                      try {
+                        const res = await fetch('/api/request', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ company: name }),
+                        });
+                        const data = await res.json();
+                        setRequestNumber(data.count);
+                        setCommunityCount(data.count);
+                      } catch {}
+                      setRequestSent(true);
+                    }}
                     className="px-4 py-2 rounded-lg text-white text-xs font-bold"
                     style={{background:'linear-gradient(135deg, #166534, #15803d)'}}>
                     Submit
@@ -197,6 +225,11 @@ export default function LoveMoneyApp() {
             ) : (
               <div className="p-4 rounded-xl" style={{background:'#05200e20', border:'1px solid #16553525'}}>
                 <div className="text-sm font-bold mb-1" style={{color:'#4ade80'}}>♥ Request received</div>
+                {requestNumber && (
+                  <div className="text-base font-extrabold font-mono mb-1" style={{color:'#fbbf24'}}>
+                    You're request #{requestNumber}
+                  </div>
+                )}
                 <div className="text-xs" style={{color:'#6ee7b780'}}>We'll research and add this company. Check back soon.</div>
               </div>
             )}
