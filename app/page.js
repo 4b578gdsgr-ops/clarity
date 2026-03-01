@@ -67,9 +67,9 @@ export default function LoveMoneyApp() {
             </h1>
           </div>
           <p className="text-sm max-w-md mx-auto leading-relaxed" style={{color:'#6b8f71'}}>
-            Know what your money supports. Search by company, ticker, or brand.
+            Know what your money supports.
           </p>
-          <p className="text-[11px] mt-1" style={{color:'#2a4a38'}}>A One Love Outdoors project · 501(c)(3)</p>
+          <p className="text-[11px] mt-1" style={{color:'#2a4a38'}}>A One Love Outdoors 501(c)(3) project</p>
         </div>
 
         {/* Search — FIXED z-index */}
@@ -204,8 +204,7 @@ export default function LoveMoneyApp() {
         )}
 
         <div className="text-center pt-8 pb-4">
-          <div className="text-[10px]" style={{color:'#1a3328'}}>Love {'>'} Money · Nonpartisan · No editorial · Just data and karma</div>
-          <div className="text-[10px] mt-1" style={{color:'#1a3328'}}>A One Love Outdoors 501(c)(3) project · © 2026</div>
+          <div className="text-[10px]" style={{color:'#1a3328'}}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ function fmt(a) {
 export async function generateMetadata({ params }) {
   const company = getCompanyById(params.id);
   if (!company) {
-    return { title: 'Company Not Found — Love > Money' };
+    return { title: 'Company Not Found — Love Over Money' };
   }
 
   const kLabel = company.karmaScore >= 75 ? 'Force for Good'
@@ -21,14 +21,14 @@ export async function generateMetadata({ params }) {
   const url = `https://loveovermoney.oneloveoutdoors.org/company/${params.id}`;
 
   return {
-    title: `${company.name} · Karma ${company.karmaScore}/100 — Love > Money`,
+    title: `${company.name} · Karma ${company.karmaScore}/100 — Love Over Money`,
     description: `${company.name} karma score: ${company.karmaScore}/100 (${kLabel}). Political spending: ${spending}. Opacity: ${company.opacityScore}/100. See what your money really supports.`,
     openGraph: {
       title: `${company.name} · Karma ${company.karmaScore}/100`,
-      description: `${kLabel}. Political spending: ${spending}. Opacity: ${company.opacityScore}/100. See the full breakdown — Love > Money.`,
+      description: `${kLabel}. Political spending: ${spending}. Opacity: ${company.opacityScore}/100. See the full breakdown — Love Over Money.`,
       type: 'article',
       url,
-      siteName: 'Love > Money',
+      siteName: 'Love Over Money',
     },
     twitter: {
       card: 'summary',
@@ -53,7 +53,7 @@ export default function CompanyPage({ params }) {
             style={{color:'#4a6b52'}}
             onMouseEnter={e => e.currentTarget.style.color = '#4ade80'}
             onMouseLeave={e => e.currentTarget.style.color = '#4a6b52'}>
-            ← Love &gt; Money
+            ← Love Over Money
           </Link>
           <span className="text-[10px]" style={{color:'#2a4a38'}}>A One Love Outdoors project · 501(c)(3)</span>
         </div>
