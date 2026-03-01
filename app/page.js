@@ -6,17 +6,10 @@ import CompanyResult from './components/CompanyResult';
 
 const BTC_ADDRESS = 'bc1qct0yly9yc2gj4s76y0ey5sqvugh4kt3g6n43fs';
 
-// Split heart: left half warm red, right half blue — clean vertical divide
-function Heart({ size = 36 }) {
-  const h = "M16 26 C16 26 2 17 2 9 A7 7 0 0 1 16 6 A7 7 0 0 1 30 9 C30 17 16 26 16 26Z";
+function InlineHeart() {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" style={{display:'inline-block', verticalAlign:'middle', flexShrink:0}}>
-      <defs>
-        <clipPath id="lh-left"><rect x="0" y="0" width="16" height="32" /></clipPath>
-        <clipPath id="lh-right"><rect x="16" y="0" width="16" height="32" /></clipPath>
-      </defs>
-      <path d={h} fill="#c0392b" clipPath="url(#lh-left)" />
-      <path d={h} fill="#3b5fc0" clipPath="url(#lh-right)" />
+    <svg viewBox="0 0 32 29" style={{display:'inline-block', width:'0.85em', height:'0.85em', verticalAlign:'-0.05em', flexShrink:0}}>
+      <path d="M16 27 C16 27 1 17 1 8.5 A7.5 7.5 0 0 1 16 5.5 A7.5 7.5 0 0 1 31 8.5 C31 17 16 27 16 27Z" fill="#e74c3c" />
     </svg>
   );
 }
@@ -116,19 +109,13 @@ export default function LoveMoneyApp() {
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
 
           {/* One-line logo */}
-          <h1 className="flex items-center justify-center gap-2 mb-4 select-none" style={{lineHeight:1}}>
-            <Heart size={34} />
-            <span style={{fontFamily:'Playfair Display, serif', color:'#c0392b', fontSize:'2rem', fontWeight:800}}>Love</span>
-            <span style={{fontFamily:'Playfair Display, serif', color:'#8faa8a', fontSize:'1.35rem', fontWeight:600}}>Over</span>
-            <span style={{fontFamily:'Playfair Display, serif', color:'#b0a899', fontSize:'2rem', fontWeight:800}}>Money</span>
+          <h1 className="flex items-center justify-center select-none mb-4" style={{lineHeight:1, gap:'0.3em'}}>
+            <span className="flex items-center" style={{fontFamily:'Playfair Display, serif', fontWeight:800, color:'#e74c3c', fontSize:'2.25rem'}}>
+              L<InlineHeart />ve
+            </span>
+            <span style={{fontFamily:'Playfair Display, serif', fontWeight:500, color:'#8faa8a', fontSize:'1.6rem'}}>&gt;</span>
+            <span style={{fontFamily:'Playfair Display, serif', fontWeight:800, color:'#999999', fontSize:'2.25rem'}}>Money</span>
           </h1>
-
-          {/* Decorative divider */}
-          <div className="flex items-center justify-center mb-4" style={{gap:0}}>
-            <div style={{width:'88px', height:'1px', background:'linear-gradient(to left, #d4ddd4, transparent)'}} />
-            <span style={{fontSize:'14px', margin:'0 8px', lineHeight:1}}>🌹</span>
-            <div style={{width:'88px', height:'1px', background:'linear-gradient(to right, #d4ddd4, transparent)'}} />
-          </div>
 
           <p className="text-sm max-w-md mx-auto leading-relaxed" style={{color:'#636e72'}}>
             Know what your money supports.
