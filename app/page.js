@@ -22,16 +22,26 @@ export default function LoveMoneyApp() {
   const [requestSent, setRequestSent] = useState(false);
   const [requestNumber, setRequestNumber] = useState(null);
   const [communityCount, setCommunityCount] = useState(null);
-  const [quote, setQuote] = useState(null);
+  const [quoteIndex, setQuoteIndex] = useState(null);
   const [quoteVisible, setQuoteVisible] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-    setQuote(q);
+    const start = Math.floor(Math.random() * QUOTES.length);
+    setQuoteIndex(start);
     setTimeout(() => setQuoteVisible(true), 50);
+
+    const cycle = setInterval(() => {
+      setQuoteVisible(false);
+      setTimeout(() => {
+        setQuoteIndex(i => (i + 1) % QUOTES.length);
+        setQuoteVisible(true);
+      }, 800);
+    }, 10000);
+
+    return () => clearInterval(cycle);
   }, []);
 
   useEffect(() => {
@@ -253,13 +263,13 @@ export default function LoveMoneyApp() {
         )}
 
         <div className="text-center pt-8 pb-4">
-          {quote && (
-            <div className="mb-3" style={{opacity: quoteVisible ? 1 : 0, transition: 'opacity 1.2s ease'}}>
+          {quoteIndex !== null && (
+            <div className="mb-3" style={{opacity: quoteVisible ? 1 : 0, transition: 'opacity 0.8s ease'}}>
               <p style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#6b8f71', fontSize:'12px', lineHeight:'1.6'}}>
-                🌹 {quote.text}
+                🌹 {QUOTES[quoteIndex].text}
               </p>
               <p style={{color:'#2a4a38', fontSize:'10px', marginTop:'4px'}}>
-                — {quote.attribution}
+                — {QUOTES[quoteIndex].attribution}
               </p>
             </div>
           )}
