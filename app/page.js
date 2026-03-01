@@ -3,37 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import CompanyResult from './components/CompanyResult';
 
-// Grateful Dead-style split heart — 13-point lightning bolt divider
-function HeartBolt({ size = 42 }) {
-  const heart = "M 50 28 C 50 22 42 14 31 14 C 14 14 14 33 14 33 C 14 53 33 67 50 86 C 67 67 86 53 86 33 C 86 33 86 14 69 14 C 58 14 50 22 50 28 Z";
-
-  // 13-point centerline: starts at cleft (top), ends at point (bottom)
-  // Alternates right/left in equal steps, tapering near top & bottom
-  const cx = [50, 63, 37, 64, 36, 64, 36, 64, 38, 61, 43, 55, 50];
-  const cy = [28, 33, 38, 43, 48, 53, 58, 63, 68, 73, 78, 83, 86];
-  const W = 6; // bolt half-width in viewBox units
-
-  const leftPts    = cx.map((x, i) => `${x - W},${cy[i]}`).join(' ');
-  const rightPts   = cx.map((x, i) => `${x + W},${cy[i]}`).join(' ');
-  const rightRev   = cx.map((x, i) => `${x + W},${cy[i]}`).reverse().join(' ');
-
-  // White bolt polygon: trace down left edge, back up right edge
-  const boltPoly   = `${leftPts} ${rightRev}`;
-  // Left clip: everything left of the bolt's right edge
-  const leftClip   = `-10,-10 ${rightPts} -10,110`;
-  // Right clip: everything right of the bolt's left edge
-  const rightClip  = `110,-10 ${leftPts} 110,110`;
-
+function Heart({ size = 36 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" style={{display:'inline-block', verticalAlign:'middle', flexShrink:0}}>
-      <defs>
-        <clipPath id="hb-heart"><path d={heart} /></clipPath>
-        <clipPath id="hb-left"><polygon points={leftClip} /></clipPath>
-        <clipPath id="hb-right"><polygon points={rightClip} /></clipPath>
-      </defs>
-      <path d={heart} fill="#e74c3c" clipPath="url(#hb-left)" />
-      <path d={heart} fill="#3b5fc0" clipPath="url(#hb-right)" />
-      <polygon points={boltPoly} fill="white" clipPath="url(#hb-heart)" />
+    <svg width={size} height={size} viewBox="0 0 32 29" style={{display:'inline-block', verticalAlign:'middle', flexShrink:0}}>
+      <path d="M16 27 C16 27 2 18 2 9 A7 7 0 0 1 16 6 A7 7 0 0 1 30 9 C30 18 16 27 16 27Z" fill="#e74c3c" />
     </svg>
   );
 }
@@ -134,7 +107,7 @@ export default function LoveMoneyApp() {
             <h1 className="leading-none">
               {/* Heart + Love */}
               <div className="flex items-center justify-center gap-2.5 mb-1">
-                <HeartBolt size={42} />
+                <Heart size={36} />
                 <span style={{fontFamily:'Playfair Display, serif', color:'#e17055', fontSize:'3rem', fontWeight:900, lineHeight:1}}>Love</span>
               </div>
               {/* over */}
