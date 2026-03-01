@@ -3,10 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import CompanyResult from './components/CompanyResult';
 
+// Split heart: left half warm red, right half blue — clean vertical divide
 function Heart({ size = 36 }) {
+  const h = "M16 26 C16 26 2 17 2 9 A7 7 0 0 1 16 6 A7 7 0 0 1 30 9 C30 17 16 26 16 26Z";
   return (
-    <svg width={size} height={size} viewBox="0 0 32 29" style={{display:'inline-block', verticalAlign:'middle', flexShrink:0}}>
-      <path d="M16 27 C16 27 2 18 2 9 A7 7 0 0 1 16 6 A7 7 0 0 1 30 9 C30 18 16 27 16 27Z" fill="#e74c3c" />
+    <svg width={size} height={size} viewBox="0 0 32 32" style={{display:'inline-block', verticalAlign:'middle', flexShrink:0}}>
+      <defs>
+        <clipPath id="lh-left"><rect x="0" y="0" width="16" height="32" /></clipPath>
+        <clipPath id="lh-right"><rect x="16" y="0" width="16" height="32" /></clipPath>
+      </defs>
+      <path d={h} fill="#c0392b" clipPath="url(#lh-left)" />
+      <path d={h} fill="#3b5fc0" clipPath="url(#lh-right)" />
     </svg>
   );
 }
@@ -103,19 +110,22 @@ export default function LoveMoneyApp() {
       <div className="relative z-10 px-4 py-8 max-w-2xl mx-auto">
         {/* Header */}
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
-          <div className="mb-4 select-none">
-            <h1 className="leading-none">
-              {/* Heart + Love */}
-              <div className="flex items-center justify-center gap-2.5 mb-1">
-                <Heart size={36} />
-                <span style={{fontFamily:'Playfair Display, serif', color:'#e17055', fontSize:'3rem', fontWeight:900, lineHeight:1}}>Love</span>
-              </div>
-              {/* over */}
-              <div style={{color:'#c4bdb5', fontSize:'10px', letterSpacing:'0.35em', textTransform:'uppercase', marginBottom:'4px'}}>over</div>
-              {/* Money — muted, gently struck through */}
-              <div style={{fontFamily:'Playfair Display, serif', color:'#b0a89e', fontSize:'2.1rem', fontWeight:900, lineHeight:1, textDecoration:'line-through', textDecorationColor:'#c4bdb5', textDecorationThickness:'2px'}}>Money</div>
-            </h1>
+
+          {/* One-line logo */}
+          <h1 className="flex items-center justify-center gap-2 mb-4 select-none" style={{lineHeight:1}}>
+            <Heart size={34} />
+            <span style={{fontFamily:'Playfair Display, serif', color:'#c0392b', fontSize:'2rem', fontWeight:800}}>Love</span>
+            <span style={{fontFamily:'Playfair Display, serif', color:'#8faa8a', fontSize:'1.35rem', fontWeight:600}}>Over</span>
+            <span style={{fontFamily:'Playfair Display, serif', color:'#b0a899', fontSize:'2rem', fontWeight:800}}>Money</span>
+          </h1>
+
+          {/* Decorative divider */}
+          <div className="flex items-center justify-center mb-4" style={{gap:0}}>
+            <div style={{width:'88px', height:'1px', background:'linear-gradient(to left, #d4ddd4, transparent)'}} />
+            <span style={{fontSize:'14px', margin:'0 8px', lineHeight:1}}>🌹</span>
+            <div style={{width:'88px', height:'1px', background:'linear-gradient(to right, #d4ddd4, transparent)'}} />
           </div>
+
           <p className="text-sm max-w-md mx-auto leading-relaxed" style={{color:'#636e72'}}>
             Know what your money supports.
           </p>
