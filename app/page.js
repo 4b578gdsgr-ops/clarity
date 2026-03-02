@@ -122,9 +122,6 @@ export default function LoveMoneyApp() {
             </span>
           </h1>
 
-          <p className="max-w-sm mx-auto mb-2" style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#636e72', fontSize:'0.82rem', lineHeight:1.6}}>
-            "Doing the right thing may never pay, but we'll keep doing it anyway."
-          </p>
           <p className="text-sm" style={{color:'#9ca3af'}}>
             Know what your money supports.
           </p>
@@ -313,6 +310,9 @@ export default function LoveMoneyApp() {
               </p>
             </div>
           )}
+          <p className="mb-4 max-w-sm mx-auto" style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#636e72', fontSize:'0.82rem', lineHeight:1.6}}>
+            "Doing the right thing may never pay, but we'll keep doing it anyway."
+          </p>
           <div className="text-[10px]" style={{color:'#c4bdb5'}}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
           <div className="flex justify-center gap-4 mt-1">
             <a href="/about" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>Why this exists</a>
