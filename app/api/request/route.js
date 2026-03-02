@@ -23,7 +23,7 @@ export async function GET() {
 
     const { data: top } = await supabase
       .from('company_requests')
-      .select('company, votes')
+      .select('company_name, votes')
       .order('votes', { ascending: false })
       .limit(10);
 
@@ -60,7 +60,7 @@ export async function POST(request) {
     const { data: existing, error: selectError } = await db
       .from('company_requests')
       .select('id, votes')
-      .ilike('company', company)
+      .ilike('company_name', company)
       .limit(1)
       .maybeSingle();
 
@@ -84,7 +84,7 @@ export async function POST(request) {
     } else {
       const { data: inserted, error: insertError } = await db
         .from('company_requests')
-        .insert({ company, votes: 1 })
+        .insert({ company_name: company, votes: 1 })
         .select();
 
       console.log('[request] insert result — data:', inserted, 'error:', insertError);
