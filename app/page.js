@@ -5,16 +5,6 @@ import CompanyResult from './components/CompanyResult';
 import CryptoDonate from './components/CryptoDonate';
 
 
-function InlineHeart() {
-  return (
-    <svg viewBox="0 0 32 29" style={{display:'inline-block', width:'0.85em', height:'0.8em', verticalAlign:'0.05em', overflow:'visible', flexShrink:0}}>
-      {/* Halo arc — floats above via overflow:visible, doesn't affect layout */}
-      <path d="M 10 -3 Q 16 -8 22 -3" fill="none" stroke="#f0c040" strokeWidth="2.5" strokeLinecap="round"/>
-      {/* Heart */}
-      <path d="M16 27 C16 27 1 17 1 8.5 A7.5 7.5 0 0 1 16 5.5 A7.5 7.5 0 0 1 31 8.5 C31 17 16 27 16 27Z" fill="#e74c3c"/>
-    </svg>
-  );
-}
 
 
 // EDIT THESE QUOTES MANUALLY - replace placeholders with your chosen quotes
@@ -114,11 +104,11 @@ export default function LoveMoneyApp() {
           {/* One-line logo */}
           <h1 className="flex items-baseline justify-center select-none mb-3" style={{lineHeight:1, gap:'0.2em'}}>
             <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
-              L<InlineHeart />ve
+              L<span style={{display:'inline-block', verticalAlign:'baseline', transform:'translateY(2px)', fontSize:'0.8em'}}>❤️</span>ve
             </span>
             <span style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d8653', fontSize:'3.4rem', lineHeight:0.85}}>&gt;</span>
             <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
-              M<span style={{fontSize:'0.8em', verticalAlign:'0.05em'}}>💀</span>ney
+              M<span style={{display:'inline-block', verticalAlign:'baseline', transform:'translateY(2px)', fontSize:'0.8em'}}>💀</span>ney
             </span>
           </h1>
 
