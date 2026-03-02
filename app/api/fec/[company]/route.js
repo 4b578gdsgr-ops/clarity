@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../../../lib/supabase';
 
 const FEC_BASE = 'https://api.open.fec.gov/v1';
 const CACHE_DAYS = 30;
@@ -25,9 +25,10 @@ async function fecFetch(path) {
 }
 
 async function cacheResult(companyName, data) {
-  if (!supabase) return;
+  const db = supabaseAdmin ?? supabase;
+  if (!db) return;
   try {
-    await supabase
+    await db
       .from('fec_cache')
       .upsert(
         { company_name: companyName, data, cached_at: new Date().toISOString() },
