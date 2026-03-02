@@ -9,7 +9,7 @@ export const metadata = {
 
 function P({ children, className = '' }) {
   return (
-    <p className={`text-sm leading-relaxed mb-4 ${className}`} style={{color:'#4a5568'}}>
+    <p className={`mb-6 ${className}`} style={{color:'#4a5568', fontSize:'15px', lineHeight:'1.8'}}>
       {children}
     </p>
   );
@@ -40,11 +40,11 @@ export default function AboutPage() {
         </div>
 
         {/* Body */}
-        <div className="rounded-2xl p-6 mb-5" style={{background:'#ffffff', border:'1px solid #e5e0d8', boxShadow:'0 2px 16px rgba(0,0,0,0.05)'}}>
+        <div className="rounded-2xl p-6 mb-5" style={{background:'#ffffff', border:'1px solid #e5e0d8', boxShadow:'0 2px 16px rgba(0,0,0,0.05)', maxWidth:'680px', margin:'0 auto 20px'}}>
 
           <P>I had a bike shop in Connecticut. Before I tell you what happened to it, I want to tell you what it actually was.</P>
 
-          <P>It was Saturday mornings with the door propped open and coffee going, someone's kid getting their first real bike fit. It was knowing which local trail had washed out after Thursday's rain and being the person the whole community called to find out. It was my mechanic — six years at the shop, knew every customer by name, could true a wheel by feel in three minutes flat. It was a junior mountain bike team we'd helped build from nothing, kids who'd never been in the woods learning that their bodies could do hard things.</P>
+          <P>It was Saturday mornings with the door propped open and coffee going, someone's kid getting their first real bike. It was knowing which local trail had washed out after Thursday's rain and what was dry. It was fixing a flat on the fly so you could make the group ride. It was the teenage employees I watched grow into men.</P>
 
           <P>We weren't selling bikes. We were a place where the outdoor community actually happened.</P>
 
@@ -54,13 +54,13 @@ export default function AboutPage() {
 
           <P>The economics of community kept losing to the economics of scale.</P>
 
-          <P>After the shop closed I had a lot of time to sit with that. And I started noticing the same pattern everywhere I looked — not just in cycling. The outdoor industry. Healthcare. Food. Finance. Banking. Every sector I examined had the same shape: a handful of large players, enormous political spending to keep it that way, and a PR layer designed to make it look like consumer choice when it was really market capture.</P>
+          <P>After the shop closed the first time, I had a lot of time to sit with that. And I started noticing the same pattern everywhere I looked — not just in cycling. The outdoor industry. Healthcare. Food. Finance. Banking. Every sector I examined had the same shape: a handful of large players, enormous political spending to keep it that way, and a PR layer designed to make it look like consumer choice when it was really market capture.</P>
 
-          <P>I'm not a conspiracy theorist. I don't think there's a room where executives coordinate. I think there's something more mundane and more powerful: an economic logic that rewards consolidation, punishes independence, and is invisible to most people because the information is technically public but practically buried in SEC filings and FEC databases that nobody has time to read.</P>
+          <P>I'm might be a conspiracy theorist. It appears there's a room where elites coordinate our fate. I think there's something also more mundane and more powerful to our framing of priorities: an economic logic that rewards consolidation, punishes independence, and is invisible to most people because the information is technically public but practically buried in SEC filings and FEC databases that nobody has time to read.</P>
 
           <P>That's what bothered me most. The information exists. It's just designed, unintentionally or not, to be inaccessible.</P>
 
-          <P>So I started One Love Outdoors — a 501(c)(3) built around the idea that the outdoor community has always been good at taking care of each other, and that caring for each other now means caring about the systems our money moves through. Trail work. Rides for people who don't feel welcome in the sport yet. And now this: a tool to make the money trail readable for anyone who wants to look.</P>
+          <P>One Love Outdoors — a 501(c)(3) was built around the idea that the outdoor community has always been good at taking care of each other, and that caring for each other now means caring about the systems our money moves through. Trail work. Rides for people who don't feel welcome in the sport yet. And now this: a tool to make the money trail readable for anyone who wants to look.</P>
 
           <P>I'm not trying to tell anyone what to buy. I still ride components made overseas. I shop online sometimes. I'm not here to make anyone feel guilty. I'm here because I spent fifteen years in a small business in Connecticut watching the slow physics of how large money moves, and I think people deserve to see it — clearly, honestly, without a political agenda attached.</P>
 
@@ -68,17 +68,11 @@ export default function AboutPage() {
 
           <P>This tool exists because we believe the complexity of how our buying choices affect the world tomorrow shouldn't be hidden behind corporate PR.</P>
 
-          <P className="font-semibold" style={{color:'#2d3436', fontFamily:'Playfair Display, serif', fontSize:'15px'}}>
+          <p style={{fontFamily:'Playfair Display, serif', fontWeight:700, color:'#2d3436', fontSize:'16px', lineHeight:'1.8', marginBottom:'24px'}}>
             Love over money. Always.
-          </P>
+          </p>
 
-        </div>
-
-        {/* Links card */}
-        <div className="rounded-2xl p-5 mb-5" style={{background:'#ffffff', border:'1px solid #e5e0d8', boxShadow:'0 2px 16px rgba(0,0,0,0.05)'}}>
-          <div className="text-[10px] font-extrabold tracking-[2px] uppercase mb-4" style={{color:'#9ca3af'}}>One Love Outdoors</div>
-          <P>One Love Outdoors is a 501(c)(3) nonprofit based in Connecticut. We run trail programs, community rides, and youth outdoor access initiatives across the Northeast. Love Over Money is one part of what we do.</P>
-          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2" style={{borderTop:'1px solid #e5e0d8'}}>
             <a href="https://oneloveoutdoors.org" target="_blank" rel="noopener noreferrer"
               className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-bold"
               style={{background:'#faf9f6', border:'1px solid #e5e0d8', color:'#2d8653'}}>
@@ -87,9 +81,10 @@ export default function AboutPage() {
             <a href="https://www.paypal.com/donate/?hosted_button_id=M5YTUPJJDF434" target="_blank" rel="noopener noreferrer"
               className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white"
               style={{background:'linear-gradient(135deg, #2d8653, #1a6e3f)'}}>
-              ♥ Support the work
+              Donate USD
             </a>
           </div>
+
         </div>
 
         <CryptoDonate />
