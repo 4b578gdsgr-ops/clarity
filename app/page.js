@@ -223,7 +223,13 @@ export default function LoveMoneyApp() {
           </div>
         )}
 
-        {result && result !== 'not_found' && <CompanyResult data={result} />}
+        {result && result !== 'not_found' && (
+          <CompanyResult data={result} onSearch={(name) => {
+            setQuery(name);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            doSearch(name);
+          }} />
+        )}
 
         {result === 'not_found' && (
           <div className="text-center py-10 max-w-sm mx-auto">

@@ -97,11 +97,29 @@ function Tag({ children, color = '#7c6bfa' }) {
   );
 }
 
-export default function CompanyResult({ data }) {
+export default function CompanyResult({ data, onSearch }) {
   const [tab, setTab] = useState('karma');
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [altIds, setAltIds] = useState({});
   useEffect(() => { setVisible(false); setTab('karma'); setTimeout(() => setVisible(true), 50); }, [data]);
+
+  useEffect(() => {
+    if (!data.alternatives?.length || !onSearch) return;
+    setAltIds({});
+    const result = {};
+    Promise.all(
+      data.alternatives.map(async (alt) => {
+        try {
+          const res = await fetch(`/api/search?q=${encodeURIComponent(alt.name)}`);
+          const json = await res.json();
+          result[alt.name] = json.results?.[0]?.id ?? null;
+        } catch {
+          result[alt.name] = null;
+        }
+      })
+    ).then(() => setAltIds(result));
+  }, [data, onSearch]);
 
   const handleShare = () => {
     navigator.clipboard.writeText(`https://loveovermoney.oneloveoutdoors.org/company/${data.id}`);
@@ -191,14 +209,24 @@ export default function CompanyResult({ data }) {
             <Section title="♥ Better Alternatives">
               {data.alternatives.map((alt, i) => {
                 const kc = alt.karma >= 75 ? '#16a34a' : alt.karma >= 50 ? '#65a30d' : '#d97706';
+                const inDb = altIds[alt.name] != null;
                 return (
-                  <div key={i} className="p-3.5 rounded-xl mb-2" style={{background:'#f6fbf8', border:'1px solid #d1ead9'}}>
+                  <div key={i}
+                    className="p-3.5 rounded-xl mb-2 transition-colors"
+                    style={{background:'#f6fbf8', border:'1px solid #d1ead9', cursor: inDb ? 'pointer' : 'default'}}
+                    onClick={inDb ? () => onSearch(alt.name) : undefined}
+                    onMouseEnter={inDb ? e => e.currentTarget.style.background = '#ecf7f1' : undefined}
+                    onMouseLeave={inDb ? e => e.currentTarget.style.background = '#f6fbf8' : undefined}
+                  >
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm font-bold" style={{color:'#2d8653'}}>♥ {alt.name}</span>
+                      <span className="text-sm font-bold" style={{color:'#2d8653'}}>
+                        ♥ {alt.name}{inDb ? ' →' : ''}
+                      </span>
                       <span className="text-xs font-extrabold font-mono px-2 py-0.5 rounded"
                         style={{ color: kc, background: kc + '18' }}>Karma {alt.karma}</span>
                     </div>
                     <div className="text-xs" style={{color:'#636e72'}}>{alt.why}</div>
+                    {inDb && <div className="text-[10px] mt-1.5" style={{color:'#2d8653'}}>Tap to view full profile</div>}
                   </div>
                 );
               })}
