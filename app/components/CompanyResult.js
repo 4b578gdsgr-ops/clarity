@@ -188,19 +188,19 @@ export default function CompanyResult({ data, onSearch }) {
       {/* Tab content card */}
       <div className="rounded-2xl p-5" style={{background:'#ffffff', border:'1px solid #e5e0d8', boxShadow:'0 2px 16px rgba(0,0,0,0.06)'}}>
         {tab === 'karma' && (<>
-          <Section title="Karma Breakdown"><KarmaBreakdown data={data.karmaBreakdown} /></Section>
-          {data.healthcareImpact && (
-            <Section title={data.healthcareImpact.score >= 70 ? "⊕ Healthcare Impact" : "⊖ Healthcare Impact"}>
-              <div className="p-3 rounded-lg mb-3" style={data.healthcareImpact.score >= 70
+          <Section title="Karma Breakdown"><KarmaBreakdown data={data.karmaBreakdown ?? {}} /></Section>
+          {data.healthcareImpact && typeof data.healthcareImpact === 'object' && (
+            <Section title={(data.healthcareImpact.score ?? 0) >= 70 ? "⊕ Healthcare Impact" : "⊖ Healthcare Impact"}>
+              <div className="p-3 rounded-lg mb-3" style={(data.healthcareImpact.score ?? 0) >= 70
                 ? {border:'1px solid #22c55e30', background:'#f0faf5'}
                 : {border:'1px solid #ef444430', background:'#fef2f2'}}>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-bold" style={{color: data.healthcareImpact.score >= 70 ? '#16a34a' : '#dc2626'}}>Healthcare Score</span>
-                  <span className="text-lg font-black font-mono" style={{color: data.healthcareImpact.score >= 70 ? '#16a34a' : '#dc2626'}}>{data.healthcareImpact.score}/100</span>
+                  <span className="text-xs font-bold" style={{color: (data.healthcareImpact.score ?? 0) >= 70 ? '#16a34a' : '#dc2626'}}>Healthcare Score</span>
+                  <span className="text-lg font-black font-mono" style={{color: (data.healthcareImpact.score ?? 0) >= 70 ? '#16a34a' : '#dc2626'}}>{data.healthcareImpact.score}/100</span>
                 </div>
-                {data.healthcareImpact.details.map((d, i) => (
-                  <div key={i} className="text-[11px] mb-1" style={{color: data.healthcareImpact.score >= 70 ? '#15803d' : '#b91c1c'}}>
-                    {data.healthcareImpact.score >= 70 ? '⊕' : '⊖'} {d}
+                {(data.healthcareImpact.details ?? []).map((d, i) => (
+                  <div key={i} className="text-[11px] mb-1" style={{color: (data.healthcareImpact.score ?? 0) >= 70 ? '#15803d' : '#b91c1c'}}>
+                    {(data.healthcareImpact.score ?? 0) >= 70 ? '⊕' : '⊖'} {d}
                   </div>
                 ))}
               </div>
@@ -208,7 +208,7 @@ export default function CompanyResult({ data, onSearch }) {
           )}
           <Section title="What They Actually Do">
             <div className="flex flex-col gap-1.5">
-              {data.karmaDetails.map((d, i) => (
+              {(data.karmaDetails ?? []).map((d, i) => (
                 <div key={i} className="text-xs px-2.5 py-2 rounded-md" style={d.bad
                   ? {color:'#b91c1c', background:'#fef2f2', border:'1px solid #ef444428'}
                   : {color:'#15803d', background:'#f0faf5', border:'1px solid #22c55e28'}}>
@@ -270,7 +270,7 @@ export default function CompanyResult({ data, onSearch }) {
             </div>
           </Section>
           <Section title="Top Recipients">
-            {data.topRecipients.map((r, i) => (
+            {(data.topRecipients ?? []).map((r, i) => (
               <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg mb-1.5" style={{background:'#faf9f6', border:'1px solid #e5e0d8'}}>
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-extrabold"
@@ -282,7 +282,7 @@ export default function CompanyResult({ data, onSearch }) {
             ))}
           </Section>
           <Section title="Lobbying Issues">
-            <div className="flex flex-wrap">{data.lobbyingIssues.map((issue, i) => <Tag key={i} color="#d97706">{issue}</Tag>)}</div>
+            <div className="flex flex-wrap">{(data.lobbyingIssues ?? []).map((issue, i) => <Tag key={i} color="#d97706">{issue}</Tag>)}</div>
           </Section>
           <Section title="Federal PAC Activity">
             {fecLoading ? (
