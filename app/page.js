@@ -109,7 +109,7 @@ export default function LoveMoneyApp() {
             </span>
             <span style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d8653', fontSize:'3.4rem', lineHeight:0.85}}>&gt;</span>
             <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
-              M<span style={{display:'inline-block', verticalAlign:'baseline', transform:'translateY(2px)', fontSize:'0.8em'}}>💀</span>ney
+              M<span style={{display:'inline-block', verticalAlign:'baseline', transform:'translateY(2px)', fontSize:'0.8em'}}>💰</span>ney
             </span>
           </h1>
 
