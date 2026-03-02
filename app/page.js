@@ -11,7 +11,7 @@ import CryptoDonate from './components/CryptoDonate';
 const QUOTES = [
   { text: "Love's real, not fade away", attribution: "Grateful Dead, Not Fade Away" },
   { text: "Without love in the dream it'll never come true", attribution: "Grateful Dead, Help on the Way" },
-  { text: "Put your gold money where your love is, baby", attribution: "Grateful Dead, Deal" },
+  { text: "Put your gold money where your love is, baby, before you let my deal go down", attribution: "Grateful Dead, Deal" },
   { text: "If your cup is full may it be again", attribution: "Grateful Dead, Ripple" },
   { text: "Heartless powers try to tell us what to think, if the spirit's sleeping then the flesh is ink", attribution: "Grateful Dead, Throwing Stones" },
   { text: "Don't give it up, you got an empty cup, only love can fill", attribution: "Grateful Dead, Come a Time" },
