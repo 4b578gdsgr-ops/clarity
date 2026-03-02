@@ -87,9 +87,7 @@ export default function CryptoDonate() {
 
       {open && (
         <div className="px-5 pb-5">
-          <p className="text-xs mb-4 text-center" style={{color:'#636e72'}}>
-            Support the mission — permissionless donations
-          </p>
+
           <div className="grid grid-cols-2 gap-3">
             {COINS.map(c => <CoinCard key={c.symbol} {...c} />)}
           </div>
