@@ -1,5 +1,16 @@
 import { NextResponse } from 'next/server';
-import { supabase, supabaseAdmin } from '../../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../../lib/supabase';
+
+// Create admin client at request-time so it always picks up the current env var.
+// Service role key bypasses RLS — never expose it to the client.
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log('[request] admin client check — url:', !!url, 'serviceKey:', !!key);
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false } });
+}
 
 export async function GET() {
   if (!supabase) {
@@ -35,15 +46,17 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Company name required' }, { status: 400 });
   }
 
-  // Use admin client for writes so RLS doesn't block server-side inserts.
-  // Fall back gracefully if service role key isn't configured.
-  const db = supabaseAdmin ?? supabase;
+  const admin = getAdminClient();
+  const db = admin ?? supabase;
+
+  console.log('[request] POST company:', company, '| using admin:', !!admin, '| db:', !!db);
+
   if (!db) {
+    console.log('[request] no db client — returning fallback success');
     return NextResponse.json({ success: true, count: 1 });
   }
 
   try {
-    // Check if this company has already been requested (case-insensitive)
     const { data: existing, error: selectError } = await db
       .from('company_requests')
       .select('id, votes')
@@ -51,8 +64,10 @@ export async function POST(request) {
       .limit(1)
       .maybeSingle();
 
+    console.log('[request] select result — existing:', existing, 'error:', selectError);
+
     if (selectError) {
-      console.error('company_requests select error:', selectError.message);
+      console.error('[request] select error:', selectError);
       return NextResponse.json({ success: false, error: selectError.message }, { status: 500 });
     }
 
@@ -62,17 +77,18 @@ export async function POST(request) {
         .update({ votes: existing.votes + 1 })
         .eq('id', existing.id);
 
+      console.log('[request] update error:', updateError);
       if (updateError) {
-        console.error('company_requests update error:', updateError.message);
         return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
       }
     } else {
-      const { error: insertError } = await db
+      const { data: inserted, error: insertError } = await db
         .from('company_requests')
-        .insert({ company, votes: 1 });
+        .insert({ company, votes: 1 })
+        .select();
 
+      console.log('[request] insert result — data:', inserted, 'error:', insertError);
       if (insertError) {
-        console.error('company_requests insert error:', insertError.message);
         return NextResponse.json({ success: false, error: insertError.message }, { status: 500 });
       }
     }
@@ -81,9 +97,10 @@ export async function POST(request) {
       .from('company_requests')
       .select('*', { count: 'exact', head: true });
 
+    console.log('[request] final count:', count);
     return NextResponse.json({ success: true, count: count ?? 1 });
   } catch (err) {
-    console.error('company_requests unexpected error:', err);
-    return NextResponse.json({ success: true, count: 1 });
+    console.error('[request] unexpected error:', err);
+    return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
   }
 }
