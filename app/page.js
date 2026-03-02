@@ -16,14 +16,6 @@ function InlineHeart() {
   );
 }
 
-function InlineFlame() {
-  return (
-    <svg viewBox="0 0 24 32" style={{display:'inline-block', width:'0.58em', height:'0.88em', verticalAlign:'-0.05em', flexShrink:0}}>
-      <path d="M12 30 C4 24 2 14 7 6 C9 12 11 9 12 2 C13 9 15 12 17 6 C22 14 20 24 12 30Z" fill="#e67e22"/>
-      <path d="M12 27 C7 22 6 15 9 10 C10 14 11 12 12 8 C13 12 14 14 15 10 C18 15 17 22 12 27Z" fill="#d35400"/>
-    </svg>
-  );
-}
 
 // EDIT THESE QUOTES MANUALLY - replace placeholders with your chosen quotes
 const QUOTES = [
@@ -126,7 +118,7 @@ export default function LoveMoneyApp() {
             </span>
             <span style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d8653', fontSize:'3.4rem', lineHeight:0.85}}>&gt;</span>
             <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
-              M<InlineFlame />ney
+              M<span style={{fontSize:'0.8em', verticalAlign:'0.05em'}}>💀</span>ney
             </span>
           </h1>
 
