@@ -44,29 +44,29 @@ export default function AboutPage() {
 
           <P>We had a bike shop in Connecticut. Before we tell you what happened to it, we want to tell you what it actually was.</P>
 
-          <P>It was Saturday mornings with the door propped open and coffee going, someone's kid getting their first real bike. It was knowing which local trail had washed out after Thursday's rain and what was dry. It was fixing a flat on the fly so you could make the group ride. It was the teenage employees we watched grow into men and the lifelong friendships made along the way.</P>
+          <P>It was Saturday mornings with the door propped open and coffee going. Someone's kid getting their first real bike. It was knowing which local trail had washed out after Thursday's rain and what was still dry. It was fixing a flat on the fly so you could make the group ride. It was the teenage employees we watched grow into men, and the lifelong friendships made along the way.</P>
 
-          <P>We weren't selling bikes. We were a place where the outdoor community actually happened.</P>
+          <P>We weren't selling bikes. We were the place where the outdoor community actually happened.</P>
 
           <P>Then it was gone.</P>
 
-          <P>Not dramatically. There wasn't one villain and one bad day. There was a pandemic, a lease renewal, some genuinely bad timing. But there was also something that had been building for years before any of that — something we'd been watching but hadn't quite named. The industry had been quietly consolidating. Brands we'd believed in were getting absorbed into holding companies we'd never heard of. Online retailers with warehouse economics were pricing us out of categories we'd spent years earning customer trust in. Private equity was buying up distributors. The companies that used to sponsor local rides started sponsoring influencers instead.</P>
+          <P>Not dramatically. There wasn't one villain or one bad day. There was a pandemic, a lease renewal, some genuinely bad timing. But there was also something that had been building for years before any of that — something we'd been watching but hadn't quite named. The industry had been quietly consolidating. Brands we believed in were getting absorbed into holding companies we'd never heard of. Online retailers with warehouse economics were pricing us out of categories we'd spent years earning customer trust in. Private equity was buying up distributors. The companies that used to sponsor local rides started sponsoring influencers instead.</P>
 
           <P>The economics of community kept losing to the economics of scale.</P>
 
-          <P>After the shop closed the first time, we had a lot of time to sit with that. And we started noticing the same pattern everywhere we looked — not just in cycling. The outdoor industry. Healthcare. Food. Finance. Banking. Every sector we examined had the same shape: a handful of large players, enormous political spending to keep it that way, and a PR layer designed to make it look like consumer choice when it was really market capture.</P>
+          <P>After the shop closed, we had a lot of time to sit with that. And we started noticing the same pattern everywhere — not just in cycling. The outdoor industry. Healthcare. Food. Finance. Banking. Every sector we examined had the same shape: a handful of large players, enormous political spending to keep it that way, and a PR layer designed to make it look like consumer choice when it was really market capture.</P>
 
-          <P>We might be conspiracy theorists. It appears there's a room where elites coordinate our fate. We think there's something also more mundane and more powerful to our framing of priorities: an economic logic that rewards consolidation, punishes independence, and is invisible to most people because the information is technically public but practically buried in SEC filings and FEC databases that nobody has time to read.</P>
+          <P>We might be conspiracy theorists. Maybe there is a room where elites coordinate our fate. But we think there's something more mundane and more powerful: an economic logic that rewards consolidation, punishes independence, and stays invisible to most people because the information is technically public but practically buried in SEC filings and FEC databases nobody has time to read.</P>
 
-          <P>That's what bothered us most. The information exists. It's just designed, unintentionally or not, to be inaccessible.</P>
+          <P>That's what bothered us most. The information exists. It's just designed — unintentionally or not — to be inaccessible.</P>
 
-          <P>One Love Outdoors — a 501(c)(3) was built around the idea that the outdoor community has always been good at taking care of each other, and that caring for each other now means caring about the systems our money moves through. Trail work. Rides for people who don't feel welcome in the sport yet. And now this: a tool to make the money trail readable for anyone who wants to look.</P>
+          <P>One Love Outdoors is a 501(c)(3) built around the idea that the outdoor community has always been good at taking care of each other, and that caring for each other now means caring about the systems our money moves through. Trail work. Rides for people who don't yet feel welcome in the sport. And now this: a tool to make the money trail readable for anyone who wants to look.</P>
 
-          <P>We're not trying to tell anyone what to buy. We still ride components made overseas. We shop online sometimes. We're not here to make anyone feel guilty. We're here because we spent fifteen years in a small business in Connecticut watching the slow physics of how large money moves, and we think people deserve to see it — clearly, honestly, without a political agenda attached.</P>
+          <P>We're not here to tell anyone what to buy. We still ride components made overseas. We shop online sometimes. We're not here to make anyone feel guilty. We're here because we spent fifteen years in a small business watching the slow physics of how large money moves, and we think people deserve to see it — clearly, honestly, without a political agenda attached.</P>
 
-          <P>The Karma Score isn't perfect. The data has gaps. We make judgment calls and document them so you can disagree. We update scores when we're wrong. We're a family with a laptop and a genuine belief that the community that taught us to love the outdoors is worth fighting for with whatever tools we have.</P>
+          <P>The Karma Score isn't perfect. The data has gaps. We make judgment calls and document them so you can disagree. We update scores when we're wrong. We're a family with a laptop and a belief that the community that taught us to love the outdoors is worth fighting for with whatever tools we have.</P>
 
-          <P>This tool exists because we believe the complexity of how our buying choices affect the world tomorrow shouldn't be hidden behind corporate PR.</P>
+          <P>This tool exists because the way our buying choices shape the world tomorrow shouldn't be hidden behind corporate PR.</P>
 
           <p style={{fontFamily:'Playfair Display, serif', fontWeight:700, color:'#2d3436', fontSize:'16px', lineHeight:'1.8', marginBottom:'24px'}}>
             Love over money. Always.
