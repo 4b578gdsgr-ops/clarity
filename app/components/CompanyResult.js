@@ -102,7 +102,19 @@ export default function CompanyResult({ data, onSearch }) {
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [altIds, setAltIds] = useState({});
+  const [fecData, setFecData] = useState(null);
+  const [fecLoading, setFecLoading] = useState(false);
   useEffect(() => { setVisible(false); setTab('karma'); setTimeout(() => setVisible(true), 50); }, [data]);
+
+  useEffect(() => {
+    if (!data?.name) return;
+    setFecData(null);
+    setFecLoading(true);
+    fetch(`/api/fec/${encodeURIComponent(data.name)}`)
+      .then(r => r.json())
+      .then(d => { setFecData(d); setFecLoading(false); })
+      .catch(() => setFecLoading(false));
+  }, [data]);
 
   useEffect(() => {
     if (!data.alternatives?.length || !onSearch) return;
@@ -271,6 +283,53 @@ export default function CompanyResult({ data, onSearch }) {
           </Section>
           <Section title="Lobbying Issues">
             <div className="flex flex-wrap">{data.lobbyingIssues.map((issue, i) => <Tag key={i} color="#d97706">{issue}</Tag>)}</div>
+          </Section>
+          <Section title="Federal PAC Activity">
+            {fecLoading ? (
+              <div className="flex items-center gap-2 py-3">
+                <div className="w-4 h-4 rounded-full animate-spin" style={{border:'2px solid #e5e0d8', borderTopColor:'#2d8653'}} />
+                <span className="text-xs" style={{color:'#9ca3af'}}>Checking FEC.gov...</span>
+              </div>
+            ) : fecData?.committees?.length > 0 ? (
+              <>
+                <div className="rounded-xl p-3 mb-3 text-center" style={{background:'#faf9f6', border:'1px solid #e5e0d8'}}>
+                  <div className="text-[10px] tracking-wider uppercase mb-1" style={{color:'#9ca3af'}}>Total PAC Disbursements</div>
+                  <div className="text-xl font-extrabold font-mono" style={{color:'#2d3436'}}>{fecData.totalFormatted}</div>
+                </div>
+                {fecData.committees.map((c, i) => (
+                  <div key={i} className="mb-3 p-3 rounded-lg" style={{background:'#faf9f6', border:'1px solid #e5e0d8'}}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-bold" style={{color:'#2d3436'}}>{c.name}</span>
+                      {c.cycle && <span className="text-[10px] font-mono" style={{color:'#9ca3af'}}>{c.cycle} cycle</span>}
+                    </div>
+                    <div className="flex gap-3 mb-2">
+                      <div className="text-[11px]" style={{color:'#636e72'}}>
+                        Receipts: <span className="font-bold font-mono" style={{color:'#2d3436'}}>{formatMoney(c.receipts)}</span>
+                      </div>
+                      <div className="text-[11px]" style={{color:'#636e72'}}>
+                        Spent: <span className="font-bold font-mono" style={{color:'#2d3436'}}>{formatMoney(c.disbursements)}</span>
+                      </div>
+                    </div>
+                    {c.recipients?.length > 0 && (
+                      <div className="flex flex-col gap-1">
+                        {c.recipients.map((r, j) => (
+                          <div key={j} className="flex justify-between text-[11px] px-2 py-1 rounded" style={{background:'#ffffff', border:'1px solid #e5e0d8'}}>
+                            <span style={{color:'#636e72'}} className="truncate mr-2">{r.name}</span>
+                            <span className="font-bold font-mono flex-shrink-0" style={{color:'#2d3436'}}>{formatMoney(r.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div className="text-[10px] mt-2" style={{color:'#9ca3af'}}>Source: FEC.gov · Federal election cycle data</div>
+              </>
+            ) : (
+              <div className="py-3">
+                <div className="text-xs" style={{color:'#9ca3af'}}>No federal PAC spending found on record.</div>
+                <div className="text-[10px] mt-1" style={{color:'#b0b8b4'}}>Source: FEC.gov</div>
+              </div>
+            )}
           </Section>
         </>)}
 
