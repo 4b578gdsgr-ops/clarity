@@ -293,7 +293,7 @@ export default function LoveMoneyApp() {
           <a href="https://www.paypal.com/donate?token=CVMQXpC4Y4SF0ukiHSLS3V-Msw4syFCNKFF6RQBn6H7F1FqpSH4W1uriTp_sewt1T8moT7FzP7eQPShz" target="_blank" rel="noopener noreferrer"
             className="inline-block px-5 py-2.5 rounded-lg text-sm font-bold text-white mb-6"
             style={{background:'linear-gradient(135deg, #c0392b, #a93226)'}}>
-            ♥ Donate at oneloveoutdoors.org
+            ♥ Spread some love
           </a>
         </div>
 
