@@ -114,7 +114,7 @@ export default function LoveMoneyApp() {
           </h1>
 
           <p className="text-sm" style={{color:'#9ca3af'}}>
-            Know what your money supports.
+            Your dollar is your last vote.
           </p>
           <p className="text-[11px] mt-1" style={{color:'#b0b8b4'}}>A One Love Outdoors 501(c)(3) project</p>
         </div>
