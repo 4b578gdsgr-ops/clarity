@@ -29,7 +29,7 @@ export async function generateMetadata({ params }) {
     description,
     openGraph: {
       title: `${company.name} · Karma ${company.karmaScore}/100 · ${kLabel}`,
-      description: `Political spending: ${spending}. Opacity: ${company.opacityScore}/100. ${description}`,
+      description: `Political spending: ${spending}. Transparency: ${company.transparencyScore}/100. ${description}`,
       type: 'article',
       url,
       siteName: 'Love Over Money',
@@ -51,7 +51,7 @@ export default function CompanyPage({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: company.name,
-    description: `${company.name} has a Karma Score of ${company.karmaScore}/100 on Love Over Money. Political spending: ${fmt(company.totalPoliticalSpending)}. Opacity score: ${company.opacityScore}/100.`,
+    description: `${company.name} has a Karma Score of ${company.karmaScore}/100 on Love Over Money. Political spending: ${fmt(company.totalPoliticalSpending)}. Transparency score: ${company.transparencyScore}/100.`,
     url,
     sameAs: url,
   } : null;

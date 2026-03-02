@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'How We Score Companies — Love Over Money Methodology',
-  description: 'How Love Over Money calculates Karma Scores and Opacity Scores. Data sources, editorial process, and scoring philosophy.',
+  description: 'How Love Over Money calculates Karma Scores and Transparency Scores. Data sources, editorial process, and scoring philosophy.',
   alternates: { canonical: 'https://loveovermoney.oneloveoutdoors.org/methodology' },
 };
 
@@ -115,21 +115,21 @@ export default function MethodologyPage() {
           </div>
         </Card>
 
-        {/* Opacity Score */}
+        {/* Transparency Score */}
         <Card>
-          <SectionTitle>The Opacity Score (0–100)</SectionTitle>
+          <SectionTitle>The Transparency Score (0–100)</SectionTitle>
           <p className="text-sm leading-relaxed mb-4" style={{color:'#636e72'}}>
-            The Opacity Score measures how difficult it is to trace a company's money trail —
+            The Transparency Score measures how easy it is to trace a company's money trail —
             its political spending, ownership structure, and true financial relationships.
-            Lower is better. A score of 0 means the company is fully transparent.
-            A score of 100 means it is almost impossible to follow where the money goes.
+            Higher is better. A score of 100 means the company is fully transparent.
+            A score of 0 means it is almost impossible to follow where the money goes.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { range: '0–25', label: 'Transparent', desc: 'Easy to trace. Proactive disclosure. Full data available.', color: '#22c55e' },
-              { range: '26–50', label: 'Semi-Opaque', desc: 'Some gaps. Data exists but requires digging.', color: '#84cc16' },
-              { range: '51–75', label: 'Opaque', desc: 'Significant gaps. Complex structures obscure the picture.', color: '#f59e0b' },
-              { range: '76–100', label: 'Very Opaque', desc: 'Hard to trace. Shell companies, offshore accounts, or minimal disclosure.', color: '#ef4444' },
+              { range: '76–100', label: 'Transparent', desc: 'Easy to trace. Proactive disclosure. Full data available.', color: '#22c55e' },
+              { range: '51–75', label: 'Semi-Transparent', desc: 'Some gaps. Data exists but requires digging.', color: '#84cc16' },
+              { range: '26–50', label: 'Low Transparency', desc: 'Significant gaps. Complex structures obscure the picture.', color: '#f59e0b' },
+              { range: '0–25', label: 'Very Low', desc: 'Hard to trace. Shell companies, offshore accounts, or minimal disclosure.', color: '#ef4444' },
             ].map(tier => (
               <div key={tier.range} className="p-3 rounded-lg" style={{background:'#faf9f6', border:'1px solid #e5e0d8'}}>
                 <div className="text-xs font-extrabold font-mono mb-1" style={{color: tier.color}}>{tier.range}</div>

@@ -21,7 +21,7 @@ export async function GET(request) {
     ticker: c.ticker,
     sector: c.sector,
     karmaScore: c.karmaScore,
-    opacityScore: c.opacityScore,
+    transparencyScore: c.transparencyScore,
   }));
   
   return NextResponse.json({ results: lightweight, total: lightweight.length });

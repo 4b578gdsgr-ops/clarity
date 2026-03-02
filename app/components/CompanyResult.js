@@ -27,14 +27,14 @@ function ScoreRing({ score, color, size = 120 }) {
   );
 }
 
-function DualScore({ opacity, karma }) {
-  const oc = opacity <= 25 ? '#22c55e' : opacity <= 50 ? '#f59e0b' : opacity <= 75 ? '#f97316' : '#ef4444';
+function DualScore({ transparency, karma }) {
+  const tc = transparency >= 75 ? '#22c55e' : transparency >= 50 ? '#84cc16' : transparency >= 25 ? '#f59e0b' : '#ef4444';
   const kc = karma >= 75 ? '#22c55e' : karma >= 50 ? '#84cc16' : karma >= 25 ? '#f59e0b' : '#ef4444';
-  const ol = opacity <= 25 ? 'Transparent' : opacity <= 50 ? 'Semi-Opaque' : opacity <= 75 ? 'Opaque' : 'Very Opaque';
+  const tl = transparency >= 75 ? 'Transparent' : transparency >= 50 ? 'Semi-Transparent' : transparency >= 25 ? 'Low Transparency' : 'Very Low';
   const kl = karma >= 75 ? 'Force for Good' : karma >= 50 ? 'Mixed Impact' : karma >= 25 ? 'Mostly Harmful' : 'Harmful';
   return (
     <div className="grid grid-cols-2 gap-4 py-5">
-      {[{ s: opacity, c: oc, l: ol, t: 'Opacity', sub: '0 = transparent · 100 = hidden' },
+      {[{ s: transparency, c: tc, l: tl, t: 'Transparency', sub: '100 = transparent · 0 = hidden' },
         { s: karma, c: kc, l: kl, t: 'Karma', sub: '0 = harmful · 100 = force for good' }].map((item, i) => (
         <div key={i} className="text-center">
           <div className="text-[10px] tracking-[2px] uppercase mb-3 font-bold" style={{color:'#9ca3af'}}>
@@ -130,7 +130,7 @@ export default function CompanyResult({ data }) {
           )}
           <span className="text-[11px]" style={{color:'#9ca3af'}}>· {data.sector}</span>
         </div>
-        <DualScore opacity={data.opacityScore} karma={data.karmaScore} />
+        <DualScore transparency={data.transparencyScore} karma={data.karmaScore} />
         <button onClick={handleShare}
           className="w-full py-2 rounded-lg text-[11px] font-bold tracking-widest uppercase transition-all"
           style={{
