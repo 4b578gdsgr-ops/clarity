@@ -7,8 +7,20 @@ import CryptoDonate from './components/CryptoDonate';
 
 function InlineHeart() {
   return (
-    <svg viewBox="0 0 32 29" style={{display:'inline-block', width:'0.85em', height:'0.85em', verticalAlign:'-0.05em', flexShrink:0}}>
-      <path d="M16 27 C16 27 1 17 1 8.5 A7.5 7.5 0 0 1 16 5.5 A7.5 7.5 0 0 1 31 8.5 C31 17 16 27 16 27Z" fill="#e74c3c" />
+    <svg viewBox="0 0 32 34" style={{display:'inline-block', width:'0.85em', height:'1.05em', verticalAlign:'-0.22em', flexShrink:0}}>
+      {/* Halo arc */}
+      <path d="M 10 7 Q 16 2 22 7" fill="none" stroke="#f0c040" strokeWidth="2.5" strokeLinecap="round"/>
+      {/* Heart */}
+      <path d="M16 33 C16 33 1 22 1 13 A7.5 7.5 0 0 1 16 10 A7.5 7.5 0 0 1 31 13 C31 22 16 33 16 33Z" fill="#e74c3c"/>
+    </svg>
+  );
+}
+
+function InlineFlame() {
+  return (
+    <svg viewBox="0 0 24 32" style={{display:'inline-block', width:'0.58em', height:'0.88em', verticalAlign:'-0.05em', flexShrink:0}}>
+      <path d="M12 30 C4 24 2 14 7 6 C9 12 11 9 12 2 C13 9 15 12 17 6 C22 14 20 24 12 30Z" fill="#e67e22"/>
+      <path d="M12 27 C7 22 6 15 9 10 C10 14 11 12 12 8 C13 12 14 14 15 10 C18 15 17 22 12 27Z" fill="#d35400"/>
     </svg>
   );
 }
@@ -108,18 +120,23 @@ export default function LoveMoneyApp() {
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
 
           {/* One-line logo */}
-          <h1 className="flex items-center justify-center select-none mb-4" style={{lineHeight:1, gap:'0.3em'}}>
-            <span className="flex items-center" style={{fontFamily:'Playfair Display, serif', fontWeight:800, color:'#e74c3c', fontSize:'2.25rem'}}>
+          <h1 className="flex items-baseline justify-center select-none mb-3" style={{lineHeight:1, gap:'0.2em'}}>
+            <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
               L<InlineHeart />ve
             </span>
-            <span style={{fontFamily:'Playfair Display, serif', fontWeight:500, color:'#8faa8a', fontSize:'1.6rem'}}>&gt;</span>
-            <span style={{fontFamily:'Playfair Display, serif', fontWeight:800, color:'#999999', fontSize:'2.25rem'}}>Money</span>
+            <span style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d8653', fontSize:'3.4rem', lineHeight:0.85}}>&gt;</span>
+            <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
+              M<InlineFlame />ney
+            </span>
           </h1>
 
-          <p className="text-sm max-w-md mx-auto leading-relaxed" style={{color:'#636e72'}}>
+          <p className="max-w-sm mx-auto mb-2" style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#636e72', fontSize:'0.82rem', lineHeight:1.6}}>
+            "Doing the right thing may never pay, but we'll keep doing it anyway."
+          </p>
+          <p className="text-sm" style={{color:'#9ca3af'}}>
             Know what your money supports.
           </p>
-          <p className="text-[11px] mt-1" style={{color:'#9ca3af'}}>A One Love Outdoors 501(c)(3) project</p>
+          <p className="text-[11px] mt-1" style={{color:'#b0b8b4'}}>A One Love Outdoors 501(c)(3) project</p>
         </div>
 
         {/* Search */}
