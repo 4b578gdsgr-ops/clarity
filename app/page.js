@@ -14,6 +14,7 @@ const QUOTES = [
   { text: "Put your gold money where your love is, baby", attribution: "Grateful Dead, Deal" },
   { text: "If your cup is full may it be again", attribution: "Grateful Dead, Ripple" },
   { text: "Heartless powers try to tell us what to think, if the spirit's sleeping then the flesh is ink", attribution: "Grateful Dead, Throwing Stones" },
+  { text: "Don't give it up, you got an empty cup, only love can fill", attribution: "Grateful Dead, Come a Time" },
 ];
 
 export default function LoveMoneyApp() {
