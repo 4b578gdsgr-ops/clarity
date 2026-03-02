@@ -7,11 +7,11 @@ import CryptoDonate from './components/CryptoDonate';
 
 function InlineHeart() {
   return (
-    <svg viewBox="0 0 32 34" style={{display:'inline-block', width:'0.85em', height:'1.05em', verticalAlign:'-0.22em', flexShrink:0}}>
-      {/* Halo arc */}
-      <path d="M 10 7 Q 16 2 22 7" fill="none" stroke="#f0c040" strokeWidth="2.5" strokeLinecap="round"/>
+    <svg viewBox="0 0 32 29" style={{display:'inline-block', width:'0.85em', height:'0.8em', verticalAlign:'0.05em', overflow:'visible', flexShrink:0}}>
+      {/* Halo arc — floats above via overflow:visible, doesn't affect layout */}
+      <path d="M 10 -3 Q 16 -8 22 -3" fill="none" stroke="#f0c040" strokeWidth="2.5" strokeLinecap="round"/>
       {/* Heart */}
-      <path d="M16 33 C16 33 1 22 1 13 A7.5 7.5 0 0 1 16 10 A7.5 7.5 0 0 1 31 13 C31 22 16 33 16 33Z" fill="#e74c3c"/>
+      <path d="M16 27 C16 27 1 17 1 8.5 A7.5 7.5 0 0 1 16 5.5 A7.5 7.5 0 0 1 31 8.5 C31 17 16 27 16 27Z" fill="#e74c3c"/>
     </svg>
   );
 }
