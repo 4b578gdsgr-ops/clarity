@@ -44,7 +44,7 @@ export default function AboutPage() {
 
           <P>I had a bike shop in Connecticut. Before I tell you what happened to it, I want to tell you what it actually was.</P>
 
-          <P>It was Saturday mornings with the door propped open and coffee going, someone's kid getting their first real bike. It was knowing which local trail had washed out after Thursday's rain and what was dry. It was fixing a flat on the fly so you could make the group ride. It was the teenage employees I watched grow into men.</P>
+          <P>It was Saturday mornings with the door propped open and coffee going, someone's kid getting their first real bike. It was knowing which local trail had washed out after Thursday's rain and what was dry. It was fixing a flat on the fly so you could make the group ride. It was the teenage employees I watched grow into men and the lifelong friendships made along the way.</P>
 
           <P>We weren't selling bikes. We were a place where the outdoor community actually happened.</P>
 
