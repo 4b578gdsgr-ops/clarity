@@ -290,23 +290,13 @@ export default function LoveMoneyApp() {
           <a href="https://www.paypal.com/donate/?hosted_button_id=M5YTUPJJDF434" target="_blank" rel="noopener noreferrer"
             className="inline-block px-5 py-2.5 rounded-lg text-sm font-bold text-white mb-6"
             style={{background:'linear-gradient(135deg, #c0392b, #a93226)'}}>
-            ♥ Spread some love
+            Donate USD
           </a>
         </div>
 
         <CryptoDonate />
 
         <div className="text-center pt-8 pb-4">
-          {quoteIndex !== null && (
-            <div className="mb-3" style={{opacity: quoteVisible ? 1 : 0, transition: 'opacity 0.8s ease'}}>
-              <p style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#636e72', fontSize:'12px', lineHeight:'1.6'}}>
-                🌹 {QUOTES[quoteIndex].text}
-              </p>
-              <p style={{color:'#9ca3af', fontSize:'10px', marginTop:'4px'}}>
-                — {QUOTES[quoteIndex].attribution}
-              </p>
-            </div>
-          )}
           <p className="mb-4 max-w-sm mx-auto" style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#636e72', fontSize:'0.82rem', lineHeight:1.6}}>
             "Doing the right thing may never pay, but we'll keep doing it anyway."
           </p>
@@ -316,6 +306,22 @@ export default function LoveMoneyApp() {
             <a href="/methodology" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>How we score</a>
           </div>
         </div>
+
+        {/* Rotating quote — bottom-right easter egg */}
+        {quoteIndex !== null && (
+          <div style={{
+            position: 'fixed', bottom: '12px', right: '14px',
+            opacity: quoteVisible ? 0.55 : 0, transition: 'opacity 0.8s ease',
+            maxWidth: '220px', textAlign: 'right', pointerEvents: 'none',
+          }}>
+            <p style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#7aad8c', fontSize:'11px', lineHeight:1.5}}>
+              {QUOTES[quoteIndex].text}
+            </p>
+            <p style={{color:'#a8c4b0', fontSize:'9px', marginTop:'3px'}}>
+              — {QUOTES[quoteIndex].attribution}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

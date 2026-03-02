@@ -76,7 +76,7 @@ export default function CryptoDonate() {
         className="w-full flex items-center justify-between px-5 py-4"
       >
         <div className="flex items-center gap-2.5">
-          <span className="text-sm font-bold" style={{color:'#2d3436'}}>Crypto donations</span>
+          <span className="text-sm font-bold" style={{color:'#2d3436'}}>Bankless payments</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wide"
             style={{background:'#f0faf5', color:'#2d8653', border:'1px solid #d1ead9'}}>
             BTC · ETH · SOL · USDC
