@@ -1,104 +1,93 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
 
-const MAP_CONTAINER_STYLE = { width: '100%', height: '280px', borderRadius: '12px' };
+// Fix leaflet default icon paths broken by webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
-const MAP_OPTIONS = {
-  disableDefaultUI: true,
-  zoomControl: true,
-  styles: [
-    { elementType: 'geometry', stylers: [{ color: '#f5f0ea' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#636e72' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e8d5' }] },
-    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#e5e0d8' }] },
-    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#d1ead9' }] },
-    { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#e8f5ee' }] },
-  ],
-};
+// Custom colored pin using divIcon
+function makePin(color) {
+  return L.divIcon({
+    className: '',
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24s12-15 12-24C24 5.37 18.63 0 12 0z"
+        fill="${color}" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="12" cy="12" r="4" fill="#fff" opacity="0.9"/>
+    </svg>`,
+    iconSize: [24, 36],
+    iconAnchor: [12, 36],
+    popupAnchor: [0, -36],
+  });
+}
+
+const PIN_DEFAULT = makePin('#2d8653');
+const PIN_SELECTED = makePin('#fbbf24');
+
+// Recenter map when center prop changes
+function MapController({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) map.setView([center.lat, center.lng], 10, { animate: true });
+  }, [center, map]);
+  return null;
+}
 
 export default function ShopMap({ shops, center, onSelectShop, selectedShop }) {
-  const [activePin, setActivePin] = useState(null);
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-  });
-
-  const onMapClick = useCallback(() => setActivePin(null), []);
-
-  if (loadError) {
-    return (
-      <div className="flex items-center justify-center rounded-xl text-sm"
-        style={{ height: 280, background: '#f6fbf8', border: '1px solid #d1ead9', color: '#636e72' }}>
-        Map unavailable
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center rounded-xl"
-        style={{ height: 280, background: '#f6fbf8', border: '1px solid #d1ead9' }}>
-        <div className="w-8 h-8 rounded-full animate-spin" style={{ border: '2px solid #e5e0d8', borderTopColor: '#2d8653' }} />
-      </div>
-    );
-  }
-
-  if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-xl text-sm gap-2"
-        style={{ height: 280, background: '#f6fbf8', border: '1px dashed #d1ead9', color: '#636e72' }}>
-        <span className="text-2xl">🗺️</span>
-        <span>Map requires Google Maps API key</span>
-        <span className="text-xs">Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your environment</span>
-      </div>
-    );
-  }
-
-  const mapCenter = center || { lat: 41.6032, lng: -73.0877 }; // CT center
+  const defaultCenter = center || { lat: 41.6032, lng: -73.0877 }; // CT center
 
   return (
-    <GoogleMap
-      mapContainerStyle={MAP_CONTAINER_STYLE}
-      center={mapCenter}
-      zoom={center ? 10 : 8}
-      options={MAP_OPTIONS}
-      onClick={onMapClick}>
-      {shops.map(shop => (
-        <Marker
-          key={shop.id}
-          position={{ lat: shop.lat, lng: shop.lng }}
-          title={shop.name}
-          icon={{
-            path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
-            fillColor: shop === selectedShop ? '#fbbf24' : '#2d8653',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
-            scale: 1.5,
-          }}
-          onClick={() => {
-            setActivePin(shop);
-            onSelectShop && onSelectShop(shop);
-          }}
+    <>
+      <style>{`
+        .leaflet-container { border-radius: 12px; font-family: Inter, sans-serif; }
+        .leaflet-popup-content-wrapper {
+          border-radius: 10px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+          border: 1px solid #e5e0d8;
+          padding: 0;
+        }
+        .leaflet-popup-content { margin: 0; }
+        .leaflet-popup-tip { background: #fff; }
+        .leaflet-control-zoom a { color: #2d8653 !important; }
+        .leaflet-control-zoom a:hover { background: #f0faf5 !important; }
+      `}</style>
+      <MapContainer
+        center={[defaultCenter.lat, defaultCenter.lng]}
+        zoom={center ? 10 : 8}
+        style={{ width: '100%', height: 280, borderRadius: 12 }}
+        zoomControl={true}
+        attributionControl={false}>
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
-      ))}
-
-      {activePin && (
-        <InfoWindow
-          position={{ lat: activePin.lat, lng: activePin.lng }}
-          onCloseClick={() => setActivePin(null)}>
-          <div style={{ fontFamily: 'Inter, sans-serif', minWidth: 140 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: '#2d3436', marginBottom: 2 }}>{activePin.name}</div>
-            {activePin.distance != null && (
-              <div style={{ fontSize: 11, color: '#2d8653', fontWeight: 600, marginBottom: 3 }}>{activePin.distance} miles away</div>
-            )}
-            <div style={{ fontSize: 11, color: '#636e72' }}>{activePin.city}, {activePin.state}</div>
-          </div>
-        </InfoWindow>
-      )}
-    </GoogleMap>
+        <MapController center={center} />
+        {shops.map(shop => (
+          <Marker
+            key={shop.id}
+            position={[shop.lat, shop.lng]}
+            icon={selectedShop?.id === shop.id ? PIN_SELECTED : PIN_DEFAULT}
+            eventHandlers={{
+              click: () => onSelectShop && onSelectShop(shop),
+            }}>
+            <Popup>
+              <div style={{ padding: '10px 12px', minWidth: 140 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#2d3436', marginBottom: 2 }}>{shop.name}</div>
+                {shop.distance != null && (
+                  <div style={{ fontSize: 11, color: '#2d8653', fontWeight: 600, marginBottom: 3 }}>{shop.distance} miles away</div>
+                )}
+                <div style={{ fontSize: 11, color: '#636e72' }}>{shop.city}, {shop.state}</div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </>
   );
 }

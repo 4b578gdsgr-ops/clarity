@@ -8,24 +8,26 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Invalid ZIP code' }, { status: 400 });
   }
 
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: 'Maps API key not configured' }, { status: 503 });
-  }
-
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${zip}&key=${apiKey}`;
-    const res = await fetch(url);
+    const url = `https://nominatim.openstreetmap.org/search?q=${zip}&format=json&countrycodes=us&limit=1&addressdetails=1`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)',
+        'Accept-Language': 'en',
+      },
+    });
+
     const data = await res.json();
 
-    if (data.status !== 'OK' || !data.results?.[0]) {
+    if (!data?.length) {
       return NextResponse.json({ error: 'ZIP not found' }, { status: 404 });
     }
 
-    const { lat, lng } = data.results[0].geometry.location;
-    const components = data.results[0].address_components;
-    const city = components.find(c => c.types.includes('locality'))?.long_name || '';
-    const state = components.find(c => c.types.includes('administrative_area_level_1'))?.short_name || '';
+    const result = data[0];
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const city = result.address?.city || result.address?.town || result.address?.village || result.address?.county || '';
+    const state = result.address?.state || '';
 
     return NextResponse.json({ lat, lng, city, state });
   } catch {

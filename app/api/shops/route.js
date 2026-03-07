@@ -20,20 +20,25 @@ export async function GET(request) {
     return NextResponse.json({ shops: SEED_SHOPS, fallback: true });
   }
 
-  // Geocode the ZIP
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  // Geocode the ZIP via Nominatim (OpenStreetMap, no API key required)
   let lat, lng;
 
-  if (apiKey) {
-    try {
-      const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${zip}&key=${apiKey}`);
-      const geoData = await geoRes.json();
-      if (geoData.status === 'OK' && geoData.results?.[0]) {
-        lat = geoData.results[0].geometry.location.lat;
-        lng = geoData.results[0].geometry.location.lng;
+  try {
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${zip}&format=json&countrycodes=us&limit=1`,
+      {
+        headers: {
+          'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)',
+          'Accept-Language': 'en',
+        },
       }
-    } catch { /* fall through */ }
-  }
+    );
+    const geoData = await geoRes.json();
+    if (geoData?.length) {
+      lat = parseFloat(geoData[0].lat);
+      lng = parseFloat(geoData[0].lon);
+    }
+  } catch { /* fall through */ }
 
   // If we couldn't geocode, return all seed shops
   if (!lat || !lng) {

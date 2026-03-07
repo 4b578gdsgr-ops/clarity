@@ -1,4 +1,5 @@
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
 
 export const metadata = {
   metadataBase: new URL('https://loveovermoney.oneloveoutdoors.org'),
@@ -37,6 +38,9 @@ function TopNav() {
           L❤️ve &gt; M💰ney
         </a>
         <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+          <a href="/find-a-shop" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
+            Find a Shop
+          </a>
           <a href="/custom-builds" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
             Custom Builds
           </a>
@@ -46,7 +50,7 @@ function TopNav() {
           <a href="/about" style={{ fontSize: '0.75rem', color: '#636e72', textDecoration: 'none' }}>
             About
           </a>
-          <a href="/corporate" style={{ fontSize: '0.75rem', color: '#b0b8b4', textDecoration: 'none', fontSize: '0.7rem' }}>
+          <a href="/corporate" style={{ fontSize: '0.7rem', color: '#b0b8b4', textDecoration: 'none' }}>
             Corporate
           </a>
         </div>
