@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import CompanyResult from './components/CompanyResult';
+import dynamic from 'next/dynamic';
+import BikeWizard from './components/BikeWizard';
+import RecommendationResult from './components/RecommendationResult';
+import ShopCard from './components/ShopCard';
 import CryptoDonate from './components/CryptoDonate';
+import { recommend } from '../lib/recommendationEngine';
 
+const ShopMap = dynamic(() => import('./components/ShopMap'), { ssr: false });
 
-
-
-// EDIT THESE QUOTES MANUALLY - replace placeholders with your chosen quotes
 const QUOTES = [
   { text: "Love's real, not fade away", attribution: "Grateful Dead, Not Fade Away" },
   { text: "Without love in the dream it'll never come true", attribution: "Grateful Dead, Help on the Way" },
@@ -17,21 +19,21 @@ const QUOTES = [
   { text: "Don't give it up, you got an empty cup, only love can fill", attribution: "Grateful Dead, Comes a Time" },
 ];
 
-export default function LoveMoneyApp() {
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState(null);
-  const [suggestions, setSuggestions] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+export default function HomePage() {
   const [mounted, setMounted] = useState(false);
-  const [requestName, setRequestName] = useState('');
-  const [requestSent, setRequestSent] = useState(false);
-  const [requestNumber, setRequestNumber] = useState(null);
-  const [communityCount, setCommunityCount] = useState(null);
   const [quoteIndex, setQuoteIndex] = useState(null);
   const [quoteVisible, setQuoteVisible] = useState(false);
 
-  const searchRef = useRef(null);
+  // Wizard + results state
+  const [wizardDone, setWizardDone] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [recommendation, setRecommendation] = useState(null);
+  const [shops, setShops] = useState([]);
+  const [shopCenter, setShopCenter] = useState(null);
+  const [shopsLoading, setShopsLoading] = useState(false);
+  const [selectedShop, setSelectedShop] = useState(null);
+
+  const resultsRef = useRef(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -39,257 +41,194 @@ export default function LoveMoneyApp() {
     const start = Math.floor(Math.random() * QUOTES.length);
     setQuoteIndex(start);
     setTimeout(() => setQuoteVisible(true), 50);
-
     const cycle = setInterval(() => {
       setQuoteVisible(false);
-      setTimeout(() => {
-        setQuoteIndex(i => (i + 1) % QUOTES.length);
-        setQuoteVisible(true);
-      }, 800);
+      setTimeout(() => { setQuoteIndex(i => (i + 1) % QUOTES.length); setQuoteVisible(true); }, 800);
     }, 10000);
-
     return () => clearInterval(cycle);
   }, []);
 
-  useEffect(() => {
-    fetch('/api/request')
-      .then(r => r.json())
-      .then(d => setCommunityCount(d.count))
-      .catch(() => {});
-  }, []);
+  const handleWizardComplete = async (wizardProfile) => {
+    setProfile(wizardProfile);
+    const rec = recommend(wizardProfile);
+    setRecommendation(rec);
+    setWizardDone(true);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handler = (e) => { if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggestions(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+    // Scroll to results
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
-  const doSearch = async (term) => {
-    const q = (term || query).trim();
-    setShowSuggestions(false);
-    if (!q) return;
-    setSearching(true); setResult(null); setRequestSent(false);
-    try {
-      const res = await fetch(`/api/company?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      setResult(data.found ? data.company : 'not_found');
-    } catch { setResult('not_found'); }
-    setSearching(false);
+    // Fetch nearby shops
+    if (wizardProfile.zip?.length === 5) {
+      setShopsLoading(true);
+      try {
+        const res = await fetch(`/api/shops?zip=${wizardProfile.zip}&radius=${wizardProfile.radius || 25}`);
+        const data = await res.json();
+        setShops(data.shops || []);
+        setShopCenter(data.center || null);
+      } catch { setShops([]); }
+      setShopsLoading(false);
+    }
   };
 
-  const fetchSuggestions = async (q) => {
-    if (q.length < 1) { setSuggestions([]); return; }
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      setSuggestions(data.results || []);
-    } catch { setSuggestions([]); }
+  const resetWizard = () => {
+    setWizardDone(false);
+    setProfile(null);
+    setRecommendation(null);
+    setShops([]);
+    setShopCenter(null);
+    setSelectedShop(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const handleInput = (val) => { setQuery(val); setShowSuggestions(true); fetchSuggestions(val); };
-
-  const cyclingBrands = ['Specialized', 'Trek', 'Santa Cruz', 'SRAM', 'Shimano', 'Yeti', 'Chris King', 'Canyon', 'FOX', 'Ibis'];
-  const outdoorBrands = ['Patagonia', 'REI', 'Cotopaxi', 'The North Face', 'Dr. Bronner\'s'];
-  const otherBrands = ['AMZN', 'TSLA', 'UNH', 'LMT', 'META', 'BLK', 'Nestlé', 'Costco'];
 
   return (
     <div className="min-h-screen relative">
-      <div className="fixed inset-0 pointer-events-none" style={{background:'radial-gradient(ellipse at 50% 0%, #e8f5ee, #faf9f6 70%)'}} />
+      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, #e8f5ee, #faf9f6 70%)' }} />
       <div className="fixed inset-0 nature-bg pointer-events-none" />
 
       <div className="relative z-10 px-4 py-8 max-w-2xl mx-auto">
         {/* Header */}
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
-
-          {/* One-line logo */}
-          <h1 className="flex items-baseline justify-center select-none mb-3" style={{lineHeight:1, gap:'0.2em'}}>
-            <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
-              L<span style={{display:'inline-block', verticalAlign:'baseline', transform:'translateY(2px)', fontSize:'0.8em'}}>❤️</span>ve
+          <h1 className="flex items-baseline justify-center select-none mb-3" style={{ lineHeight: 1, gap: '0.2em' }}>
+            <span className="flex items-baseline" style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '2.25rem' }}>
+              L<span style={{ display: 'inline-block', verticalAlign: 'baseline', transform: 'translateY(2px)', fontSize: '0.8em' }}>❤️</span>ve
             </span>
-            <span style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d8653', fontSize:'3.4rem', lineHeight:0.85}}>&gt;</span>
-            <span className="flex items-baseline" style={{fontFamily:'Playfair Display, serif', fontWeight:900, color:'#2d3436', fontSize:'2.25rem'}}>
-              M<span style={{display:'inline-block', verticalAlign:'baseline', transform:'translateY(2px)', fontSize:'0.8em'}}>💰</span>ney
+            <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d8653', fontSize: '3.4rem', lineHeight: 0.85 }}>&gt;</span>
+            <span className="flex items-baseline" style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '2.25rem' }}>
+              M<span style={{ display: 'inline-block', verticalAlign: 'baseline', transform: 'translateY(2px)', fontSize: '0.8em' }}>💰</span>ney
             </span>
           </h1>
-
-          <p className="text-sm" style={{color:'#9ca3af'}}>
-            Your dollar is your only real vote.
-          </p>
-          <p className="text-[11px] mt-1" style={{color:'#b0b8b4'}}>A One Love Outdoors 501(c)(3) project</p>
+          <p className="text-sm" style={{ color: '#9ca3af' }}>Your dollar is your only real vote.</p>
+          <p className="text-[11px] mt-1" style={{ color: '#b0b8b4' }}>A One Love Outdoors 501(c)(3) project</p>
         </div>
 
-        {/* Search */}
-        <div ref={searchRef} className={`relative mb-6 z-50 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-          <div className="flex rounded-xl overflow-hidden" style={{background:'#ffffff', border:'1px solid #e5e0d8', boxShadow:'0 2px 20px rgba(45,134,83,0.08)'}}>
-            <input type="text" value={query}
-              onChange={e => handleInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && doSearch()}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              placeholder="Company, $TICKER, or brand..."
-              className="flex-1 px-4 py-3.5 bg-transparent border-none outline-none text-[15px]"
-              style={{color:'#2d3436'}} />
-            <button onClick={() => doSearch()}
-              className="px-6 text-white font-bold text-sm tracking-wider"
-              style={{background:'linear-gradient(135deg, #2d8653, #1a6e3f)'}}>
-              {searching ? '...' : 'SEARCH'}
-            </button>
-          </div>
+        {/* Wizard */}
+        {!wizardDone && (
+          <>
+            <div className={`p-5 rounded-2xl mb-6 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
+              style={{ background: '#ffffff', border: '1px solid #e5e0d8', boxShadow: '0 2px 24px rgba(45,134,83,0.07)' }}>
+              <BikeWizard onComplete={handleWizardComplete} />
+            </div>
 
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-50 rounded-b-xl overflow-hidden shadow-lg"
-              style={{background:'#ffffff', border:'1px solid #e5e0d8', borderTop:'none'}}>
-              {suggestions.slice(0, 8).map((c, i) => (
-                <div key={i} onClick={() => { setQuery(c.name); setShowSuggestions(false); doSearch(c.name); }}
-                  className="px-4 py-2.5 cursor-pointer text-sm flex justify-between items-center transition-colors"
-                  style={{color:'#636e72', borderBottom:'1px solid #f0ede8'}}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f6fbf8'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            {/* Three paths */}
+            <div className={`mb-8 transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+              <div className="text-xs font-bold uppercase tracking-widest text-center mb-4" style={{ color: '#9ca3af' }}>
+                Three ways One Love can help
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-4 px-4 py-4 rounded-xl" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+                  <div className="text-2xl shrink-0">🚵</div>
                   <div>
-                    <span style={{color:'#2d3436'}}>{c.name}</span>
-                    {c.ticker && c.ticker !== 'Private' && c.ticker !== 'Co-op' && (
-                      <span className="ml-2 font-mono text-xs" style={{color:'#2d8653'}}>${c.ticker}</span>
-                    )}
+                    <div className="text-sm font-bold mb-0.5" style={{ color: '#2d3436' }}>Find your bike + a local shop</div>
+                    <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
+                      Use the wizard above. We'll match you with the right ride and the nearest quality shop that carries it. We help you find the right bike — local shops take care of you from there.
+                    </div>
                   </div>
-                  <span className="text-xs font-bold font-mono" style={{color: c.karmaScore >= 50 ? '#16a34a' : c.karmaScore >= 25 ? '#d97706' : '#dc2626'}}>
-                    K:{c.karmaScore}
-                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Browse chips */}
-        {!result && !searching && (
-          <div className={`mb-6 transition-opacity duration-700 delay-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="text-center mb-3">
-              <div className="text-[10px] tracking-[2px] uppercase mb-2" style={{color:'#9ca3af'}}>🚵 Cycling & Components</div>
-              <div className="flex flex-wrap justify-center gap-1.5">
-                {cyclingBrands.map(n => (
-                  <button key={n} onClick={() => { setQuery(n); doSearch(n); }}
-                    className="px-3 py-1.5 rounded-full text-xs transition-all"
-                    style={{background:'#ffffff', border:'1px solid #d1ead9', color:'#2d8653'}}
-                    onMouseEnter={e => {e.currentTarget.style.background='#f0faf5';e.currentTarget.style.borderColor='#2d8653'}}
-                    onMouseLeave={e => {e.currentTarget.style.background='#ffffff';e.currentTarget.style.borderColor='#d1ead9'}}>
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="text-center mb-3">
-              <div className="text-[10px] tracking-[2px] uppercase mb-2" style={{color:'#9ca3af'}}>🌲 Outdoor & Lifestyle</div>
-              <div className="flex flex-wrap justify-center gap-1.5">
-                {outdoorBrands.map(n => (
-                  <button key={n} onClick={() => { setQuery(n); doSearch(n); }}
-                    className="px-3 py-1.5 rounded-full text-xs transition-all"
-                    style={{background:'#ffffff', border:'1px solid #d1ead9', color:'#4a9e6b'}}
-                    onMouseEnter={e => {e.currentTarget.style.background='#f0faf5';e.currentTarget.style.borderColor='#4a9e6b'}}
-                    onMouseLeave={e => {e.currentTarget.style.background='#ffffff';e.currentTarget.style.borderColor='#d1ead9'}}>
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-[10px] tracking-[2px] uppercase mb-2" style={{color:'#9ca3af'}}>📊 Corporate & Ticker Search</div>
-              <div className="flex flex-wrap justify-center gap-1.5">
-                {otherBrands.map(n => (
-                  <button key={n} onClick={() => { setQuery(n); doSearch(n); }}
-                    className="px-3 py-1.5 rounded-full text-xs font-mono transition-all"
-                    style={{background:'#ffffff', border:'1px solid #e5e0d8', color:'#636e72'}}
-                    onMouseEnter={e => {e.currentTarget.style.background='#faf9f6';e.currentTarget.style.borderColor='#636e72'}}
-                    onMouseLeave={e => {e.currentTarget.style.background='#ffffff';e.currentTarget.style.borderColor='#e5e0d8'}}>
-                    {n.startsWith('$') || n.match(/^[A-Z]{2,5}$/) ? `$${n}` : n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="text-center mt-4 text-[11px]" style={{color:'#9ca3af'}}>
-              219 companies · 300+ brands & subsidiaries searchable
-            </div>
-            {communityCount > 0 && (
-              <div className="text-center mt-1 text-[11px]" style={{color:'#b0b8b4'}}>
-                {communityCount} {communityCount === 1 ? 'company' : 'companies'} requested by the community
-              </div>
-            )}
-          </div>
-        )}
-
-        {searching && (
-          <div className="text-center py-12">
-            <div className="w-9 h-9 rounded-full animate-spin-slow mx-auto" style={{border:'3px solid #e5e0d8', borderTopColor:'#2d8653'}} />
-            <div className="mt-3 text-xs" style={{color:'#9ca3af'}}>Looking into it...</div>
-          </div>
-        )}
-
-        {result && result !== 'not_found' && (
-          <CompanyResult data={result} onSearch={(name) => {
-            setQuery(name);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            doSearch(name);
-          }} />
-        )}
-
-        {result === 'not_found' && (
-          <div className="text-center py-10 max-w-sm mx-auto">
-            <div className="text-4xl mb-3">🌱</div>
-            <h3 className="text-base font-bold mb-2" style={{color:'#2d3436'}}>"{query}" not found yet</h3>
-            <p className="text-sm leading-relaxed mb-5" style={{color:'#636e72'}}>
-              We're growing the database. Want us to research this company?
-            </p>
-            {!requestSent ? (
-              <div className="p-4 rounded-xl" style={{background:'#ffffff', border:'1px solid #e5e0d8', boxShadow:'0 2px 12px rgba(0,0,0,0.04)'}}>
-                <div className="text-xs font-bold mb-2" style={{color:'#2d8653'}}>Request This Company</div>
-                <div className="flex gap-2">
-                  <input type="text" value={requestName} onChange={e => setRequestName(e.target.value)}
-                    placeholder={query || "Company name"}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                    style={{background:'#faf9f6', border:'1px solid #e5e0d8', color:'#2d3436'}} />
-                  <button onClick={async () => {
-                      const name = (requestName || query).trim();
-                      if (!name) return;
-                      try {
-                        const res = await fetch('/api/request', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ company: name }),
-                        });
-                        const data = await res.json();
-                        setRequestNumber(data.count);
-                        setCommunityCount(data.count);
-                      } catch {}
-                      setRequestSent(true);
-                    }}
-                    className="px-4 py-2 rounded-lg text-white text-xs font-bold"
-                    style={{background:'linear-gradient(135deg, #2d8653, #1a6e3f)'}}>
-                    Submit
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl" style={{background:'#f6fbf8', border:'1px solid #d1ead9'}}>
-                <div className="text-sm font-bold mb-1" style={{color:'#2d8653'}}>♥ Request received</div>
-                {requestNumber && (
-                  <div className="text-base font-extrabold font-mono mb-1" style={{color:'#d97706'}}>
-                    You're request #{requestNumber}
+                <a href="/custom-builds" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
+                  style={{ background: '#f6fbf8', border: '1px solid #d1ead9' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#2d8653'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#d1ead9'}>
+                  <div className="text-2xl shrink-0">🛠️</div>
+                  <div>
+                    <div className="text-sm font-bold mb-0.5" style={{ color: '#2d8653' }}>Custom builds →</div>
+                    <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
+                      American-made frames. Fitted to your body. Component brands with high karma scores. For riders who want it done right. Budget $5k and up.
+                    </div>
                   </div>
+                </a>
+                <a href="/membership" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
+                  style={{ background: '#faf9ff', border: '1px solid #e0d9f7' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#9333ea'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#e0d9f7'}>
+                  <div className="text-2xl shrink-0">♥</div>
+                  <div>
+                    <div className="text-sm font-bold mb-0.5" style={{ color: '#9333ea' }}>Membership →</div>
+                    <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
+                      Priority service, fair labor rates, seasonal tune-ups, and a direct line to Nate. $49–$99/month. No contracts.
+                    </div>
+                  </div>
+                </a>
+              </div>
+              <p className="text-center text-[11px] mt-4 max-w-xs mx-auto" style={{ color: '#9ca3af' }}>
+                The app is free forever. Custom builds and memberships fund trail work and community rides.
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Results */}
+        {wizardDone && (
+          <div ref={resultsRef}>
+            <RecommendationResult result={recommendation} profile={profile} />
+
+            {/* Shop finder */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#9ca3af' }}>
+                  Local shops near {profile?.zip}
+                </div>
+                {shops.length > 0 && (
+                  <div className="text-xs" style={{ color: '#9ca3af' }}>{shops.length} found</div>
                 )}
-                <div className="text-xs" style={{color:'#636e72'}}>We'll research and add this company. Check back soon.</div>
               </div>
-            )}
+
+              {shopsLoading && (
+                <div className="text-center py-8">
+                  <div className="w-7 h-7 rounded-full animate-spin mx-auto" style={{ border: '2px solid #e5e0d8', borderTopColor: '#2d8653' }} />
+                  <div className="mt-2 text-xs" style={{ color: '#9ca3af' }}>Finding shops near you...</div>
+                </div>
+              )}
+
+              {!shopsLoading && shops.length > 0 && (
+                <>
+                  <div className="mb-4">
+                    <ShopMap
+                      shops={shops}
+                      center={shopCenter}
+                      onSelectShop={setSelectedShop}
+                      selectedShop={selectedShop}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {shops.map(shop => (
+                      <ShopCard key={shop.id} shop={shop}
+                        selected={selectedShop?.id === shop.id}
+                        onSelect={setSelectedShop} />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {!shopsLoading && shops.length === 0 && profile?.zip && (
+                <div className="text-center py-6">
+                  <p className="text-sm" style={{ color: '#636e72' }}>No shops found near {profile.zip}.</p>
+                  <a href="/find-a-shop" className="text-xs mt-1 block" style={{ color: '#2d8653' }}>
+                    Try the full shop finder →
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Start over */}
+            <div className="mt-8 text-center">
+              <button onClick={resetWizard}
+                className="px-6 py-2.5 rounded-xl text-sm font-medium transition-all"
+                style={{ background: '#ffffff', border: '1px solid #d1ead9', color: '#4a9e6b' }}>
+                ← Start over
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Donation section */}
+        {/* Donation */}
         <div className="mt-10 mb-6 text-center">
-          <div className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{color:'#b0b8b4'}}>Support the work</div>
-          <p className="text-xs mb-4 max-w-xs mx-auto leading-relaxed" style={{color:'#9ca3af'}}>
+          <div className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#b0b8b4' }}>Support the work</div>
+          <p className="text-xs mb-4 max-w-xs mx-auto leading-relaxed" style={{ color: '#9ca3af' }}>
             Love Over Money is free, ad-free, and nonprofit. Help us keep it that way.
           </p>
           <a href="https://www.paypal.com/donate/?hosted_button_id=M5YTUPJJDF434" target="_blank" rel="noopener noreferrer"
             className="inline-block px-5 py-2.5 rounded-lg text-sm font-bold text-white mb-6"
-            style={{background:'linear-gradient(135deg, #c0392b, #a93226)'}}>
+            style={{ background: 'linear-gradient(135deg, #c0392b, #a93226)' }}>
             Donate USD
           </a>
         </div>
@@ -297,27 +236,22 @@ export default function LoveMoneyApp() {
         <CryptoDonate />
 
         <div className="text-center pt-8 pb-4">
-          <p className="mb-4 max-w-sm mx-auto" style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#636e72', fontSize:'0.82rem', lineHeight:1.6}}>
+          <p className="mb-4 max-w-sm mx-auto" style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', color: '#636e72', fontSize: '0.82rem', lineHeight: 1.6 }}>
             "Doing the right thing may never pay, but we'll keep doing it anyway."
           </p>
-          <div className="text-[10px]" style={{color:'#c4bdb5'}}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
+          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
           <div className="flex justify-center gap-4 mt-1">
-            <a href="/about" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>Why this exists</a>
-            <a href="/methodology" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>How we score</a>
+            <a href="/about" className="text-[10px] hover:underline" style={{ color: '#b0b8b4' }}>Why this exists</a>
+            <a href="/methodology" className="text-[10px] hover:underline" style={{ color: '#b0b8b4' }}>How we score</a>
           </div>
         </div>
 
-        {/* Rotating quote — bottom-right easter egg */}
         {quoteIndex !== null && (
-          <div style={{
-            position: 'fixed', bottom: '12px', right: '14px',
-            opacity: quoteVisible ? 0.55 : 0, transition: 'opacity 0.8s ease',
-            maxWidth: '220px', textAlign: 'right', pointerEvents: 'none',
-          }}>
-            <p style={{fontFamily:'Playfair Display, serif', fontStyle:'italic', color:'#7aad8c', fontSize:'11px', lineHeight:1.5}}>
+          <div style={{ position: 'fixed', bottom: '12px', right: '14px', opacity: quoteVisible ? 0.55 : 0, transition: 'opacity 0.8s ease', maxWidth: '220px', textAlign: 'right', pointerEvents: 'none' }}>
+            <p style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', color: '#7aad8c', fontSize: '11px', lineHeight: 1.5 }}>
               {QUOTES[quoteIndex].text}
             </p>
-            <p style={{color:'#a8c4b0', fontSize:'9px', marginTop:'3px'}}>
+            <p style={{ color: '#a8c4b0', fontSize: '9px', marginTop: '3px' }}>
               — {QUOTES[quoteIndex].attribution}
             </p>
           </div>
