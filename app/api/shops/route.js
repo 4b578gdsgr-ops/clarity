@@ -52,7 +52,7 @@ export async function GET(request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
-    const { data, error } = await supabase.from('shops').select('*');
+    const { data, error } = await supabase.from('shops').select('*').eq('active', true);
     if (!error && data?.length > 0) {
       const withDistance = data
         .map(shop => ({ ...shop, distance: Math.round(haversineDistance(lat, lng, shop.lat, shop.lng) * 10) / 10 }))

@@ -14,6 +14,7 @@ CREATE TABLE shops (
   services TEXT[],
   shop_type TEXT CHECK (shop_type IN ('indie', 'chain', 'co-op')),
   verified BOOLEAN DEFAULT false,
+  active BOOLEAN DEFAULT true,
   added_by TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
