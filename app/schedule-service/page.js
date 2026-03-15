@@ -256,7 +256,7 @@ export default function ScheduleService() {
               maxLength={5}
               value={zip}
               onChange={e => { setZip(e.target.value); setZipError(null); setOutsideArea(false); setDemandSent(false); }}
-              placeholder="06111"
+              placeholder="ZIP code"
               style={{ width: '100%', padding: '10px 12px', border: `1px solid ${zipError ? '#fca5a5' : '#e5e0d8'}`, borderRadius: 10, fontSize: 16, marginBottom: 16, boxSizing: 'border-box' }}
             />
 
@@ -383,7 +383,7 @@ export default function ScheduleService() {
             {[
               { key: 'name',    label: 'Your name',      placeholder: 'Nate', required: true },
               { key: 'address', label: 'Street address', placeholder: '123 Main St', required: true },
-              { key: 'city',    label: 'City',            placeholder: 'Newington' },
+              { key: 'city',    label: 'City',            placeholder: 'City' },
               { key: 'phone',   label: 'Phone',           placeholder: '(860) 555-1234', type: 'tel' },
               { key: 'email',   label: 'Email',           placeholder: 'nate@example.com', type: 'email' },
             ].map(f => (

@@ -319,7 +319,7 @@ export default function BikeWizard({ onComplete }) {
               <div className="mb-4">
                 <label className="block text-xs font-bold mb-2" style={{ color: '#636e72' }}>ZIP code</label>
                 <input type="text" value={zip} onChange={e => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                  placeholder="06001"
+                  placeholder="ZIP code"
                   className="w-full px-4 py-3 rounded-lg text-lg font-mono text-center outline-none"
                   style={{ background: '#ffffff', border: '1px solid #e5e0d8', color: '#2d3436', letterSpacing: '0.2em' }} />
               </div>
