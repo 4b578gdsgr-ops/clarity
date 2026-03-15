@@ -7,7 +7,7 @@ const WHY_CUSTOM = [
   {
     icon: '🇺🇸',
     title: 'Made in America',
-    body: `The big companies flooded the market after COVID. Crashed pricing. Gutted dealer margins. Replaced craftsmanship with gimmicks because gimmicks sell on Instagram. Custom builds are the opposite of all that. Frames from Moots, Seven, Breadwinner, Lynskey — built by small shops, not factories.`,
+    body: `The big companies flooded the market after COVID. Crashed pricing. Gutted dealer margins. Custom builds are the opposite. Frames from Breadwinner, Lynskey, Litespeed, Chumba — built by small shops, not factories.`,
   },
   {
     icon: '📐',
@@ -64,13 +64,13 @@ export default function CustomBuildsPage() {
             One Love Custom Builds
           </div>
           <h1 className="text-3xl font-black mb-3 leading-tight" style={{ fontFamily: 'Playfair Display, serif', color: '#2d3436' }}>
-            The industry moved to mass production and quarterly earnings. We moved the other direction.
+            Mass production went one way. We went the other.
           </h1>
           <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: '#636e72' }}>
-            Every custom bike starts with a conversation. What do you ride? Where do you ride it? What matters to you? We listen first, then we build.
+            Every build starts with a conversation — what you ride, where you ride it, what matters. We listen first.
           </p>
           <p className="text-xs mt-3" style={{ color: '#9ca3af' }}>
-            One Love Outdoors is a 501(c)(3). Custom builds and memberships fund trail work, community rides, and keeping this tool free forever.
+            Custom builds and memberships fund trail work, community rides, and keeping this tool free.
           </p>
         </div>
 

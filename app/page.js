@@ -102,13 +102,13 @@ export default function HomePage() {
           <>
             <div className={`text-center mb-4 transition-all duration-700 delay-150 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
               <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: '#636e72' }}>
-                Bikes aren't just products. They're Saturday mornings. They're the trail you needed after a hard week. They're the shop that knew your name. We built this to keep that alive.
+                Bikes aren't just products. They're the shop that knew your name. The trail after a hard week. We built this to keep that alive.
               </p>
             </div>
             <div className={`p-5 rounded-2xl mb-6 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
               style={{ background: '#ffffff', border: '1px solid #e5e0d8', boxShadow: '0 2px 24px rgba(45,134,83,0.07)' }}>
               <p className="text-xs text-center mb-4" style={{ color: '#9ca3af', fontStyle: 'italic' }}>
-                {`Let's find your bike the way it used to work — by actually talking about what you ride.`}
+                {`Let's find your bike the right way — by talking about what you actually ride.`}
               </p>
               <BikeWizard onComplete={handleWizardComplete} />
             </div>
@@ -116,7 +116,7 @@ export default function HomePage() {
             {/* Three paths */}
             <div className={`mb-8 transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
               <div className="text-xs font-bold uppercase tracking-widest text-center mb-4" style={{ color: '#9ca3af' }}>
-                Five ways One Love can help
+                What we do
               </div>
               <div className="flex flex-col gap-3">
                 <div className="flex gap-4 px-4 py-4 rounded-xl" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
@@ -124,7 +124,7 @@ export default function HomePage() {
                   <div>
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#2d3436' }}>Find your bike + a local shop</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      Use the wizard above. We'll match you with the right ride and the nearest quality shop that carries it. We help you find the right bike — local shops take care of you from there.
+                      Answer a few questions. We'll match you with the right ride and a local shop that carries it.
                     </div>
                   </div>
                 </div>
@@ -136,7 +136,7 @@ export default function HomePage() {
                   <div>
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#2d8653' }}>Custom builds →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      American-made frames. Fitted to your body. Component brands with high karma scores. For riders who want it done right. Budget $5k and up.
+                      American-made frames. Fitted to your body. Components chosen for quality, not a catalog. Budget $5k and up.
                     </div>
                   </div>
                 </a>
@@ -148,7 +148,7 @@ export default function HomePage() {
                   <div>
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#9333ea' }}>Membership →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      Priority service, free pickup and dropoff, seasonal tune-up included, and a direct line to Nate. $25/month. No contracts.
+                      Free pickup and dropoff. Priority service. Seasonal tune-up. Direct line to Nate. $25/month.
                     </div>
                   </div>
                 </a>
@@ -160,7 +160,7 @@ export default function HomePage() {
                   <div>
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#d97706' }}>Fix or Ride? →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      Got a bike collecting dust? Tell us what's wrong and we'll tell you if it's worth fixing — and what it'll actually cost.
+                      Got a bike collecting dust? Tell us what's wrong. We'll tell you if it's worth fixing.
                     </div>
                   </div>
                 </a>
@@ -172,13 +172,13 @@ export default function HomePage() {
                   <div>
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#0ea5e9' }}>Schedule Service →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      Book a service appointment with pickup and dropoff included. We come to you, fix it, bring it back.
+                      We pick it up, fix it, bring it back.
                     </div>
                   </div>
                 </a>
               </div>
               <p className="text-center text-[11px] mt-4 max-w-xs mx-auto" style={{ color: '#9ca3af' }}>
-                The app is free forever. Custom builds and memberships fund trail work and community rides.
+                The finder is free. Custom builds and memberships fund trail work and community rides.
               </p>
             </div>
           </>
@@ -252,7 +252,7 @@ export default function HomePage() {
         <div className="mt-10 mb-6 text-center">
           <div className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#b0b8b4' }}>Support the work</div>
           <p className="text-xs mb-4 max-w-xs mx-auto leading-relaxed" style={{ color: '#9ca3af' }}>
-            Love Over Money is free, ad-free, and nonprofit. Help us keep it that way.
+            Free, ad-free, nonprofit. Help us keep it that way.
           </p>
           <a href="https://www.paypal.com/donate/?hosted_button_id=M5YTUPJJDF434" target="_blank" rel="noopener noreferrer"
             className="inline-block px-5 py-2.5 rounded-lg text-sm font-bold text-white mb-6"

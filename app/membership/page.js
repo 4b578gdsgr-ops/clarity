@@ -120,10 +120,10 @@ export default function MembershipPage() {
             This is how we keep the lights on without selling out.
           </h1>
           <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: '#636e72' }}>
-            No ads. No investors. No private equity. Just riders who think this is worth supporting.
+            No ads. No investors. Just riders who think this matters.
           </p>
           <p className="text-xs mt-3 max-w-sm mx-auto" style={{ color: '#9ca3af' }}>
-            One pickup without a membership costs $25. The membership is $25/month with free pickups, priority service, and a seasonal tune-up. The math is simple. But honestly, most people join because they want this thing to exist.
+            One standalone pickup costs $25. The membership is $25/month — free pickups, priority service, seasonal tune-up. Most people join because they want this to exist.
           </p>
         </div>
 

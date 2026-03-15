@@ -54,8 +54,8 @@ function budgetLabel(val) {
   if (val < 1500) return { zone: 'value', text: 'Best value complete bikes from local shops', color: '#6b7280' };
   if (val < 3500) return { zone: 'sweet', text: 'Sweet spot — quality bikes that last', color: '#2d8653' };
   if (val < 5000) return { zone: 'high', text: 'High-end complete or custom territory', color: '#d97706' };
-  if (val < 7000) return { zone: 'custom5k', text: `At this price, you deserve something built for you — not pulled off a warehouse shelf.`, color: '#9333ea' };
-  return { zone: 'custom', text: `This is custom territory. American-made frames. Hand-built wheels. A bike that fits you, not a focus group.`, color: '#9333ea' };
+  if (val < 7000) return { zone: 'custom5k', text: `At this price, consider something built for you.`, color: '#9333ea' };
+  return { zone: 'custom', text: `Custom territory. American-made frames. Hand-built wheels.`, color: '#9333ea' };
 }
 
 const STEPS = ['Type', 'Budget', 'About You', 'Location', 'Details'];
@@ -326,7 +326,7 @@ export default function BikeWizard({ onComplete }) {
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-2" style={{ color: '#636e72' }}>How far will you travel to a shop?</label>
+                <label className="block text-xs font-bold mb-2" style={{ color: '#636e72' }}>How far will you travel for a good shop?</label>
                 <div className="flex gap-2">
                   {RADII.map(r => (
                     <button key={r.value} onClick={() => setRadius(r.value)}
@@ -347,8 +347,8 @@ export default function BikeWizard({ onComplete }) {
           {/* Step 4: Conditional follow-up */}
           {step === 4 && showConditionalStep() && (
             <div>
-              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>One more thing</h2>
-              <p className="text-sm text-center mb-6" style={{ color: '#9ca3af' }}>This helps us get the details right.</p>
+              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>Almost there.</h2>
+              <p className="text-sm text-center mb-6" style={{ color: '#9ca3af' }}>One more thing and we're done.</p>
 
               {bikeType === 'touring' && (
                 <div className="mb-5">

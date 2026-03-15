@@ -76,7 +76,7 @@ export default function FindAShopPage() {
             These shops are still here.
           </h1>
           <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: '#9ca3af' }}>
-            They survived the consolidation, the online pricing wars, and a pandemic. They're still opening the door every morning because they believe in this the same way we do.
+            They survived the consolidation, the online pricing wars, and a pandemic. They're still opening the door every morning.
           </p>
         </div>
 

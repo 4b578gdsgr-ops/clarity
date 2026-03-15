@@ -229,10 +229,10 @@ export default function ScheduleService() {
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '32px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, color: '#2d3436', marginBottom: 6 }}>
-          No more phone tag. Book a service window and we'll come to you.
+          Book a service window. We'll come to you.
         </h1>
         <p style={{ color: '#636e72', fontSize: 13, lineHeight: 1.6, maxWidth: 400, margin: '0 auto 16px' }}>
-          Service + Pickup/Dropoff. We pick it up, fix it, bring it back. Like having a bike shop that makes house calls.
+          We pick it up, fix it, bring it back.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
           {['Tune-ups', 'Brake service', 'Drivetrain', 'Wheel builds & truing', 'Full suspension service'].map(s => (

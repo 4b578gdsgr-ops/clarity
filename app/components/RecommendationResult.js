@@ -99,10 +99,10 @@ function CustomLeadBlock({ profile }) {
           One Love Custom Builds
         </div>
         <div className="text-xl font-black mb-2 leading-snug" style={{ color: '#ffffff', fontFamily: 'Playfair Display, serif' }}>
-          At your budget, a custom build is the right call.
+          At this budget, go custom.
         </div>
         <p className="text-sm leading-relaxed mb-4" style={{ color: '#a3d9b5' }}>
-          A bike built around you. From builders who still answer their own phone. Titanium frames that outlast everything. Wheels built by hand, one spoke at a time. This is what the industry used to be.
+          A bike built around you. Titanium frames that outlast everything. Wheels built by hand, one spoke at a time.
         </p>
 
         <div className="flex gap-4 mb-4">
@@ -155,7 +155,7 @@ function CustomSoftBlock({ profile }) {
         <div className="flex items-start gap-3 mb-3">
           <div className="text-2xl shrink-0">🛠️</div>
           <div>
-            <div className="text-sm font-bold" style={{ color: '#1a6e3f' }}>Consider a custom build</div>
+            <div className="text-sm font-bold" style={{ color: '#1a6e3f' }}>Worth considering — custom</div>
             <p className="text-xs leading-relaxed mt-0.5" style={{ color: '#636e72' }}>
               At your budget, you're in custom territory. American-made frames, components chosen for your riding,
               fitted to your body. Our custom builds score ♥ 82 vs ♥ 55 for typical big-brand complete bikes.
@@ -207,7 +207,7 @@ function CustomMentionBlock() {
       <div>
         <div className="text-sm font-bold mb-0.5" style={{ color: '#2d8653' }}>Touring riders often go custom</div>
         <p className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-          At your budget, a custom chromoly build from a builder like Breadwinner or Seven gives you a frame dialed to your body and your load. Worth a conversation.
+          At your budget, a custom chromoly build from a builder like Breadwinner, Lynskey, or similar gives you a frame dialed to your body and your load. Worth a conversation.
         </p>
         <a href="/custom-builds" className="inline-block mt-2 text-xs font-bold" style={{ color: '#2d8653' }}>
           Learn about custom builds →
