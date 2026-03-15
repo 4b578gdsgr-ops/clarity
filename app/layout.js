@@ -50,6 +50,9 @@ function TopNav() {
           <a href="/membership" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
             Membership
           </a>
+          <a href="/book-pickup" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
+            Book Pickup
+          </a>
           <a href="/about" style={{ fontSize: '0.75rem', color: '#636e72', textDecoration: 'none' }}>
             About
           </a>

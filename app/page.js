@@ -112,7 +112,7 @@ export default function HomePage() {
             {/* Three paths */}
             <div className={`mb-8 transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
               <div className="text-xs font-bold uppercase tracking-widest text-center mb-4" style={{ color: '#9ca3af' }}>
-                Four ways One Love can help
+                Five ways One Love can help
               </div>
               <div className="flex flex-col gap-3">
                 <div className="flex gap-4 px-4 py-4 rounded-xl" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
@@ -157,6 +157,18 @@ export default function HomePage() {
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#d97706' }}>Fix or Ride? →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
                       Got a bike collecting dust? Tell us what's wrong and we'll tell you if it's worth fixing — and what it'll actually cost.
+                    </div>
+                  </div>
+                </a>
+                <a href="/book-pickup" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
+                  style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#0ea5e9'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#bae6fd'}>
+                  <div className="text-2xl shrink-0">🚐</div>
+                  <div>
+                    <div className="text-sm font-bold mb-0.5" style={{ color: '#0ea5e9' }}>Book a Pickup →</div>
+                    <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
+                      We come to you. Pick up, fix, deliver. No drop-off required. Serving central Connecticut.
                     </div>
                   </div>
                 </a>
