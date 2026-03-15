@@ -112,7 +112,7 @@ export default function HomePage() {
             {/* Three paths */}
             <div className={`mb-8 transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
               <div className="text-xs font-bold uppercase tracking-widest text-center mb-4" style={{ color: '#9ca3af' }}>
-                Three ways One Love can help
+                Four ways One Love can help
               </div>
               <div className="flex flex-col gap-3">
                 <div className="flex gap-4 px-4 py-4 rounded-xl" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
@@ -145,6 +145,18 @@ export default function HomePage() {
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#9333ea' }}>Membership →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
                       Priority service, fair labor rates, seasonal tune-ups, and a direct line to Nate. $49–$99/month. No contracts.
+                    </div>
+                  </div>
+                </a>
+                <a href="/fix-or-ride" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
+                  style={{ background: '#fffbeb', border: '1px solid #fde68a' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#d97706'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#fde68a'}>
+                  <div className="text-2xl shrink-0">🔧</div>
+                  <div>
+                    <div className="text-sm font-bold mb-0.5" style={{ color: '#d97706' }}>Fix or Ride? →</div>
+                    <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
+                      Got a bike collecting dust? Tell us what's wrong and we'll tell you if it's worth fixing — and what it'll actually cost.
                     </div>
                   </div>
                 </a>

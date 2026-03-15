@@ -41,6 +41,9 @@ function TopNav() {
           <a href="/find-a-shop" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
             Find a Shop
           </a>
+          <a href="/fix-or-ride" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
+            Fix or Ride?
+          </a>
           <a href="/custom-builds" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
             Custom Builds
           </a>
