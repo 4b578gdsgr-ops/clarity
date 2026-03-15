@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { ZONES } from '../../../lib/zones';
+import { ZONES } from '../../../lib/serviceZones';
 
 const PickupMap = dynamic(() => import('./PickupMap'), { ssr: false });
 

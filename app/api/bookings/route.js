@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase';
-import { getZoneForZip } from '../../../lib/zones';
+import { getZoneForZip } from '../../../lib/serviceZones';
 
 // GET /api/bookings?date=YYYY-MM-DD&status=booked
 export async function GET(request) {

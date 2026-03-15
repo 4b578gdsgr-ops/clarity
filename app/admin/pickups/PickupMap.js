@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { ZONES } from '../../../lib/zones';
+import { ZONES } from '../../../lib/serviceZones';
 
 // Fix Leaflet default icon webpack issue
 delete L.Icon.Default.prototype._getIconUrl;
