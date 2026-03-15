@@ -97,15 +97,23 @@ export default function HomePage() {
               M<span style={{ display: 'inline-block', verticalAlign: 'baseline', transform: 'translateY(2px)', fontSize: '0.8em' }}>💰</span>ney
             </span>
           </h1>
-          <p className="text-sm" style={{ color: '#9ca3af' }}>Your dollar is your only real vote.</p>
+          <p className="text-sm" style={{ color: '#9ca3af' }}>Your dollar is your last vote.</p>
           <p className="text-[11px] mt-1" style={{ color: '#b0b8b4' }}>A One Love Outdoors 501(c)(3) project</p>
         </div>
 
         {/* Wizard */}
         {!wizardDone && (
           <>
+            <div className={`text-center mb-4 transition-all duration-700 delay-150 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+              <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: '#636e72' }}>
+                Bikes aren't just products. They're Saturday mornings. They're the trail you needed after a hard week. They're the shop that knew your name. We built this to keep that alive.
+              </p>
+            </div>
             <div className={`p-5 rounded-2xl mb-6 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
               style={{ background: '#ffffff', border: '1px solid #e5e0d8', boxShadow: '0 2px 24px rgba(45,134,83,0.07)' }}>
+              <p className="text-xs text-center mb-4" style={{ color: '#9ca3af', fontStyle: 'italic' }}>
+                {`Let's find your bike the way it used to work — by actually talking about what you ride.`}
+              </p>
               <BikeWizard onComplete={handleWizardComplete} />
             </div>
 
@@ -260,8 +268,11 @@ export default function HomePage() {
         <CryptoDonate />
 
         <div className="text-center pt-8 pb-4">
-          <p className="mb-4 max-w-sm mx-auto" style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', color: '#636e72', fontSize: '0.82rem', lineHeight: 1.6 }}>
-            "Doing the right thing may never pay, but we'll keep doing it anyway."
+          <p className="mb-1 max-w-sm mx-auto" style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', color: '#636e72', fontSize: '0.82rem', lineHeight: 1.6 }}>
+            "No ads. No investors. No private equity. Just this."
+          </p>
+          <p className="mb-4 max-w-sm mx-auto" style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', color: '#9aad9c', fontSize: '0.78rem', lineHeight: 1.6 }}>
+            Love over money. Always.
           </p>
           <div className="text-[10px]" style={{ color: '#c4bdb5' }}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
           <div className="flex justify-center gap-4 mt-1">

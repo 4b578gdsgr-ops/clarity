@@ -53,8 +53,9 @@ const RADII = [
 function budgetLabel(val) {
   if (val < 1500) return { zone: 'value', text: 'Best value complete bikes from local shops', color: '#6b7280' };
   if (val < 3500) return { zone: 'sweet', text: 'Sweet spot — quality bikes that last', color: '#2d8653' };
-  if (val < 6000) return { zone: 'high', text: 'High-end complete or custom territory', color: '#d97706' };
-  return { zone: 'custom', text: 'Custom build territory — your dollar stays local longer', color: '#9333ea' };
+  if (val < 5000) return { zone: 'high', text: 'High-end complete or custom territory', color: '#d97706' };
+  if (val < 7000) return { zone: 'custom5k', text: `At this price, you deserve something built for you — not pulled off a warehouse shelf.`, color: '#9333ea' };
+  return { zone: 'custom', text: `This is custom territory. American-made frames. Hand-built wheels. A bike that fits you, not a focus group.`, color: '#9333ea' };
 }
 
 const STEPS = ['Type', 'Budget', 'About You', 'Location', 'Details'];
@@ -147,7 +148,7 @@ export default function BikeWizard({ onComplete }) {
           {step === 0 && (
             <div>
               <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>
-                What are you looking for?
+                What gets you outside?
               </h2>
               <p className="text-sm text-center mb-5" style={{ color: '#9ca3af' }}>No wrong answers.</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -222,8 +223,8 @@ export default function BikeWizard({ onComplete }) {
           {/* Step 1: Budget */}
           {step === 1 && (
             <div>
-              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>What's your budget?</h2>
-              <p className="text-sm text-center mb-6" style={{ color: '#9ca3af' }}>Be honest — there's a great bike at every price.</p>
+              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>What are you working with?</h2>
+              <p className="text-sm text-center mb-6" style={{ color: '#9ca3af' }}>Be honest — we'll make it count wherever you land.</p>
 
               <div className="text-center mb-3">
                 <span className="text-3xl font-extrabold font-mono" style={{ color: '#2d3436' }}>
@@ -261,8 +262,8 @@ export default function BikeWizard({ onComplete }) {
           {/* Step 2: About you */}
           {step === 2 && (
             <div>
-              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>A little about you</h2>
-              <p className="text-sm text-center mb-5" style={{ color: '#9ca3af' }}>Helps us get the fit and feel right.</p>
+              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>Tell us about you.</h2>
+              <p className="text-sm text-center mb-5" style={{ color: '#9ca3af' }}>This helps us get the fit and feel right.</p>
 
               <div className="mb-4">
                 <label className="block text-xs font-bold mb-2" style={{ color: '#636e72' }}>Height</label>
@@ -313,8 +314,8 @@ export default function BikeWizard({ onComplete }) {
           {/* Step 3: Location */}
           {step === 3 && (
             <div>
-              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>Where are you?</h2>
-              <p className="text-sm text-center mb-6" style={{ color: '#9ca3af' }}>We'll find shops near you that can help.</p>
+              <h2 className="text-lg font-bold mb-1 text-center" style={{ color: '#2d3436' }}>Where do you ride?</h2>
+              <p className="text-sm text-center mb-6" style={{ color: '#9ca3af' }}>{`We'll find the shops that are still doing it right near you.`}</p>
 
               <div className="mb-4">
                 <label className="block text-xs font-bold mb-2" style={{ color: '#636e72' }}>ZIP code</label>

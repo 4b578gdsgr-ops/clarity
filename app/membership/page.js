@@ -4,19 +4,18 @@ import { useState, useEffect } from 'react';
 
 const TIERS = {
   base: {
-    name: 'One Love Service Membership',
-    price: '$49/month',
+    name: 'One Love Membership',
+    price: '$25/month',
     color: '#2d8653',
     bg: '#f0faf5',
     border: '#a3d9b5',
     perks: [
-      'Priority scheduling — 48-hour turnaround vs. standard shop wait times',
-      'Discounted labor rate — 20% off standard rates',
-      'Free basic tune-up every 3 months (seasonal tune included)',
-      'Component sourcing at cost + small markup',
-      'First access to used and consignment high-end parts',
-      'Direct text/call line to Nate',
-      'Members-only workshop sessions — bike maintenance clinics',
+      `Direct line to a real mechanic who actually rides`,
+      `Free pickup and dropoff — we come to you`,
+      `Priority service — your bike doesn't wait in a queue`,
+      `Seasonal tune-up included — we'll remind you`,
+      `Parts sourced at near-cost — we're not marking up to make margin`,
+      `You're funding trail work, community rides, and keeping this tool free for everyone`,
     ],
   },
   premium: {
@@ -117,13 +116,13 @@ export default function MembershipPage() {
             One Love Membership
           </div>
           <h1 className="text-3xl font-black mb-3 leading-tight" style={{ fontFamily: 'Playfair Display, serif', color: '#2d3436' }}>
-            Your bike, taken care of.
+            This is how we keep the lights on without selling out.
           </h1>
           <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: '#636e72' }}>
-            Priority service, fair labor rates, maintenance clinics, and a direct line to Nate — for riders who want their bike to always be ready.
+            No ads. No investors. No private equity. Just riders who think this is worth supporting.
           </p>
           <p className="text-xs mt-3 max-w-sm mx-auto" style={{ color: '#9ca3af' }}>
-            Membership revenue funds trail work, community rides, and keeping this tool free forever. The shop sustains the mission.
+            One pickup without a membership costs $25. The membership is $25/month with free pickups, priority service, and a seasonal tune-up. The math is simple. But honestly, most people join because they want this thing to exist.
           </p>
         </div>
 

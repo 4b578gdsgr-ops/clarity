@@ -115,8 +115,7 @@ export default function FixOrRidePage() {
             Fix or Ride?
           </h1>
           <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: '#636e72' }}>
-            Be honest — is that bike in your garage collecting dust or collecting excuses?
-            Let's figure out what it actually needs.
+            Be honest — how long has that bike been sitting there? Let's figure out what it needs. And what you deserve.
           </p>
         </div>
 

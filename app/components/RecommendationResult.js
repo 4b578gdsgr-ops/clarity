@@ -102,7 +102,7 @@ function CustomLeadBlock({ profile }) {
           At your budget, a custom build is the right call.
         </div>
         <p className="text-sm leading-relaxed mb-4" style={{ color: '#a3d9b5' }}>
-          American-made frames. Components chosen for you, not for a catalog. A bike fitted to your body and your riding — built by craftspeople, not factories.
+          A bike built around you. From builders who still answer their own phone. Titanium frames that outlast everything. Wheels built by hand, one spoke at a time. This is what the industry used to be.
         </p>
 
         <div className="flex gap-4 mb-4">
@@ -124,11 +124,11 @@ function CustomLeadBlock({ profile }) {
           <button onClick={() => setFormOpen(true)}
             className="w-full py-3.5 rounded-xl text-sm font-bold transition-all"
             style={{ background: '#4ade80', color: '#0d1f15' }}>
-            Design your dream bike with One Love →
+            Let's build something →
           </button>
         ) : (
           <div className="mt-2 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="text-xs font-bold mb-3" style={{ color: '#a3d9b5' }}>Start the conversation</div>
+            <div className="text-xs font-bold mb-3" style={{ color: '#a3d9b5' }}>{`Tell us about your dream bike. We'll figure out the rest together.`}</div>
             <div className="[&_input]:!bg-[rgba(255,255,255,0.08)] [&_input]:!border-[rgba(255,255,255,0.15)] [&_input]:!text-white [&_input]:placeholder:text-[#6b8f7a] [&_textarea]:!bg-[rgba(255,255,255,0.08)] [&_textarea]:!border-[rgba(255,255,255,0.15)] [&_textarea]:!text-white [&_textarea]:placeholder:text-[#6b8f7a] [&_select]:!bg-[rgba(255,255,255,0.08)] [&_select]:!border-[rgba(255,255,255,0.15)] [&_select]:!text-white [&_label]:!text-[#a3d9b5] [&_p]:!text-[#a3d9b5] [&_button:last-of-type]:!bg-[#4ade80] [&_button:last-of-type]:!text-[#0d1f15]">
               <CustomBuildForm
                 prefill={{
@@ -179,11 +179,11 @@ function CustomSoftBlock({ profile }) {
           <button onClick={() => setFormOpen(true)}
             className="w-full py-3 rounded-xl text-sm font-bold transition-all"
             style={{ background: 'linear-gradient(135deg, #2d8653, #1a6e3f)', color: '#ffffff' }}>
-            Talk to One Love about a custom build →
+            Let's build something →
           </button>
         ) : (
           <div className="mt-2">
-            <div className="text-xs font-bold mb-3" style={{ color: '#2d8653' }}>Start the conversation</div>
+            <div className="text-xs font-bold mb-3" style={{ color: '#2d8653' }}>{`Tell us about your dream bike. We'll figure out the rest together.`}</div>
             <CustomBuildForm
               prefill={{
                 budget_range: getBudgetRange(profile?.budget),

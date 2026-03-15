@@ -7,35 +7,35 @@ const WHY_CUSTOM = [
   {
     icon: '🇺🇸',
     title: 'Made in America',
-    body: "Frames from Moots, Seven, Breadwinner, Lynskey — built by small shops, not factories. Your money goes to craftspeople, not shareholders.",
+    body: `The big companies flooded the market after COVID. Crashed pricing. Gutted dealer margins. Replaced craftsmanship with gimmicks because gimmicks sell on Instagram. Custom builds are the opposite of all that. Frames from Moots, Seven, Breadwinner, Lynskey — built by small shops, not factories.`,
   },
   {
     icon: '📐',
-    title: 'Fitted to you',
-    body: "Off-the-shelf bikes are built for an average body. A custom frame is built for yours — your height, your reach, your riding style.",
+    title: 'Built for you, not a focus group',
+    body: `An American-made titanium frame that will outlive every trend. Components chosen because they're right, not because some brand manager needed to hit a sales target. Off-the-shelf bikes are built for an average body. This one is built for yours.`,
   },
   {
     icon: '♥',
     title: 'Higher karma score',
-    body: "Independent frame builders and component makers like Hope, Chris King, and Wolf Tooth score 78–88 on karma vs. 52–55 for big-brand complete bikes.",
+    body: `Independent frame builders and component makers like Hope, Chris King, and Wolf Tooth score 78–88 on karma vs. 52–55 for big-brand complete bikes. Where your dollar goes matters.`,
   },
   {
     icon: '🏔️',
-    title: 'Built to last',
-    body: "A well-specced custom build outlasts most complete bikes by a decade or more. Buy once, buy right.",
+    title: 'This is what bikes were before they became content',
+    body: `Wheels built by hand with your weight, your terrain, your riding style in mind. A well-specced custom build outlasts most complete bikes by a decade or more. Buy once, buy right.`,
   },
   {
     icon: '🤝',
     title: 'The shops send the exotic stuff to us',
-    body: "Local shops are our partners, not our competition. We handle the custom work they can't; they handle everything else. When we send you a customer, everyone wins.",
+    body: `Local shops are our partners, not our competition. We handle the custom work they can't; they handle everything else. When we send you a customer, everyone wins.`,
   },
 ];
 
 const BUILDERS = [
-  { name: 'Moots', location: 'Steamboat Springs, CO', material: 'Titanium', karma: 88 },
-  { name: 'Seven Cycles', location: 'Watertown, MA', material: 'Titanium / Steel', karma: 85 },
-  { name: 'Breadwinner Cycles', location: 'Portland, OR', material: 'Steel / Titanium', karma: 82 },
-  { name: 'Lynskey Performance', location: 'Chattanooga, TN', material: 'Titanium', karma: 80 },
+  { name: 'Moots', location: 'Steamboat Springs, CO', material: 'Titanium · Handmade since 1981', karma: 88 },
+  { name: 'Seven Cycles', location: 'Watertown, MA', material: 'Custom titanium and steel · New England built', karma: 85 },
+  { name: 'Breadwinner Cycles', location: 'Portland, OR', material: 'Steel and titanium · Two builders, every frame', karma: 82 },
+  { name: 'Lynskey Performance', location: 'Chattanooga, TN', material: 'Family-owned titanium since the beginning', karma: 80 },
   { name: 'Chumba USA', location: 'Austin, TX', material: 'Steel / Titanium', karma: 79 },
 ];
 
@@ -65,10 +65,10 @@ export default function CustomBuildsPage() {
             One Love Custom Builds
           </div>
           <h1 className="text-3xl font-black mb-3 leading-tight" style={{ fontFamily: 'Playfair Display, serif', color: '#2d3436' }}>
-            Design your dream bike.
+            The industry moved to mass production and quarterly earnings. We moved the other direction.
           </h1>
           <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: '#636e72' }}>
-            We work with the best small American frame builders and independent component makers to put together bikes that are built for you — not for a catalog.
+            Every custom bike starts with a conversation. What do you ride? Where do you ride it? What matters to you? We listen first, then we build.
           </p>
           <p className="text-xs mt-3" style={{ color: '#9ca3af' }}>
             One Love Outdoors is a 501(c)(3). Custom builds and memberships fund trail work, community rides, and keeping this tool free forever.
@@ -96,9 +96,12 @@ export default function CustomBuildsPage() {
 
         {/* Frame builders */}
         <div className="mb-10">
-          <div className="text-xs font-bold uppercase tracking-widest mb-4 text-center" style={{ color: '#9ca3af' }}>
+          <div className="text-xs font-bold uppercase tracking-widest mb-2 text-center" style={{ color: '#9ca3af' }}>
             Builders we work with
           </div>
+          <p className="text-xs text-center mb-4" style={{ color: '#636e72' }}>
+            {`These aren't brands. They're people. Small shops where the person who designed your frame is the person who built it.`}
+          </p>
           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #e5e0d8' }}>
             {BUILDERS.map((b, i) => (
               <div key={b.name} className="flex items-center justify-between px-4 py-3"
@@ -144,7 +147,7 @@ export default function CustomBuildsPage() {
           style={{ background: '#ffffff', border: '1px solid #e5e0d8', boxShadow: '0 2px 24px rgba(45,134,83,0.07)' }}>
           <div className="mb-5 text-center">
             <h2 className="text-xl font-bold mb-1" style={{ fontFamily: 'Playfair Display, serif', color: '#2d3436' }}>
-              Design your dream bike with One Love
+              {`Tell us about your dream bike. We'll figure out the rest together.`}
             </h2>
             <p className="text-sm" style={{ color: '#9ca3af' }}>
               No commitment. Just a conversation.

@@ -73,10 +73,10 @@ export default function FindAShopPage() {
       <div className="relative z-10 px-4 py-8 max-w-2xl mx-auto">
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
           <h1 className="text-2xl font-bold mb-1" style={{ color: '#2d3436', fontFamily: 'Playfair Display, serif' }}>
-            Find a Local Bike Shop
+            These shops are still here.
           </h1>
-          <p className="text-sm" style={{ color: '#9ca3af' }}>
-            Buying local keeps money in your community. These shops can help.
+          <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: '#9ca3af' }}>
+            They survived the consolidation, the online pricing wars, and a pandemic. They're still opening the door every morning because they believe in this the same way we do.
           </p>
         </div>
 
@@ -150,8 +150,8 @@ export default function FindAShopPage() {
                 ) : (
                   <div className="text-center py-10">
                     <div className="text-4xl mb-3">🔍</div>
-                    <p className="text-sm" style={{ color: '#636e72' }}>No shops found within {radius} miles of {zip}.</p>
-                    <p className="text-xs mt-1" style={{ color: '#9ca3af' }}>Try a larger radius, or submit your local shop below.</p>
+                    <p className="text-sm" style={{ color: '#636e72' }}>{`We're still building this map. Know a great local shop? Tell us about it and we'll add them.`}</p>
+                    <p className="text-xs mt-1" style={{ color: '#9ca3af' }}>Try a larger radius, or use the form below to submit a shop.</p>
                   </div>
                 )}
               </>

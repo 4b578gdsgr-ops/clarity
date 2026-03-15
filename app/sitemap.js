@@ -19,6 +19,7 @@ export default function sitemap() {
     { url: `${BASE_URL}/custom-builds`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE_URL}/membership`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/schedule-service`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${BASE_URL}/why`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/corporate`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
     ...companyUrls,
   ];

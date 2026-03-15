@@ -53,6 +53,9 @@ function TopNav() {
           <a href="/schedule-service" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
             Schedule Service
           </a>
+          <a href="/why" style={{ fontSize: '0.75rem', color: '#636e72', textDecoration: 'none' }}>
+            Why We Do This
+          </a>
           <a href="/about" style={{ fontSize: '0.75rem', color: '#636e72', textDecoration: 'none' }}>
             About
           </a>

@@ -1,9 +1,9 @@
 'use client';
 
 const SHOP_TYPE_LABELS = {
-  indie: { label: 'Independent', color: '#2d8653', bg: '#f0faf5' },
+  indie: { label: 'Locally owned', color: '#2d8653', bg: '#f0faf5' },
   chain: { label: 'Chain', color: '#636e72', bg: '#f5f5f5' },
-  'co-op': { label: 'Co-op', color: '#2563eb', bg: '#eff6ff' },
+  'co-op': { label: 'Rider-owned cooperative', color: '#2563eb', bg: '#eff6ff' },
 };
 
 const SERVICE_LABELS = {
@@ -45,7 +45,7 @@ export default function ShopCard({ shop, onSelect, selected }) {
       {canCustomBuild && (
         <div className="mb-2 px-3 py-1.5 rounded-lg text-xs font-medium"
           style={{ background: '#fef9ec', border: '1px solid #fbbf2440', color: '#d97706' }}>
-          This shop can build your custom bike
+          Custom builds available
         </div>
       )}
 

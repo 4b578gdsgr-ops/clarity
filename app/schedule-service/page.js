@@ -45,10 +45,10 @@ function FeeCallout({ zone, isMember }) {
     return (
       <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#2d8653', marginBottom: 2 }}>
-          {`You're local!`}
+          {`You're close!`}
         </div>
         <div style={{ fontSize: 12, color: '#636e72', lineHeight: 1.5 }}>
-          Drop off at our Newington shop anytime by arrangement, or we can pick up for free.
+          {`Drop off anytime by arrangement, or we'll pick up for free. Text us.`}
         </div>
       </div>
     );
@@ -229,11 +229,10 @@ export default function ScheduleService() {
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '32px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, color: '#2d3436', marginBottom: 6 }}>
-          Service + Pickup/Dropoff
+          No more phone tag. Book a service window and we'll come to you.
         </h1>
         <p style={{ color: '#636e72', fontSize: 13, lineHeight: 1.6, maxWidth: 400, margin: '0 auto' }}>
-          Book a service appointment with pickup and dropoff included.
-          We come to you, fix it, and bring it back.
+          Service + Pickup/Dropoff. We pick it up, fix it, bring it back. Like having a bike shop that makes house calls.
         </p>
       </div>
 
@@ -288,10 +287,10 @@ export default function ScheduleService() {
             {outsideArea && (
               <div style={{ marginTop: 20, padding: '18px 16px', background: '#f9f9f6', border: '1px solid #e5e0d8', borderRadius: 12 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#2d3436', marginBottom: 8 }}>
-                  {`We don't have regular service runs in your area yet — but we'd still love to help.`}
+                  {`We're not in your area yet for regular pickup — but we'd still love to help.`}
                 </div>
                 <p style={{ fontSize: 13, color: '#636e72', lineHeight: 1.6, marginBottom: 16 }}>
-                  {`Drop off at our Newington shop, or reach out and we'll figure something out together.`}
+                  {`Drop off at our Newington shop, or reach out and we'll work something out. We don't turn anyone away.`}
                 </p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
                   <a href="sms:+18605551234"
@@ -477,7 +476,7 @@ export default function ScheduleService() {
             {isLocal ? (
               <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#2d8653', marginBottom: 2 }}>
-                  {`You're local — drop off or we'll pick up. No fee.`}
+                  {`You're close — drop off anytime or we'll pick up for free.`}
                 </div>
               </div>
             ) : isFree ? (
