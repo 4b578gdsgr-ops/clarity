@@ -141,6 +141,22 @@ export default function CustomBuildsPage() {
           </div>
         </div>
 
+        {/* Frame-up builds */}
+        <div className="mb-10 px-5 py-5 rounded-xl" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+          <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#9ca3af' }}>
+            Already have a frame?
+          </div>
+          <h2 className="text-lg font-bold mb-3 leading-snug" style={{ fontFamily: 'Playfair Display, serif', color: '#2d3436' }}>
+            {`We'll build it up.`}
+          </h2>
+          <p className="text-sm leading-relaxed mb-4" style={{ color: '#636e72' }}>
+            {`Maybe you love your Specialized frame. Or you scored a deal on a carbon Yeti. Great — bring us the frame and we'll do the rest. Drivetrain, wheels, cockpit, all spec'd and built by hand. The frame might come from a big company, but every other dollar stays local. Your build, your choices, no shareholder dividends.`}
+          </p>
+          <div className="text-xs leading-relaxed" style={{ color: '#4a9e6b' }}>
+            {`We also do full suspension service — fork rebuilds, re-valving, and setup for your weight and riding style. Ask about it when you reach out.`}
+          </div>
+        </div>
+
         {/* The form */}
         <div className="px-5 py-6 rounded-2xl mb-8"
           style={{ background: '#ffffff', border: '1px solid #e5e0d8', boxShadow: '0 2px 24px rgba(45,134,83,0.07)' }}>

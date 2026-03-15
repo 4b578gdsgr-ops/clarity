@@ -15,6 +15,7 @@ const TIERS = {
       `Priority service — your bike doesn't wait in a queue`,
       `Seasonal tune-up included — we'll remind you`,
       `Parts sourced at near-cost — we're not marking up to make margin`,
+      `Full suspension service in-house — fork rebuilds, re-valving, and setup for your weight and riding style`,
       `You're funding trail work, community rides, and keeping this tool free for everyone`,
     ],
   },

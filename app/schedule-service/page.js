@@ -231,9 +231,16 @@ export default function ScheduleService() {
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, color: '#2d3436', marginBottom: 6 }}>
           No more phone tag. Book a service window and we'll come to you.
         </h1>
-        <p style={{ color: '#636e72', fontSize: 13, lineHeight: 1.6, maxWidth: 400, margin: '0 auto' }}>
+        <p style={{ color: '#636e72', fontSize: 13, lineHeight: 1.6, maxWidth: 400, margin: '0 auto 16px' }}>
           Service + Pickup/Dropoff. We pick it up, fix it, bring it back. Like having a bike shop that makes house calls.
         </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+          {['Tune-ups', 'Brake service', 'Drivetrain', 'Wheel builds & truing', 'Full suspension service'].map(s => (
+            <span key={s} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#f0faf5', color: '#2d8653', border: '1px solid #d1ead9' }}>
+              {s}
+            </span>
+          ))}
+        </div>
       </div>
 
       <StepDots current={step} />
