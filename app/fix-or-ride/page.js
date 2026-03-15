@@ -57,9 +57,9 @@ const CTA = {
     note: 'Members get priority service and discounted labor.',
   },
   upgrade: {
-    primary:   { label: 'Talk to One Love about your build →', href: '/custom-builds' },
-    secondary: { label: 'Find a local shop', href: '/find-a-shop' },
-    note: 'Component upgrades and wheel builds are One Love specialty work.',
+    primary:   { label: 'Find a local shop →', href: '/find-a-shop' },
+    secondary: { label: 'Or talk to us about component work', href: '/custom-builds' },
+    note: 'A good local mechanic can handle most of this. We do custom builds and hand-built wheels if you need to go further.',
   },
   local_shop: {
     primary:   { label: 'Find a shop near you →', href: '/find-a-shop' },

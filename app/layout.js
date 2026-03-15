@@ -34,33 +34,26 @@ function TopNav() {
       borderBottom: '1px solid #e5e0d8',
     }}>
       <div style={{ maxWidth: 672, margin: '0 auto', padding: '0 1rem', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <a href="/" style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '1rem', textDecoration: 'none', letterSpacing: '-0.01em' }}>
-          L❤️ve &gt; M💰ney
+        <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'baseline', gap: '0.18em' }}>
+          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '1rem', letterSpacing: '-0.01em' }}>Love</span>
+          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d8653', fontSize: '1.35rem', lineHeight: 0.85 }}>&gt;</span>
+          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '1rem', letterSpacing: '-0.01em' }}>Money</span>
         </a>
-        <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-          <a href="/find-a-shop" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
-            Find a Shop
-          </a>
-          <a href="/fix-or-ride" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
-            Fix or Ride?
+        <div style={{ display: 'flex', gap: '1.1rem', alignItems: 'center' }}>
+          <a href="/" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
+            Find a Bike
           </a>
           <a href="/custom-builds" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
             Custom Builds
           </a>
+          <a href="/schedule-service" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
+            Service
+          </a>
           <a href="/membership" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
             Membership
           </a>
-          <a href="/schedule-service" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2d8653', textDecoration: 'none' }}>
-            Schedule Service
-          </a>
-          <a href="/why" style={{ fontSize: '0.75rem', color: '#636e72', textDecoration: 'none' }}>
-            Why We Do This
-          </a>
           <a href="/about" style={{ fontSize: '0.75rem', color: '#636e72', textDecoration: 'none' }}>
             About
-          </a>
-          <a href="/corporate" style={{ fontSize: '0.7rem', color: '#b0b8b4', textDecoration: 'none' }}>
-            Corporate
           </a>
         </div>
       </div>

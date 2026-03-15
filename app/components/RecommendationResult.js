@@ -166,7 +166,7 @@ function CustomSoftBlock({ profile }) {
           {[
             'Frame built for your height and reach — not off a size chart',
             'Component brands with higher karma scores: Hope, Chris King, Wolf Tooth',
-            'The shops send the exotic spec work to us — local shops stay your go-to for everything else',
+            'Titanium frames, hand-built wheels, carefully spec\'d — the kind of work that takes time to get right',
           ].map((point, i) => (
             <div key={i} className="flex gap-2 text-xs" style={{ color: '#4a5568' }}>
               <span style={{ color: '#2d8653' }}>♥</span>

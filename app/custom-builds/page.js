@@ -26,17 +26,16 @@ const WHY_CUSTOM = [
   },
   {
     icon: '🤝',
-    title: 'The shops send the exotic stuff to us',
-    body: `Local shops are our partners, not our competition. We handle the custom work they can't; they handle everything else. When we send you a customer, everyone wins.`,
+    title: 'A small operation, not a factory',
+    body: `We specialize in titanium frames, hand-built wheels, and carefully spec'd builds. If you know exactly what you want, we'll source it and build it right. If you're not sure yet, we'll figure it out together.`,
   },
 ];
 
 const BUILDERS = [
-  { name: 'Moots', location: 'Steamboat Springs, CO', material: 'Titanium · Handmade since 1981', karma: 88 },
-  { name: 'Seven Cycles', location: 'Watertown, MA', material: 'Custom titanium and steel · New England built', karma: 85 },
-  { name: 'Breadwinner Cycles', location: 'Portland, OR', material: 'Steel and titanium · Two builders, every frame', karma: 82 },
-  { name: 'Lynskey Performance', location: 'Chattanooga, TN', material: 'Family-owned titanium since the beginning', karma: 80 },
-  { name: 'Chumba USA', location: 'Austin, TX', material: 'Steel / Titanium', karma: 79 },
+  { name: 'Lynskey', location: 'Chattanooga, TN', material: 'Family-owned titanium', karma: 80 },
+  { name: 'Litespeed', location: 'Chattanooga, TN', material: 'American titanium since 1986', karma: 82 },
+  { name: 'Chumba', location: 'Austin, TX', material: 'Steel and titanium', karma: 79 },
+  { name: 'Breadwinner', location: 'Portland, OR', material: 'Steel and titanium · Two builders, every frame', karma: 82 },
 ];
 
 function KarmaBadge({ score }) {
@@ -115,7 +114,7 @@ export default function CustomBuildsPage() {
             ))}
           </div>
           <p className="text-xs text-center mt-2" style={{ color: '#9ca3af' }}>
-            Plus wheel builders at Industry Nine, Chris King, and hand-built by your local shop.
+            We work with a growing list of independent frame builders. If you have a builder in mind, ask — we can probably make it happen.
           </p>
         </div>
 

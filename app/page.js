@@ -89,13 +89,9 @@ export default function HomePage() {
         {/* Header */}
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
           <h1 className="flex items-baseline justify-center select-none mb-3" style={{ lineHeight: 1, gap: '0.2em' }}>
-            <span className="flex items-baseline" style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '2.25rem' }}>
-              L<span style={{ display: 'inline-block', verticalAlign: 'baseline', transform: 'translateY(2px)', fontSize: '0.8em' }}>❤️</span>ve
-            </span>
+            <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '2.25rem', letterSpacing: '-0.01em' }}>Love</span>
             <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d8653', fontSize: '3.4rem', lineHeight: 0.85 }}>&gt;</span>
-            <span className="flex items-baseline" style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '2.25rem' }}>
-              M<span style={{ display: 'inline-block', verticalAlign: 'baseline', transform: 'translateY(2px)', fontSize: '0.8em' }}>💰</span>ney
-            </span>
+            <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '2.25rem', letterSpacing: '-0.01em' }}>Money</span>
           </h1>
           <p className="text-sm" style={{ color: '#9ca3af' }}>Your dollar is your last vote.</p>
           <p className="text-[11px] mt-1" style={{ color: '#b0b8b4' }}>A One Love Outdoors 501(c)(3) project</p>
@@ -152,7 +148,7 @@ export default function HomePage() {
                   <div>
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#9333ea' }}>Membership →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      Priority service, fair labor rates, seasonal tune-ups, and a direct line to Nate. $49–$99/month. No contracts.
+                      Priority service, free pickup and dropoff, seasonal tune-up included, and a direct line to Nate. $25/month. No contracts.
                     </div>
                   </div>
                 </a>
