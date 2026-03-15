@@ -160,15 +160,15 @@ export default function HomePage() {
                     </div>
                   </div>
                 </a>
-                <a href="/book-pickup" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
+                <a href="/schedule-service" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
                   style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#0ea5e9'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = '#bae6fd'}>
                   <div className="text-2xl shrink-0">🚐</div>
                   <div>
-                    <div className="text-sm font-bold mb-0.5" style={{ color: '#0ea5e9' }}>Book a Pickup →</div>
+                    <div className="text-sm font-bold mb-0.5" style={{ color: '#0ea5e9' }}>Schedule Service →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      We come to you. Pick up, fix, deliver. No drop-off required. Serving central Connecticut.
+                      Book a service appointment with pickup and dropoff included. We come to you, fix it, bring it back.
                     </div>
                   </div>
                 </a>

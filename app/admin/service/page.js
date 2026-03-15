@@ -82,11 +82,11 @@ export default function AdminPickups() {
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 6 }}>
-          Admin · Pickups
+          Admin · Service
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#2d3436' }}>
-            Pickup Route
+            Service Schedule
           </h1>
           <input
             type="date"
@@ -131,7 +131,7 @@ export default function AdminPickups() {
 
       {!loading && bookings.length === 0 && (
         <div style={{ textAlign: 'center', padding: 48, color: '#9ca3af', fontSize: 14 }}>
-          No pickups scheduled for this date.
+          No service appointments scheduled for this date.
         </div>
       )}
 

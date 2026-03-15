@@ -39,28 +39,45 @@ function StepDots({ current }) {
 }
 
 function FeeCallout({ zone, isMember }) {
-  const { fee, isFree } = getPickupFee(zone, isMember);
+  const { fee, isFree, isLocal } = getPickupFee(zone, isMember);
+
+  if (isLocal) {
+    return (
+      <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#2d8653', marginBottom: 2 }}>
+          {`You're local!`}
+        </div>
+        <div style={{ fontSize: 12, color: '#636e72', lineHeight: 1.5 }}>
+          Drop off at our Newington shop anytime by arrangement, or we can pick up for free.
+        </div>
+      </div>
+    );
+  }
+
   if (isFree) {
     return (
       <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
-        <strong style={{ color: '#2d8653' }}>Pickup fee: Free</strong>
+        <strong style={{ color: '#2d8653' }}>Service + Pickup/Dropoff: included</strong>
         {isMember && <span style={{ color: '#636e72' }}> — member perk ♥</span>}
       </div>
     );
   }
+
   return (
     <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>
-        Pickup fee: ${fee}
+        Service + Pickup/Dropoff fee: ${fee}
       </div>
       <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.5 }}>
-        Members ride free — <a href="/membership" style={{ color: '#d97706', fontWeight: 700 }}>join for $25/month</a> and save on every visit.
+        Members get free pickup/dropoff —{' '}
+        <a href="/membership" style={{ color: '#d97706', fontWeight: 700 }}>join for $25/month</a>{' '}
+        and save on every visit.
       </div>
     </div>
   );
 }
 
-export default function BookPickup() {
+export default function ScheduleService() {
   const [step, setStep] = useState(0);
   const [zip, setZip] = useState('');
   const [isMember, setIsMember] = useState(false);
@@ -114,13 +131,11 @@ export default function BookPickup() {
     setDemandSending(false);
   };
 
-  // Step 1 → 2: slot selection
   const handleSlot = (s) => {
     setSelectedSlot(s);
     setStep(2);
   };
 
-  // Step 2 → 3: details form
   const handleDetails = () => {
     if (!form.name.trim() || !form.address.trim()) {
       setDetailsError('Name and address are required.');
@@ -137,7 +152,6 @@ export default function BookPickup() {
     }));
   };
 
-  // Step 3: submit
   const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError(null);
@@ -165,7 +179,7 @@ export default function BookPickup() {
   };
 
   const zoneInfo = zone ? ZONES[zone] : null;
-  const { fee, isFree } = zone ? getPickupFee(zone, isMember) : { fee: 0, isFree: true };
+  const { fee, isFree, isLocal } = zone ? getPickupFee(zone, isMember) : { fee: 0, isFree: true, isLocal: false };
 
   // Success screen
   if (submitted) {
@@ -176,9 +190,11 @@ export default function BookPickup() {
           {`You're booked.`}
         </h1>
         <p style={{ color: '#636e72', fontSize: 14, lineHeight: 1.6, maxWidth: 360, margin: '0 auto 24px' }}>
-          {`We'll pick up your bike on`}{' '}
-          <strong>{new Date(selectedSlot.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>{' '}
-          between <strong>{selectedSlot.timeSlot}</strong>.
+          {isLocal
+            ? `Bring your bike in or let us know when to pick it up — we'll take it from there.`
+            : `We'll pick up your bike on`}{' '}
+          {!isLocal && <><strong>{new Date(selectedSlot.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>{' '}
+          between <strong>{selectedSlot.timeSlot}</strong>.</>}
         </p>
         <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 12, padding: '16px 20px', textAlign: 'left', maxWidth: 360, margin: '0 auto 20px' }}>
           <div style={{ fontSize: 12, color: '#636e72' }}><strong style={{ color: '#2d3436' }}>Name:</strong> {booking?.name}</div>
@@ -188,19 +204,19 @@ export default function BookPickup() {
           )}
           {!isFree && (
             <div style={{ fontSize: 12, color: '#92400e', marginTop: 8, padding: '6px 10px', background: '#fffbeb', borderRadius: 6 }}>
-              Pickup fee: <strong>${fee}</strong> — due at pickup
+              Service + Pickup/Dropoff fee: <strong>${fee}</strong> — due at service completion
             </div>
           )}
         </div>
         {!isMember && !isFree && (
           <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 10, padding: '12px 16px', maxWidth: 360, margin: '0 auto 20px', fontSize: 13 }}>
             <strong style={{ color: '#7c3aed' }}>Next time, ride free.</strong>
-            <span style={{ color: '#636e72' }}> Members never pay a pickup fee. </span>
+            <span style={{ color: '#636e72' }}> Members get free pickup/dropoff on every service visit. </span>
             <a href="/membership" style={{ color: '#9333ea', fontWeight: 700 }}>Join for $25/month →</a>
           </div>
         )}
         <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.6 }}>
-          {`We'll text or call to confirm. Questions? Reach out directly.`}
+          {`We'll text or call to confirm. No payment due until work is complete.`}
         </p>
         <a href="/" style={{ display: 'inline-block', marginTop: 20, color: '#2d8653', fontSize: 13, fontWeight: 600 }}>
           ← Back to Love Over Money
@@ -213,10 +229,11 @@ export default function BookPickup() {
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '32px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, color: '#2d3436', marginBottom: 6 }}>
-          Book a Pickup
+          Service + Pickup/Dropoff
         </h1>
-        <p style={{ color: '#636e72', fontSize: 13, lineHeight: 1.6, maxWidth: 380, margin: '0 auto' }}>
-          We come to you. Pick up, fix it, bring it back. No drop-off required.
+        <p style={{ color: '#636e72', fontSize: 13, lineHeight: 1.6, maxWidth: 400, margin: '0 auto' }}>
+          Book a service appointment with pickup and dropoff included.
+          We come to you, fix it, and bring it back.
         </p>
       </div>
 
@@ -229,7 +246,7 @@ export default function BookPickup() {
           <div>
             <div style={{ fontWeight: 700, fontSize: 16, color: '#2d3436', marginBottom: 4 }}>Where are you?</div>
             <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 20 }}>
-              {`We'll check if we service your area and show you available slots.`}
+              {`We'll check your area and show available service slots.`}
             </div>
 
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 6 }}>ZIP Code</label>
@@ -271,7 +288,7 @@ export default function BookPickup() {
             {outsideArea && (
               <div style={{ marginTop: 20, padding: '18px 16px', background: '#f9f9f6', border: '1px solid #e5e0d8', borderRadius: 12 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#2d3436', marginBottom: 8 }}>
-                  {`We don't have regular pickups in your area yet — but we'd still love to help.`}
+                  {`We don't have regular service runs in your area yet — but we'd still love to help.`}
                 </div>
                 <p style={{ fontSize: 13, color: '#636e72', lineHeight: 1.6, marginBottom: 16 }}>
                   {`Drop off at our Newington shop, or reach out and we'll figure something out together.`}
@@ -292,7 +309,7 @@ export default function BookPickup() {
                 </div>
                 <div style={{ borderTop: '1px solid #e5e0d8', paddingTop: 14 }}>
                   <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>
-                    Want regular pickup service in your area? Let us know — we expand based on demand.
+                    Want regular service in your area? Let us know — we expand based on demand.
                   </div>
                   {demandSent ? (
                     <div style={{ fontSize: 13, color: '#2d8653', fontWeight: 600 }}>
@@ -320,7 +337,7 @@ export default function BookPickup() {
               ← Back
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#2d3436' }}>Choose a pickup slot</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#2d3436' }}>Choose a service slot</div>
               {zoneInfo && (
                 <span style={{ background: zoneInfo.color + '22', color: zoneInfo.color, padding: '2px 8px', borderRadius: 10, fontWeight: 600, fontSize: 11 }}>
                   {zoneInfo.label}
@@ -328,7 +345,6 @@ export default function BookPickup() {
               )}
             </div>
 
-            {/* Fee shown before slot selection */}
             <FeeCallout zone={zone} isMember={isMember} />
 
             {!isMember && (
@@ -432,7 +448,7 @@ export default function BookPickup() {
 
             <button onClick={handleDetails}
               style={{ width: '100%', padding: '12px', background: '#2d8653', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
-              Review booking →
+              Review appointment →
             </button>
           </div>
         )}
@@ -443,7 +459,7 @@ export default function BookPickup() {
             <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
               ← Back
             </button>
-            <div style={{ fontWeight: 700, fontSize: 16, color: '#2d3436', marginBottom: 16 }}>Confirm your pickup</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: '#2d3436', marginBottom: 16 }}>Confirm your appointment</div>
 
             <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 12, padding: '14px 16px', marginBottom: 16, fontSize: 13, lineHeight: 1.8 }}>
               <div><strong>Date:</strong> {selectedSlot && new Date(selectedSlot.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
@@ -457,18 +473,24 @@ export default function BookPickup() {
               {isMember && <div><strong style={{ color: '#9333ea' }}>♥ Member booking</strong></div>}
             </div>
 
-            {/* Pickup fee — prominent, shown before confirm button */}
-            {isFree ? (
+            {/* Fee — prominent, shown before confirm button */}
+            {isLocal ? (
+              <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#2d8653', marginBottom: 2 }}>
+                  {`You're local — drop off or we'll pick up. No fee.`}
+                </div>
+              </div>
+            ) : isFree ? (
               <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 600, color: '#2d8653' }}>
-                Pickup fee: Free {isMember ? `(member perk ♥)` : ``}
+                Service + Pickup/Dropoff: included {isMember ? `(member perk ♥)` : ``}
               </div>
             ) : (
               <div style={{ background: '#fffbeb', border: '2px solid #fde68a', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: '#92400e', marginBottom: 4 }}>
-                  Pickup fee: ${fee}
+                  Service + Pickup/Dropoff fee: ${fee}
                 </div>
                 <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.55 }}>
-                  Members ride free —{' '}
+                  Members get free pickup/dropoff —{' '}
                   <a href="/membership" style={{ color: '#d97706', fontWeight: 700 }}>join for $25/month</a>{' '}
                   and save on every visit.
                 </div>
@@ -479,7 +501,7 @@ export default function BookPickup() {
 
             <button onClick={handleSubmit} disabled={submitting}
               style={{ width: '100%', padding: '13px', background: submitting ? '#a8d5b8' : '#2d8653', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: submitting ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}>
-              {submitting ? `Booking...` : `Confirm pickup →`}
+              {submitting ? `Booking...` : `Confirm appointment →`}
             </button>
           </div>
         )}
