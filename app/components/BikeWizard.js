@@ -55,7 +55,7 @@ function budgetLabel(val) {
   if (val < 3500) return { zone: 'sweet', text: 'Sweet spot — quality bikes that last', color: '#2d8653' };
   if (val < 5000) return { zone: 'high', text: 'High-end complete or custom territory', color: '#d97706' };
   if (val < 7000) return { zone: 'custom5k', text: `At this price, consider something built for you.`, color: '#9333ea' };
-  return { zone: 'custom', text: `Custom territory. American-made frames. Hand-built wheels.`, color: '#9333ea' };
+  return { zone: 'custom', text: `Custom territory. Independent builders. Hand-built wheels.`, color: '#9333ea' };
 }
 
 const STEPS = ['Type', 'Budget', 'About You', 'Location', 'Details'];

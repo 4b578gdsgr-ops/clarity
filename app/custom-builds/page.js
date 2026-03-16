@@ -5,14 +5,14 @@ import CustomBuildForm from '../components/CustomBuildForm';
 
 const WHY_CUSTOM = [
   {
-    icon: '🇺🇸',
-    title: 'Made in America',
-    body: `The big companies flooded the market after COVID. Crashed pricing. Gutted dealer margins. Custom builds are the opposite. Frames from Breadwinner, Lynskey, Litespeed, Chumba — built by small shops, not factories.`,
+    icon: '🛠️',
+    title: 'Independent builders, not factories',
+    body: `The big companies flooded the market after COVID. Crashed pricing. Gutted dealer margins. Custom builds are the opposite — frames from small independent builders, not publicly traded companies, not PE-owned brands. Your money goes to real people making decisions about bikes.`,
   },
   {
     icon: '📐',
     title: 'Built for you, not a focus group',
-    body: `An American-made titanium frame that will outlive every trend. Components chosen because they're right, not because some brand manager needed to hit a sales target. Off-the-shelf bikes are built for an average body. This one is built for yours.`,
+    body: `A frame that will outlive every trend. Components chosen because they're right, not because some brand manager needed to hit a sales target. Off-the-shelf bikes are built for an average body. This one is built for yours.`,
   },
   {
     icon: '♥',
@@ -27,25 +27,9 @@ const WHY_CUSTOM = [
   {
     icon: '🤝',
     title: 'A small operation, not a factory',
-    body: `We specialize in titanium frames, hand-built wheels, and carefully spec'd builds. If you know exactly what you want, we'll source it and build it right. If you're not sure yet, we'll figure it out together.`,
+    body: `We specialize in titanium and steel frames, hand-built wheels, and carefully spec'd builds. If you know exactly what you want, we'll source it and build it right. If you're not sure yet, we'll figure it out together.`,
   },
 ];
-
-const BUILDERS = [
-  { name: 'Lynskey', location: 'Chattanooga, TN', material: 'Family-owned titanium', karma: 80 },
-  { name: 'Litespeed', location: 'Chattanooga, TN', material: 'American titanium since 1986', karma: 82 },
-  { name: 'Chumba', location: 'Austin, TX', material: 'Steel and titanium', karma: 79 },
-  { name: 'Breadwinner', location: 'Portland, OR', material: 'Steel and titanium · Two builders, every frame', karma: 82 },
-];
-
-function KarmaBadge({ score }) {
-  return (
-    <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full"
-      style={{ background: '#16a34a15', color: '#16a34a', border: '1px solid #16a34a30' }}>
-      ♥ {score}
-    </span>
-  );
-}
 
 export default function CustomBuildsPage() {
   const [mounted, setMounted] = useState(false);
@@ -93,28 +77,16 @@ export default function CustomBuildsPage() {
           </div>
         </div>
 
-        {/* Frame builders */}
-        <div className="mb-10">
-          <div className="text-xs font-bold uppercase tracking-widest mb-2 text-center" style={{ color: '#9ca3af' }}>
-            Builders we work with
+        {/* Builders */}
+        <div className="mb-10 px-4 py-4 rounded-xl" style={{ background: '#f6fbf8', border: '1px solid #d1ead9' }}>
+          <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#2d8653' }}>
+            Who we work with
           </div>
-          <p className="text-xs text-center mb-4" style={{ color: '#636e72' }}>
-            {`These aren't brands. They're people. Small shops where the person who designed your frame is the person who built it.`}
+          <p className="text-sm leading-relaxed mb-3" style={{ color: '#4a5568' }}>
+            We work with independent frame builders — small operations making titanium, steel, and carbon frames in small batches. Some are American-made, some aren't. What they have in common: they're not publicly traded, they're not owned by private equity, and someone who actually cares about bikes is making the decisions.
           </p>
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #e5e0d8' }}>
-            {BUILDERS.map((b, i) => (
-              <div key={b.name} className="flex items-center justify-between px-4 py-3"
-                style={{ background: '#ffffff', borderBottom: i < BUILDERS.length - 1 ? '1px solid #f0ede8' : 'none' }}>
-                <div>
-                  <div className="text-sm font-bold" style={{ color: '#2d3436' }}>{b.name}</div>
-                  <div className="text-xs" style={{ color: '#9ca3af' }}>{b.location} · {b.material}</div>
-                </div>
-                <KarmaBadge score={b.karma} />
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-center mt-2" style={{ color: '#9ca3af' }}>
-            We work with a growing list of independent frame builders. If you have a builder in mind, ask — we can probably make it happen.
+          <p className="text-xs font-medium" style={{ color: '#2d8653' }}>
+            Ask us who we're working with right now — the list changes as we find builders worth believing in.
           </p>
         </div>
 
@@ -142,15 +114,15 @@ export default function CustomBuildsPage() {
         </div>
 
         {/* Frame-up builds */}
-        <div className="mb-10 px-5 py-5 rounded-xl" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
-          <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#9ca3af' }}>
+        <div className="mb-10 px-5 py-5 rounded-xl" style={{ background: '#ffffff', border: '2px solid #d1ead9' }}>
+          <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#2d8653' }}>
             Already have a frame?
           </div>
           <h2 className="text-lg font-bold mb-3 leading-snug" style={{ fontFamily: 'Playfair Display, serif', color: '#2d3436' }}>
             {`We'll build it up.`}
           </h2>
           <p className="text-sm leading-relaxed mb-4" style={{ color: '#636e72' }}>
-            {`Maybe you love your Specialized frame. Or you scored a deal on a carbon Yeti. Great — bring us the frame and we'll do the rest. Drivetrain, wheels, cockpit, all spec'd and built by hand. The frame might come from a big company, but every other dollar stays local. Your build, your choices, no shareholder dividends.`}
+            {`Stumpjumper, Tallboy, whatever — we don't judge the frame, we just make sure everything bolted to it is right. Drivetrain, wheels, cockpit, suspension setup — all spec'd and built by hand. The frame is yours. Every other choice is ours to make together.`}
           </p>
           <div className="text-xs leading-relaxed" style={{ color: '#4a9e6b' }}>
             {`We also do full suspension service — fork rebuilds, re-valving, and setup for your weight and riding style. Ask about it when you reach out.`}

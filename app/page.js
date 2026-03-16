@@ -136,7 +136,7 @@ export default function HomePage() {
                   <div>
                     <div className="text-sm font-bold mb-0.5" style={{ color: '#2d8653' }}>Custom builds →</div>
                     <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-                      American-made frames. Fitted to your body. Components chosen for quality, not a catalog. Budget $5k and up.
+                      Independent builders. Fitted to your body. Components chosen for quality, not a catalog. Budget $5k and up.
                     </div>
                   </div>
                 </a>

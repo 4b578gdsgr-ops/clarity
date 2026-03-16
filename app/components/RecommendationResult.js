@@ -157,7 +157,7 @@ function CustomSoftBlock({ profile }) {
           <div>
             <div className="text-sm font-bold" style={{ color: '#1a6e3f' }}>Worth considering — custom</div>
             <p className="text-xs leading-relaxed mt-0.5" style={{ color: '#636e72' }}>
-              At your budget, you're in custom territory. American-made frames, components chosen for your riding,
+              At your budget, you're in custom territory. Independent builders, components chosen for your riding,
               fitted to your body. Our custom builds score ♥ 82 vs ♥ 55 for typical big-brand complete bikes.
             </p>
           </div>
@@ -207,7 +207,7 @@ function CustomMentionBlock() {
       <div>
         <div className="text-sm font-bold mb-0.5" style={{ color: '#2d8653' }}>Touring riders often go custom</div>
         <p className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
-          At your budget, a custom chromoly build from a builder like Breadwinner, Lynskey, or similar gives you a frame dialed to your body and your load. Worth a conversation.
+          At your budget, a custom chromoly build from an independent builder gives you a frame dialed to your body and your load. Worth a conversation.
         </p>
         <a href="/custom-builds" className="inline-block mt-2 text-xs font-bold" style={{ color: '#2d8653' }}>
           Learn about custom builds →
