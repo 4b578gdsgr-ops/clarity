@@ -18,10 +18,9 @@ const BASE = 'https://clarity-pi-ten.vercel.app';
 
 function BookingForm({ onSuccess }) {
   const [form, setForm] = useState({
-    name: '', phone: '', email: '', bike_brand: '',
-    issues: [], preferred_day: '', time_slot: '', notes: '',
+    name: '', phone: '', email: '', contact_preference: '',
+    bike_brand: '', issues: [], preferred_day: '', time_slot: '', notes: '',
   });
-  const [showMap, setShowMap] = useState(false);
   const [pin, setPin] = useState(null);
   const [pinAddr, setPinAddr] = useState('');
   const [addrQuery, setAddrQuery] = useState('');
@@ -143,6 +142,33 @@ function BookingForm({ onSuccess }) {
         />
       </div>
 
+      <div style={{ marginBottom: 14 }}>
+        <label style={lbl}>How should we reach you?</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {['text', 'email'].map(opt => {
+            const sel = form.contact_preference === opt;
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setField('contact_preference', opt)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  border: sel ? '2px solid #276749' : '1px solid #e2e8f0',
+                  background: sel ? '#276749' : '#fff',
+                  color: sel ? '#fff' : '#4a5568',
+                  fontWeight: sel ? 600 : 400,
+                  transition: 'all 0.15s',
+                }}
+              >
+                {opt === 'text' ? 'Text' : 'Email'}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div style={{ marginBottom: 12 }}>
         <label style={lbl}>Bike brand</label>
         <select
@@ -219,54 +245,51 @@ function BookingForm({ onSuccess }) {
         />
       </div>
 
-      {/* Optional map pin */}
+      {/* Pickup location — always visible */}
       <div style={{ marginBottom: 16 }}>
-        <button
-          type="button"
-          onClick={() => setShowMap(!showMap)}
-          style={{
-            background: 'none', border: 'none', padding: 0,
-            color: '#276749', fontSize: 13, cursor: 'pointer',
-            textDecoration: 'underline', fontFamily: 'inherit',
-          }}
-        >
-          {showMap ? 'Hide map' : 'Pin your pickup location (optional)'}
-        </button>
-
-        {showMap && (
-          <div style={{ marginTop: 10 }}>
-            <form onSubmit={searchAddr} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-              <input
-                type="text"
-                value={addrQuery}
-                onChange={e => setAddrQuery(e.target.value)}
-                placeholder="Search an address..."
-                style={{ ...inp, flex: 1 }}
-              />
-              <button
-                type="submit"
-                disabled={searching}
-                style={{
-                  padding: '8px 14px', background: '#276749', color: '#fff',
-                  border: 'none', borderRadius: 8, fontSize: 13,
-                  cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
-                }}
-              >
-                {searching ? '...' : 'Find'}
-              </button>
-            </form>
-            <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-              <ServiceMap
-                pin={pin}
-                onMapClick={(lat, lng) => { setPin({ lat, lng }); setPinAddr(''); }}
-              />
-            </div>
-            {pin && (
-              <p style={{ fontSize: 12, color: '#718096', marginTop: 6 }}>
-                {pinAddr || Number(pin.lat).toFixed(5) + ', ' + Number(pin.lng).toFixed(5)}
-              </p>
-            )}
-          </div>
+        <label style={lbl}>Pickup location</label>
+        <form onSubmit={searchAddr} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <input
+            type="text"
+            value={addrQuery}
+            onChange={e => setAddrQuery(e.target.value)}
+            placeholder="Search your address..."
+            style={{ ...inp, flex: 1 }}
+          />
+          <button
+            type="submit"
+            disabled={searching}
+            style={{
+              padding: '8px 14px', background: '#276749', color: '#fff',
+              border: 'none', borderRadius: 8, fontSize: 13,
+              cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+            }}
+          >
+            {searching ? '...' : 'Find'}
+          </button>
+        </form>
+        <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+          <ServiceMap
+            pin={pin}
+            onMapClick={(lat, lng) => { setPin({ lat, lng }); setPinAddr(''); }}
+          />
+        </div>
+        {pin ? (
+          <p style={{ fontSize: 12, color: '#718096', marginTop: 6 }}>
+            {pinAddr || Number(pin.lat).toFixed(5) + ', ' + Number(pin.lng).toFixed(5)}
+            {' '}
+            <button
+              type="button"
+              onClick={() => { setPin(null); setPinAddr(''); }}
+              style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit' }}
+            >
+              clear
+            </button>
+          </p>
+        ) : (
+          <p style={{ fontSize: 12, color: '#a0aec0', marginTop: 6 }}>
+            Search above or click the map to drop a pin.
+          </p>
         )}
       </div>
 

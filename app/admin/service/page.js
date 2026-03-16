@@ -212,6 +212,18 @@ function BookingCard({ booking, onRefresh }) {
             {booking.bike_brand && (
               <span style={{ marginLeft: 8, fontSize: 13, color: '#6b7280' }}>{booking.bike_brand}</span>
             )}
+            {booking.contact_preference && (
+              <span style={{
+                marginLeft: 8,
+                background: booking.contact_preference === 'text' ? '#dbeafe' : '#ede9fe',
+                color: booking.contact_preference === 'text' ? '#1d4ed8' : '#6d28d9',
+                border: '1px solid ' + (booking.contact_preference === 'text' ? '#bfdbfe' : '#ddd6fe'),
+                borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                {booking.contact_preference === 'text' ? 'Text' : 'Email'}
+              </span>
+            )}
           </div>
           <span style={{
             background: color + '22', color, border: '1px solid ' + color + '55',

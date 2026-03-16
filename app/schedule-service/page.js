@@ -138,6 +138,7 @@ function FormStep({ onSubmit, submitting, submitErr }) {
     name: '',
     phone: '',
     email: '',
+    contact_preference: '',
     bike_brand: '',
     issues: [],
     preferred_day: '',
@@ -229,6 +230,32 @@ function FormStep({ onSubmit, submitting, submitErr }) {
             placeholder="email@example.com"
             style={inputStyle}
           />
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <label style={labelStyle}>How should we reach you?</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {['text', 'email'].map(opt => {
+              const sel = form.contact_preference === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setField('contact_preference', opt)}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer',
+                    border: sel ? '2px solid #1a3328' : '1px solid #d1d5db',
+                    background: sel ? '#1a3328' : '#fff',
+                    color: sel ? '#fff' : '#374151',
+                    fontWeight: sel ? 600 : 400,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {opt === 'text' ? 'Text' : 'Email'}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div style={{ marginBottom: 18 }}>
