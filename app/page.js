@@ -100,6 +100,18 @@ export default function HomePage() {
         {/* Wizard */}
         {!wizardDone && (
           <>
+            {/* Service CTA — primary action */}
+            <div className={`mb-5 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+              <a href="/schedule-service" className="flex items-center justify-between px-5 py-4 rounded-2xl no-underline"
+                style={{ background: 'linear-gradient(135deg, #2d8653, #1a6e3f)', boxShadow: '0 4px 20px rgba(45,134,83,0.2)' }}>
+                <div>
+                  <div className="font-bold text-sm" style={{ color: '#ffffff' }}>Book a service pickup →</div>
+                  <div className="text-xs mt-0.5" style={{ color: '#a3d9b5' }}>We pick it up, fix it, bring it back. Tune-ups from $75.</div>
+                </div>
+                <div className="text-2xl shrink-0">🚐</div>
+              </a>
+            </div>
+
             <div className={`text-center mb-4 transition-all duration-700 delay-150 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
               <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: '#636e72' }}>
                 Bikes aren't just products. They're the shop that knew your name. The trail after a hard week. We built this to keep that alive.

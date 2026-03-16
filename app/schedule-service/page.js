@@ -5,6 +5,47 @@ import { getZoneForZip, getAvailableSlots, getPickupFee, ZONES } from '../../lib
 
 const STEPS = ['location', 'slot', 'details', 'confirm'];
 
+const SERVICE_MENU = [
+  { service: 'Tune-up', price: '$75' },
+  { service: 'Comprehensive tune', price: '$125' },
+  { service: 'Full overhaul', price: '$200+' },
+  { service: 'Brake bleed', price: '$30/end' },
+  { service: 'Cable & housing', price: '$60–120' },
+  { service: 'Wheel true', price: '$30–50' },
+  { service: 'Wheel build', price: '$75–150+' },
+  { service: 'Hub overhaul', price: '$40–60' },
+  { service: 'Bottom bracket', price: '$60–100' },
+  { service: 'Headset service', price: '$40–60' },
+  { service: 'Fork lowers service', price: '$125–175' },
+  { service: 'Fork full rebuild', price: '$175–250' },
+  { service: 'Shock service', price: '$100–200' },
+  { service: 'Drivetrain replacement (labor)', price: '$60–100' },
+  { service: 'Tubeless setup', price: '$30–40/wheel' },
+];
+
+function ServiceMenu() {
+  return (
+    <div style={{ maxWidth: 520, margin: '32px auto 0', padding: '0 16px 40px', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ borderTop: '1px solid #e5e0d8', paddingTop: 28 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 16 }}>
+          Service menu
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {SERVICE_MENU.map((item, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '7px 0', borderBottom: i < SERVICE_MENU.length - 1 ? '1px solid #f0ede8' : 'none' }}>
+              <span style={{ fontSize: 13, color: '#2d3436' }}>{item.service}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: '#2d8653' }}>{item.price}</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ marginTop: 16, fontSize: 11, color: '#9ca3af', lineHeight: 1.6 }}>
+          Labor only. Parts extra. Members get 20% off. We quote before we wrench.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 const BIKE_BRANDS = [
   `I don't know`, 'Trek', 'Specialized', 'Giant', 'Cannondale', 'Scott', 'Canyon',
   'Santa Cruz', 'Yeti', 'Ibis', 'Pivot', 'Rocky Mountain', 'Norco', 'Marin',
@@ -222,6 +263,7 @@ export default function ScheduleService() {
           ← Back to Love Over Money
         </a>
       </div>
+      <ServiceMenu />
     );
   }
 
@@ -516,6 +558,7 @@ export default function ScheduleService() {
       <p style={{ textAlign: 'center', fontSize: 11, color: '#b0b8b4', marginTop: 20 }}>
         {`We'll text or call to confirm. No payment due until work is complete.`}
       </p>
+      <ServiceMenu />
     </div>
   );
 }
