@@ -16,8 +16,6 @@ const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain
 
 const BASE = 'https://clarity-pi-ten.vercel.app';
 
-// ─── Main embed page ──────────────────────────────────────────────────────────
-
 export default function EmbedService() {
   const [pin, setPin] = useState(null);
   const [address, setAddress] = useState('');
@@ -47,15 +45,20 @@ export default function EmbedService() {
     return () => ro.disconnect();
   }, []);
 
-  function handlePin(lat, lng) {
-    setPin({ lat, lng });
+  function handlePin(lat, lng, resolvedAddress) {
     const inside = isInServiceArea(lat, lng);
+    setPin({ lat, lng });
     setOutside(!inside);
-    if (!inside) setAddress('');
+    if (!inside) {
+      setAddress('');
+    } else if (resolvedAddress) {
+      setAddress(resolvedAddress);
+      setErrors(er => ({ ...er, address: '' }));
+    }
   }
 
   async function searchAddr(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!addrQuery.trim()) return;
     setSearching(true);
     try {
@@ -68,12 +71,42 @@ export default function EmbedService() {
       if (results[0]) {
         const lat = parseFloat(results[0].lat);
         const lng = parseFloat(results[0].lon);
-        handlePin(lat, lng);
-        setAddress(results[0].display_name.split(',').slice(0, 3).join(',').trim());
-        setErrors(er => ({ ...er, address: '' }));
+        const resolved = results[0].display_name.split(',').slice(0, 3).join(',').trim();
+        handlePin(lat, lng, resolved);
       }
     } catch { /* ignore */ }
     setSearching(false);
+  }
+
+  async function handleMapClick(lat, lng) {
+    setPin({ lat, lng });
+    const inside = isInServiceArea(lat, lng);
+    setOutside(!inside);
+    if (!inside) {
+      setAddress('');
+      return;
+    }
+    // Reverse geocode the clicked point
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        { headers: { 'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)' } }
+      );
+      const data = await res.json();
+      if (data.display_name) {
+        const resolved = data.display_name.split(',').slice(0, 3).join(',').trim();
+        setAddress(resolved);
+        setErrors(er => ({ ...er, address: '' }));
+      }
+    } catch { /* ignore */ }
+  }
+
+  function clearPin() {
+    setPin(null);
+    setAddress('');
+    setOutside(false);
+    setAddrQuery('');
+    setErrors(er => ({ ...er, address: '' }));
   }
 
   function setField(k, v) {
@@ -90,10 +123,16 @@ export default function EmbedService() {
   }
 
   const formRef = useRef(null);
-  const canSubmit = isFormValid({ ...form, address });
+  const canSubmit = pin && !outside && isFormValid({ ...form, address });
 
   async function handleSubmit(e) {
     e.preventDefault();
+    // Validate address separately
+    if (!pin || outside) {
+      setErrors(er => ({ ...er, address: pin ? 'Address is outside our service area.' : 'Drop a pin or search your address.' }));
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     const errs = validateBooking({ ...form, address });
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -147,7 +186,7 @@ export default function EmbedService() {
 
   const inp = { width: '100%', padding: '10px 13px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box', background: '#fff', color: '#1a202c', fontFamily: 'inherit' };
   const lbl = { display: 'block', fontSize: 13, fontWeight: 600, color: '#4a5568', marginBottom: 4 };
-  const errStyle = { fontSize: 12, color: '#e53e3e', marginTop: 3 };
+  const errStyle = { fontSize: 12, color: '#e53e3e', marginTop: 3, display: 'block' };
 
   // ── Confirmation screen ──
   if (bookingId) {
@@ -184,223 +223,212 @@ export default function EmbedService() {
     );
   }
 
-  const inArea = pin && !outside;
-
   return (
     <div style={container}>
       <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1a202c', marginBottom: 4, marginTop: 0 }}>
         We come to you.
       </h2>
       <p style={{ fontSize: 14, color: '#718096', lineHeight: 1.5, marginBottom: 20 }}>
-        Pickup, fix, return. Start by dropping a pin on your location.
+        Pickup, fix, return. Drop a pin or search your address to get started.
       </p>
 
-      {/* Location section */}
-      <div style={{ marginBottom: 16 }}>
-        <label style={lbl}>Your location *</label>
-        <form onSubmit={searchAddr} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-          <input
-            type="text"
-            value={addrQuery}
-            onChange={e => setAddrQuery(e.target.value)}
-            placeholder="Search your address..."
-            style={{ ...inp, flex: 1 }}
-          />
-          <button
-            type="submit"
-            disabled={searching}
-            style={{ padding: '8px 14px', background: '#276749', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
-          >
-            {searching ? '...' : 'Find'}
-          </button>
-        </form>
+      <form ref={formRef} onSubmit={handleSubmit}>
+        {submitErr && (
+          <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#c53030', fontSize: 14 }}>
+            {submitErr}
+          </div>
+        )}
 
-        <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', marginBottom: 8 }}>
-          <ServiceMap
-            pin={pin}
-            onMapClick={(lat, lng) => { handlePin(lat, lng); setAddress(''); setErrors(er => ({ ...er, address: '' })); }}
-            showBoundary
+        {/* ── Map (this IS the address) ── */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <input
+              type="text"
+              value={addrQuery}
+              onChange={e => setAddrQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); searchAddr(e); } }}
+              placeholder="Search your address..."
+              style={{ ...inp, flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={searchAddr}
+              disabled={searching}
+              style={{ padding: '8px 14px', background: '#276749', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+            >
+              {searching ? '...' : 'Find'}
+            </button>
+          </div>
+
+          <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: errors.address ? '1px solid #e53e3e' : '1px solid #e2e8f0', marginBottom: 6 }}>
+            <ServiceMap
+              pin={pin}
+              onMapClick={handleMapClick}
+              showBoundary
+            />
+          </div>
+
+          {/* Address confirmation / hints */}
+          {!pin && (
+            <p style={{ fontSize: 12, color: '#a0aec0' }}>
+              Search above or click the map to set your pickup location.
+            </p>
+          )}
+          {pin && outside && (
+            <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#c53030', marginBottom: 2 }}>
+                {'We\'re not in your area yet.'}
+              </p>
+              <p style={{ fontSize: 12, color: '#742a2a', lineHeight: 1.5 }}>
+                One Love serves Hartford and Tolland counties.{' '}
+                <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#c53030' }}>Reach out to discuss options.</a>
+              </p>
+            </div>
+          )}
+          {pin && !outside && (
+            <p style={{ fontSize: 13, color: '#276749', fontWeight: 500 }}>
+              Pickup: {address || 'location set'}{' '}
+              <button
+                type="button"
+                onClick={clearPin}
+                style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}
+              >
+                clear
+              </button>
+            </p>
+          )}
+          {errors.address && <span data-field-error style={errStyle}>{errors.address}</span>}
+        </div>
+
+        {/* ── Name + Phone ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <div>
+            <label style={lbl}>Name *</label>
+            <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#e53e3e' : '#e2e8f0' }} />
+            {errors.name && <span data-field-error style={errStyle}>{errors.name}</span>}
+          </div>
+          <div>
+            <label style={lbl}>Phone *</label>
+            <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#e53e3e' : '#e2e8f0' }} />
+            {errors.phone && <span data-field-error style={errStyle}>{errors.phone}</span>}
+          </div>
+        </div>
+
+        {/* ── Email ── */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={lbl}>Email *</label>
+          <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#e53e3e' : '#e2e8f0' }} />
+          {errors.email && <span data-field-error style={errStyle}>{errors.email}</span>}
+        </div>
+
+        {/* ── Contact preference ── */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ ...lbl, color: errors.contact_preference ? '#e53e3e' : '#4a5568' }}>
+            How should we reach you? *
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {['text', 'email'].map(opt => {
+              const sel = form.contact_preference === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setField('contact_preference', opt)}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                    border: sel ? '2px solid #276749' : ('1px solid ' + (errors.contact_preference ? '#e53e3e' : '#e2e8f0')),
+                    background: sel ? '#276749' : '#fff',
+                    color: sel ? '#fff' : '#4a5568',
+                    fontWeight: sel ? 600 : 400,
+                  }}
+                >
+                  {opt === 'text' ? 'Text' : 'Email'}
+                </button>
+              );
+            })}
+          </div>
+          {errors.contact_preference && <span data-field-error style={errStyle}>{errors.contact_preference}</span>}
+        </div>
+
+        {/* ── Bike brand ── */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={lbl}>Bike brand</label>
+          <select value={form.bike_brand} onChange={e => setField('bike_brand', e.target.value)} style={{ ...inp, color: form.bike_brand ? '#1a202c' : '#a0aec0' }}>
+            <option value="">Select (optional)</option>
+            {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </div>
+
+        {/* ── What needs attention ── */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ ...lbl, color: errors.issues ? '#e53e3e' : '#4a5568' }}>What needs attention? *</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+            {ISSUE_OPTIONS.map(issue => {
+              const on = form.issues.includes(issue);
+              return (
+                <button
+                  key={issue}
+                  type="button"
+                  onClick={() => toggleIssue(issue)}
+                  style={{
+                    padding: '6px 13px', borderRadius: 16, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                    border: on ? '2px solid #276749' : ('1px solid ' + (errors.issues ? '#e53e3e' : '#e2e8f0')),
+                    background: on ? '#276749' : '#fff',
+                    color: on ? '#fff' : '#4a5568',
+                  }}
+                >
+                  {issue}
+                </button>
+              );
+            })}
+          </div>
+          {errors.issues && <span data-field-error style={errStyle}>{errors.issues}</span>}
+        </div>
+
+        {/* ── Preferred day + time ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <div>
+            <label style={lbl}>Preferred day</label>
+            <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#1a202c' : '#a0aec0' }}>
+              <option value="">No preference</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Thursday">Thursday</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>Preferred time</label>
+            <select value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} style={{ ...inp, color: form.time_slot ? '#1a202c' : '#a0aec0' }}>
+              <option value="">No preference</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+            </select>
+          </div>
+        </div>
+
+        {/* ── Notes ── */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={lbl}>Notes</label>
+          <textarea
+            value={form.notes}
+            onChange={e => setField('notes', e.target.value)}
+            placeholder="Access instructions, anything specific about the bike..."
+            rows={2}
+            style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
           />
         </div>
 
-        {!pin && (
-          <p style={{ fontSize: 12, color: '#a0aec0', marginTop: 4 }}>
-            Search above or click the map. The shaded area is our service area.
-          </p>
-        )}
+        <button
+          type="submit"
+          disabled={submitting || !canSubmit}
+          style={{ width: '100%', padding: '13px 0', background: (submitting || !canSubmit) ? '#a0aec0' : '#276749', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: (submitting || !canSubmit) ? 'default' : 'pointer', fontFamily: 'inherit', letterSpacing: '0.01em' }}
+        >
+          {submitting ? 'Booking...' : 'Book Service'}
+        </button>
 
-        {pin && outside && (
-          <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '12px 14px', marginTop: 6 }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#c53030', marginBottom: 4 }}>
-              {'We\'re not in your area yet.'}
-            </p>
-            <p style={{ fontSize: 13, color: '#742a2a', lineHeight: 1.5 }}>
-              One Love serves Hartford and Tolland counties.{' '}
-              <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#c53030' }}>
-                Reach out to discuss options.
-              </a>
-            </p>
-          </div>
-        )}
-
-        {pin && !outside && (
-          <p style={{ fontSize: 13, color: '#276749', marginTop: 4, fontWeight: 500 }}>
-            {'In service area. '}
-            <button
-              type="button"
-              onClick={() => { setPin(null); setAddress(''); setOutside(false); }}
-              style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit' }}
-            >
-              clear pin
-            </button>
-          </p>
-        )}
-      </div>
-
-      {/* Form — only shown if pin is inside service area */}
-      {inArea && (
-        <form ref={formRef} onSubmit={handleSubmit}>
-          {submitErr && (
-            <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#c53030', fontSize: 14 }}>
-              {submitErr}
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-            <div>
-              <label style={lbl}>Name *</label>
-              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#e53e3e' : '#e2e8f0' }} />
-              {errors.name && <span data-field-error style={errStyle}>{errors.name}</span>}
-            </div>
-            <div>
-              <label style={lbl}>Phone *</label>
-              <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#e53e3e' : '#e2e8f0' }} />
-              {errors.phone && <span data-field-error style={errStyle}>{errors.phone}</span>}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={lbl}>Email *</label>
-            <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#e53e3e' : '#e2e8f0' }} />
-            {errors.email && <span data-field-error style={errStyle}>{errors.email}</span>}
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ ...lbl, color: errors.contact_preference ? '#e53e3e' : '#4a5568' }}>
-              How should we reach you? *
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['text', 'email'].map(opt => {
-                const sel = form.contact_preference === opt;
-                return (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setField('contact_preference', opt)}
-                    style={{
-                      flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                      border: sel ? '2px solid #276749' : ('1px solid ' + (errors.contact_preference ? '#e53e3e' : '#e2e8f0')),
-                      background: sel ? '#276749' : '#fff',
-                      color: sel ? '#fff' : '#4a5568',
-                      fontWeight: sel ? 600 : 400,
-                    }}
-                  >
-                    {opt === 'text' ? 'Text' : 'Email'}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.contact_preference && <span data-field-error style={errStyle}>{errors.contact_preference}</span>}
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ ...lbl, color: errors.address ? '#e53e3e' : '#4a5568' }}>Pickup address *</label>
-            <input
-              type="text"
-              value={address}
-              onChange={e => { setAddress(e.target.value); setErrors(er => ({ ...er, address: '' })); }}
-              placeholder="Street address"
-              style={{ ...inp, borderColor: errors.address ? '#e53e3e' : '#e2e8f0' }}
-            />
-            {errors.address && <span data-field-error style={errStyle}>{errors.address}</span>}
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={lbl}>Bike brand</label>
-            <select value={form.bike_brand} onChange={e => setField('bike_brand', e.target.value)} style={{ ...inp, color: form.bike_brand ? '#1a202c' : '#a0aec0' }}>
-              <option value="">Select (optional)</option>
-              {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ ...lbl, color: errors.issues ? '#e53e3e' : '#4a5568' }}>What needs attention? *</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
-              {ISSUE_OPTIONS.map(issue => {
-                const on = form.issues.includes(issue);
-                return (
-                  <button
-                    key={issue}
-                    type="button"
-                    onClick={() => toggleIssue(issue)}
-                    style={{
-                      padding: '6px 13px', borderRadius: 16, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                      border: on ? '2px solid #276749' : ('1px solid ' + (errors.issues ? '#e53e3e' : '#e2e8f0')),
-                      background: on ? '#276749' : '#fff',
-                      color: on ? '#fff' : '#4a5568',
-                    }}
-                  >
-                    {issue}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.issues && <span data-field-error style={errStyle}>{errors.issues}</span>}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-            <div>
-              <label style={lbl}>Preferred day</label>
-              <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#1a202c' : '#a0aec0' }}>
-                <option value="">No preference</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Thursday">Thursday</option>
-              </select>
-            </div>
-            <div>
-              <label style={lbl}>Preferred time</label>
-              <select value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} style={{ ...inp, color: form.time_slot ? '#1a202c' : '#a0aec0' }}>
-                <option value="">No preference</option>
-                <option value="morning">Morning</option>
-                <option value="afternoon">Afternoon</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={lbl}>Notes</label>
-            <textarea
-              value={form.notes}
-              onChange={e => setField('notes', e.target.value)}
-              placeholder="Access instructions, anything specific about the bike..."
-              rows={2}
-              style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting || !canSubmit}
-            style={{ width: '100%', padding: '13px 0', background: (submitting || !canSubmit) ? '#a0aec0' : '#276749', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: (submitting || !canSubmit) ? 'default' : 'pointer', fontFamily: 'inherit', letterSpacing: '0.01em' }}
-          >
-            {submitting ? 'Booking...' : 'Book Service'}
-          </button>
-
-          <p style={{ fontSize: 12, color: '#a0aec0', textAlign: 'center', marginTop: 8 }}>
-            {'We\'ll confirm a time within 24 hours.'}
-          </p>
-        </form>
-      )}
+        <p style={{ fontSize: 12, color: '#a0aec0', textAlign: 'center', marginTop: 8 }}>
+          {'We\'ll confirm a time within 24 hours.'}
+        </p>
+      </form>
     </div>
   );
 }
