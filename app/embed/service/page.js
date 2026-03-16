@@ -57,6 +57,7 @@ function BookingForm({ onSuccess }) {
       if (results[0]) {
         setPin({ lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) });
         setPinAddr(results[0].display_name.split(',').slice(0, 2).join(','));
+        setFieldErr(e => ({ ...e, address: '' }));
       }
     } catch { /* ignore */ }
     setSearching(false);
@@ -67,6 +68,7 @@ function BookingForm({ onSuccess }) {
     const errs = {};
     if (!form.name.trim()) errs.name = 'Required';
     if (!form.phone.trim()) errs.phone = 'Required';
+    if (!pin) errs.address = 'We need your address to schedule a pickup.';
     if (Object.keys(errs).length) { setFieldErr(errs); return; }
     setSubmitting(true);
     setErr('');
@@ -247,7 +249,7 @@ function BookingForm({ onSuccess }) {
 
       {/* Pickup location — always visible */}
       <div style={{ marginBottom: 16 }}>
-        <label style={lbl}>Pickup location</label>
+        <label style={{ ...lbl, color: fieldErr.address ? '#e53e3e' : '#4a5568' }}>Pickup location *</label>
         <form onSubmit={searchAddr} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
           <input
             type="text"
@@ -268,10 +270,10 @@ function BookingForm({ onSuccess }) {
             {searching ? '...' : 'Find'}
           </button>
         </form>
-        <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+        <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: '1px solid ' + (fieldErr.address ? '#e53e3e' : '#e2e8f0') }}>
           <ServiceMap
             pin={pin}
-            onMapClick={(lat, lng) => { setPin({ lat, lng }); setPinAddr(''); }}
+            onMapClick={(lat, lng) => { setPin({ lat, lng }); setPinAddr(''); setFieldErr(e => ({ ...e, address: '' })); }}
           />
         </div>
         {pin ? (
@@ -289,6 +291,11 @@ function BookingForm({ onSuccess }) {
         ) : (
           <p style={{ fontSize: 12, color: '#a0aec0', marginTop: 6 }}>
             Search above or click the map to drop a pin.
+          </p>
+        )}
+        {fieldErr.address && (
+          <p style={{ fontSize: 13, color: '#e53e3e', marginTop: 6, fontWeight: 500 }}>
+            {fieldErr.address}
           </p>
         )}
       </div>
