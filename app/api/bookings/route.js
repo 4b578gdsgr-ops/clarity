@@ -66,5 +66,28 @@ export async function POST(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
+  // Fire-and-forget webhook notification (connect to email later)
+  const webhookUrl = process.env.BOOKING_WEBHOOK_URL;
+  if (webhookUrl && data) {
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'new_booking',
+        booking_id: data.id,
+        name: data.name,
+        pickup_date: data.pickup_date,
+        time_slot: data.time_slot,
+        address: [data.address, data.city, data.state, data.zip].filter(Boolean).join(', '),
+        bike: [data.bike_brand, data.bike_model].filter(Boolean).join(' ') || 'not specified',
+        issues: data.issues || [],
+        is_member: data.is_member,
+        zone: data.zone,
+        phone: data.phone,
+        notes: data.notes,
+      }),
+    }).catch(() => {}); // non-blocking
+  }
+
   return Response.json({ booking: data }, { status: 201 });
 }
