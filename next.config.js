@@ -4,14 +4,24 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        // Embed routes: allow framing from Squarespace + our own domain
+        source: '/embed/:path*',
         headers: [
-          // Allow framing from Squarespace domain
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://oneloveoutdoors.org https://*.oneloveoutdoors.org https://*.squarespace.com https://*.sqsp.com",
+            value: "frame-ancestors 'self' *.squarespace.com *.sqsp.com *.oneloveoutdoors.org oneloveoutdoors.org",
           },
-          // Legacy header (not supported in Chrome/Firefox but kept for compatibility)
+          // Must NOT send X-Frame-Options on embed routes — it would block iframing
+        ],
+      },
+      {
+        // All other routes: allow framing only from our own domain
+        source: '/((?!embed).*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://oneloveoutdoors.org https://*.oneloveoutdoors.org",
+          },
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN',
