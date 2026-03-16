@@ -26,9 +26,10 @@ function fold(line) {
   return chunks.join('\r\n');
 }
 
-function dtFormat(dateStr, hour) {
-  // Returns "20240315T090000" (local time for TZID= property)
-  return dateStr.replace(/-/g, '') + 'T' + String(hour).padStart(2, '0') + '0000';
+function dtFormat(dateStr, hour, minute = 0) {
+  // Returns "20240315T093000" (local time for TZID= property)
+  return dateStr.replace(/-/g, '') + 'T' +
+    String(hour).padStart(2, '0') + String(minute).padStart(2, '0') + '00';
 }
 
 function dtstampNow() {
@@ -94,9 +95,17 @@ export async function GET(request) {
   const stamp = dtstampNow();
 
   const events = (bookings || []).map(b => {
-    const { startH, endH } = parseSlot(b.time_slot);
-    const dtstart = dtFormat(b.pickup_date, startH);
-    const dtend   = dtFormat(b.pickup_date, endH);
+    let startH, startMin = 0, endH, endMin = 0;
+    if (b.preferred_time) {
+      // Admin has set an exact time — use it with a 1-hour window
+      const [h, m] = b.preferred_time.split(':').map(Number);
+      startH = h; startMin = m;
+      endH = h + 1; endMin = m;
+    } else {
+      ({ startH, endH } = parseSlot(b.time_slot));
+    }
+    const dtstart = dtFormat(b.pickup_date, startH, startMin);
+    const dtend   = dtFormat(b.pickup_date, endH, endMin);
 
     const title = b.bike_brand
       ? `${b.name} — ${b.bike_brand} service`
@@ -107,6 +116,8 @@ export async function GET(request) {
     const descLines = [];
     if (b.issues?.length) descLines.push(`Issues: ${b.issues.join(', ')}`);
     if (b.bike_brand || b.bike_model) descLines.push(`Bike: ${[b.bike_brand, b.bike_model].filter(Boolean).join(' ')}`);
+    if (b.preferred_time) descLines.push(`Exact time: ${b.preferred_time}`);
+    if (b.pickup_type === 'meetup') descLines.push(`Meetup${b.meetup_spot ? `: ${b.meetup_spot}` : ''}`);
     if (b.phone)  descLines.push(`Phone: ${b.phone}`);
     if (b.email)  descLines.push(`Email: ${b.email}`);
     descLines.push(`Member: ${b.is_member ? 'Yes ♥' : 'No'}`);

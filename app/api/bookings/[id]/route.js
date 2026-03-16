@@ -9,7 +9,7 @@ export async function PATCH(request, { params }) {
   const { id } = params;
   const body = await request.json();
 
-  const allowed = ['status', 'notes', 'pickup_date', 'time_slot', 'zone'];
+  const allowed = ['status', 'notes', 'pickup_date', 'time_slot', 'zone', 'preferred_time'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];

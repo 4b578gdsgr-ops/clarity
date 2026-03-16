@@ -159,6 +159,15 @@ export default function AdminPickups() {
 
   const optimizeRoute = () => setBookings(bs => nearestNeighborSort(bs));
 
+  const updatePreferredTime = async (id, value) => {
+    setBookings(bs => bs.map(b => b.id === id ? { ...b, preferred_time: value || null } : b));
+    await fetch(`/api/bookings/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferred_time: value || null }),
+    });
+  };
+
   const copyIcalUrl = () => {
     if (!icalUrl) return;
     navigator.clipboard.writeText(icalUrl).then(() => {
@@ -401,14 +410,27 @@ export default function AdminPickups() {
                       </div>
                     </div>
 
-                    {/* Time slot + status select */}
+                    {/* Time slot + preferred time + status select */}
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 1 }}>Window</div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#2d3436' }}>{b.time_slot}</div>
+                      <div style={{ marginTop: 6, marginBottom: 6 }}>
+                        <div style={{ fontSize: 10, color: b.preferred_time ? '#2d8653' : '#9ca3af', marginBottom: 2, fontWeight: b.preferred_time ? 700 : 400 }}>
+                          {b.preferred_time ? '✓ Exact time' : 'Exact time'}
+                        </div>
+                        <input
+                          type="time"
+                          value={b.preferred_time || ''}
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => updatePreferredTime(b.id, e.target.value)}
+                          style={{ fontSize: 12, border: `1px solid ${b.preferred_time ? '#d1ead9' : '#e5e0d8'}`, borderRadius: 6, padding: '3px 6px', background: b.preferred_time ? '#f0faf5' : '#f9f9f9', width: 96, color: '#2d3436' }}
+                        />
+                      </div>
                       <select
                         value={b.status}
                         onChange={e => updateStatus(b.id, e.target.value)}
                         onClick={e => e.stopPropagation()}
-                        style={{ marginTop: 6, fontSize: 11, border: '1px solid #e5e0d8', borderRadius: 6, padding: '3px 6px', background: '#f9f9f9', cursor: 'pointer' }}
+                        style={{ fontSize: 11, border: '1px solid #e5e0d8', borderRadius: 6, padding: '3px 6px', background: '#f9f9f9', cursor: 'pointer' }}
                       >
                         {STATUS_OPTIONS.map(s => (
                           <option key={s} value={s}>{s}</option>
