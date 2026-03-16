@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polygon, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { SERVICE_AREA_POLYGON } from '../../lib/serviceArea';
 
 const greenDot = L.divIcon({
   className: '',
@@ -13,9 +14,7 @@ const greenDot = L.divIcon({
 
 function ClickHandler({ onMapClick }) {
   useMapEvents({
-    click(e) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
+    click(e) { onMapClick(e.latlng.lat, e.latlng.lng); },
   });
   return null;
 }
@@ -32,10 +31,10 @@ function FlyTo({ pin }) {
   return null;
 }
 
-export default function ServiceMap({ pin, onMapClick }) {
+export default function ServiceMap({ pin, onMapClick, showBoundary = false }) {
   return (
     <MapContainer
-      center={[41.76, -72.69]}
+      center={[41.88, -72.65]}
       zoom={10}
       style={{ width: '100%', height: '100%' }}
       scrollWheelZoom={false}
@@ -44,6 +43,12 @@ export default function ServiceMap({ pin, onMapClick }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
+      {showBoundary && (
+        <Polygon
+          positions={SERVICE_AREA_POLYGON}
+          pathOptions={{ color: '#276749', fillColor: '#276749', fillOpacity: 0.08, weight: 2, dashArray: '6 4' }}
+        />
+      )}
       <ClickHandler onMapClick={onMapClick} />
       {pin && <FlyTo pin={pin} />}
       {pin && <Marker position={[pin.lat, pin.lng]} icon={greenDot} />}

@@ -27,6 +27,33 @@ const STATUS_COLOR = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function fmtDate(dateStr) {
+  if (!dateStr) return 'the scheduled day';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function buildTemplate(newStatus, booking, date, time) {
+  const name = booking.name;
+  const when = (date ? fmtDate(date) : booking.preferred_day || 'the scheduled day') +
+    (time ? ' around ' + fmtTime(time) : '');
+  const issues = booking.issues && booking.issues.length > 0
+    ? booking.issues.join(', ').toLowerCase()
+    : 'your bike';
+  switch (newStatus) {
+    case 'confirmed':
+      return 'Hi ' + name + ', your service pickup is confirmed for ' + when + '. We\'ll reach out when we\'re 30 min out. — One Love';
+    case 'picked_up':
+      return 'Hi ' + name + ', we\'ve got your bike. We\'ll keep you updated as we work on it. — One Love';
+    case 'in_progress':
+      return 'Hi ' + name + ', we\'re working on ' + issues + '. We\'ll reach out when it\'s ready. — One Love';
+    case 'done':
+      return 'Hi ' + name + ', your bike is ready! We\'ll schedule the dropoff soon. — One Love';
+    default:
+      return '';
+  }
+}
+
 function addMins(timeStr, mins) {
   const [h, m] = timeStr.split(':').map(Number);
   const total = h * 60 + m + mins;
@@ -175,6 +202,8 @@ function BookingCard({ booking, onRefresh }) {
   const [advancing, setAdvancing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showMsgs, setShowMsgs] = useState(false);
+  const [template, setTemplate] = useState('');
+  const [copied, setCopied] = useState(false);
 
   async function patch(fields) {
     await fetch('/api/bookings/' + booking.id, {
@@ -188,9 +217,21 @@ function BookingCard({ booking, onRefresh }) {
   async function advance() {
     const action = NEXT_ACTION[booking.status];
     if (!action) return;
+    if (action.next === 'confirmed' && !confirmDate) {
+      alert('Set a pickup date before confirming.');
+      return;
+    }
     setAdvancing(true);
     await patch({ status: action.next });
+    setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime));
+    setCopied(false);
     setAdvancing(false);
+  }
+
+  function copyTemplate() {
+    navigator.clipboard.writeText(template).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   }
 
   async function handleDelete() {
@@ -389,6 +430,23 @@ function BookingCard({ booking, onRefresh }) {
           </button>
         </div>
       </div>
+
+      {template && (
+        <div style={{ margin: '0 18px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '12px 14px' }}>
+          <p style={{ fontSize: 11, color: '#166534', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+            {'Message to send via ' + (booking.contact_preference || 'text/email') + ':'}
+          </p>
+          <p style={{ fontSize: 14, color: '#166534', lineHeight: 1.5, marginBottom: 10, fontFamily: 'inherit' }}>
+            {template}
+          </p>
+          <button
+            onClick={copyTemplate}
+            style={{ padding: '6px 16px', background: copied ? '#16a34a' : '#276749', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}
+          >
+            {copied ? 'Copied!' : 'Copy message'}
+          </button>
+        </div>
+      )}
 
       {showMsgs && <MessageThread bookingId={booking.id} />}
     </div>
