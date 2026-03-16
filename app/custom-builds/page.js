@@ -5,27 +5,22 @@ import CustomBuildForm from '../components/CustomBuildForm';
 
 const WHY_CUSTOM = [
   {
-    icon: '🛠️',
     title: 'Independent builders, not factories',
     body: `The big companies flooded the market after COVID. Crashed pricing. Gutted dealer margins. Custom builds are the opposite — frames from small independent builders, not publicly traded companies, not PE-owned brands. Your money goes to real people making decisions about bikes.`,
   },
   {
-    icon: '📐',
     title: 'Built for you, not a focus group',
     body: `A frame that will outlive every trend. Components chosen because they're right, not because some brand manager needed to hit a sales target. Off-the-shelf bikes are built for an average body. This one is built for yours.`,
   },
   {
-    icon: '♥',
     title: 'Higher karma score',
     body: `Independent frame builders and component makers like Hope, Chris King, and Wolf Tooth score 78–88 on karma vs. 52–55 for big-brand complete bikes. Where your dollar goes matters.`,
   },
   {
-    icon: '🏔️',
     title: 'This is what bikes were before they became content',
     body: `Wheels built by hand with your weight, your terrain, your riding style in mind. A well-specced custom build outlasts most complete bikes by a decade or more. Buy once, buy right.`,
   },
   {
-    icon: '🤝',
     title: 'A small operation, not a factory',
     body: `We specialize in titanium and steel frames, hand-built wheels, and carefully spec'd builds. If you know exactly what you want, we'll source it and build it right. If you're not sure yet, we'll figure it out together.`,
   },
@@ -65,13 +60,10 @@ export default function CustomBuildsPage() {
           </div>
           <div className="flex flex-col gap-3">
             {WHY_CUSTOM.map(item => (
-              <div key={item.title} className="flex gap-4 px-4 py-3 rounded-xl"
+              <div key={item.title} className="px-4 py-3 rounded-xl"
                 style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
-                <div className="text-2xl shrink-0">{item.icon}</div>
-                <div>
-                  <div className="text-sm font-bold mb-0.5" style={{ color: '#2d3436' }}>{item.title}</div>
-                  <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>{item.body}</div>
-                </div>
+                <div className="text-sm font-bold mb-0.5" style={{ color: '#2d3436' }}>{item.title}</div>
+                <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>{item.body}</div>
               </div>
             ))}
           </div>
@@ -143,9 +135,6 @@ export default function CustomBuildsPage() {
           <CustomBuildForm />
         </div>
 
-        <div className="text-center pb-6">
-          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
-        </div>
       </div>
     </div>
   );

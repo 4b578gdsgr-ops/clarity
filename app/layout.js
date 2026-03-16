@@ -1,6 +1,7 @@
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import TopNav from './components/TopNav';
+import Footer from './components/Footer';
 
 export const metadata = {
   metadataBase: new URL('https://loveovermoney.oneloveoutdoors.org'),
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-screen">
         <TopNav />
         {children}
+        <Footer />
       </body>
     </html>
   );

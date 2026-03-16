@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import CryptoDonate from '../components/CryptoDonate';
 
 export const metadata = {
@@ -22,14 +21,6 @@ export default function AboutPage() {
       <div className="fixed inset-0 nature-bg pointer-events-none" />
 
       <div className="relative z-10 px-4 py-8 max-w-2xl mx-auto">
-
-        {/* Nav */}
-        <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-xs font-bold tracking-wider uppercase" style={{color:'#2d8653'}}>
-            ← Love Over Money
-          </Link>
-          <span className="text-[10px]" style={{color:'#9ca3af'}}>A One Love Outdoors 501(c)(3) project</span>
-        </div>
 
         {/* Title */}
         <div className="mb-8">
@@ -89,13 +80,6 @@ export default function AboutPage() {
 
         <CryptoDonate />
 
-        {/* Footer */}
-        <div className="text-center pt-4 pb-8">
-          <div className="text-[10px]" style={{color:'#c4bdb5'}}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
-          <Link href="/methodology" className="text-[10px] mt-1 inline-block hover:underline" style={{color:'#b0b8b4'}}>
-            How we score companies
-          </Link>
-        </div>
 
       </div>
     </div>

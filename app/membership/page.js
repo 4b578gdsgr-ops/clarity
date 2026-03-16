@@ -224,9 +224,6 @@ export default function MembershipPage() {
           ))}
         </div>
 
-        <div className="text-center pb-6">
-          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
-        </div>
       </div>
     </div>
   );
