@@ -1,21 +1,17 @@
 import { supabaseAdmin } from '../../../lib/supabase';
-import { getZoneForZip } from '../../../lib/serviceZones';
 
-// GET /api/bookings?date=YYYY-MM-DD&status=booked
+// GET /api/bookings?status=new
 export async function GET(request) {
   if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
 
   const { searchParams } = new URL(request.url);
-  const date   = searchParams.get('date');
   const status = searchParams.get('status');
 
   let query = supabaseAdmin
     .from('service_bookings')
     .select('*')
-    .order('pickup_date', { ascending: true })
-    .order('time_slot', { ascending: true });
+    .order('created_at', { ascending: false });
 
-  if (date)   query = query.eq('pickup_date', date);
   if (status) query = query.eq('status', status);
 
   const { data, error } = await query;
@@ -29,50 +25,36 @@ export async function POST(request) {
   if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
 
   const body = await request.json();
-  const { name, address, city, state, zip, phone, email,
-          bike_brand, bike_model, issues, notes,
-          pickup_date, time_slot, is_member,
-          pickup_type, meetup_spot } = body;
+  const { name, phone, email, lat, lng, address,
+          bike_brand, issues, notes,
+          preferred_day, time_slot } = body;
 
-  const isMeetup = pickup_type === 'meetup';
-  if (!name || (!isMeetup && !address) || !zip || !pickup_date || !time_slot) {
-    return Response.json({ error: 'Missing required fields' }, { status: 400 });
+  if (!name || !phone) {
+    return Response.json({ error: 'Name and phone are required' }, { status: 400 });
   }
-
-  // Geocode address for map pin (home pickups only)
-  let lat = null, lng = null;
-  if (!isMeetup && address) {
-    try {
-      const geo = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ' ' + city + ' ' + (state || 'CT'))}&format=json&countrycodes=us&limit=1`,
-        { headers: { 'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)' } }
-      );
-      const geoData = await geo.json();
-      if (geoData[0]) { lat = parseFloat(geoData[0].lat); lng = parseFloat(geoData[0].lon); }
-    } catch { /* proceed without coords */ }
-  }
-
-  const zone = getZoneForZip(zip);
 
   const { data, error } = await supabaseAdmin
     .from('service_bookings')
     .insert([{
-      name, address: address || null, city: city || null, state: state || 'CT', zip,
-      lat, lng, phone, email,
-      bike_brand, bike_model,
+      name,
+      phone,
+      email: email || null,
+      lat: lat || null,
+      lng: lng || null,
+      address: address || null,
+      bike_brand: bike_brand || null,
       issues: Array.isArray(issues) ? issues : [],
-      notes, zone, pickup_date, time_slot,
-      is_member: !!is_member,
-      pickup_type: pickup_type || 'home',
-      meetup_spot: meetup_spot || null,
-      status: 'booked',
+      notes: notes || null,
+      preferred_day: preferred_day || null,
+      time_slot: time_slot || null,
+      status: 'new',
     }])
     .select()
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Fire-and-forget webhook notification (connect to email later)
+  // Fire-and-forget webhook
   const webhookUrl = process.env.BOOKING_WEBHOOK_URL;
   if (webhookUrl && data) {
     fetch(webhookUrl, {
@@ -82,17 +64,15 @@ export async function POST(request) {
         type: 'new_booking',
         booking_id: data.id,
         name: data.name,
-        pickup_date: data.pickup_date,
-        time_slot: data.time_slot,
-        address: [data.address, data.city, data.state, data.zip].filter(Boolean).join(', '),
-        bike: [data.bike_brand, data.bike_model].filter(Boolean).join(' ') || 'not specified',
-        issues: data.issues || [],
-        is_member: data.is_member,
-        zone: data.zone,
         phone: data.phone,
+        bike: data.bike_brand || 'not specified',
+        issues: data.issues || [],
+        preferred_day: data.preferred_day,
+        time_slot: data.time_slot,
+        address: data.address,
         notes: data.notes,
       }),
-    }).catch(() => {}); // non-blocking
+    }).catch(() => {});
   }
 
   return Response.json({ booking: data }, { status: 201 });

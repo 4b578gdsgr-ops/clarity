@@ -1,6 +1,10 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 
-const VALID_STATUSES = ['booked', 'picked_up', 'in_progress', 'ready', 'delivered', 'cancelled'];
+const VALID_STATUSES = [
+  'new', 'confirmed', 'picked_up', 'done', 'cancelled',
+  // legacy values kept for backwards compat
+  'booked', 'in_progress', 'ready', 'delivered',
+];
 
 // PATCH /api/bookings/[id]
 export async function PATCH(request, { params }) {
@@ -9,7 +13,8 @@ export async function PATCH(request, { params }) {
   const { id } = params;
   const body = await request.json();
 
-  const allowed = ['status', 'notes', 'pickup_date', 'time_slot', 'zone', 'preferred_time'];
+  const allowed = ['status', 'notes', 'time_slot', 'preferred_day',
+                   'confirmed_date', 'confirmed_time', 'zone', 'preferred_time'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];
