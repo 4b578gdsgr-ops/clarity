@@ -1,10 +1,26 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 
 const VALID_STATUSES = [
-  'new', 'confirmed', 'picked_up', 'done', 'cancelled',
+  'new', 'confirmed', 'picked_up', 'in_progress', 'done', 'cancelled',
   // legacy values kept for backwards compat
-  'booked', 'in_progress', 'ready', 'delivered',
+  'booked', 'ready', 'delivered',
 ];
+
+// GET /api/bookings/[id]
+export async function GET(request, { params }) {
+  if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+
+  const { id } = params;
+  const { data, error } = await supabaseAdmin
+    .from('service_bookings')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) return Response.json({ error: error.message }, { status: error.code === 'PGRST116' ? 404 : 500 });
+
+  return Response.json({ booking: data });
+}
 
 // PATCH /api/bookings/[id]
 export async function PATCH(request, { params }) {

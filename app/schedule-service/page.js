@@ -327,21 +327,32 @@ function FormStep({ onSubmit, submitting, submitErr }) {
 
 // ─── Step 3: Done ─────────────────────────────────────────────────────────────
 
-function DoneStep() {
+function DoneStep({ bookingId }) {
   return (
     <div style={{ maxWidth: 540, margin: '80px auto', padding: '0 16px', textAlign: 'center' }}>
       <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, color: '#0f1a14', marginBottom: 16 }}>
         Got it.
       </h2>
-      <p style={{ color: '#4b5563', fontSize: 17, lineHeight: 1.6, marginBottom: 32 }}>
-        {'We\'ll text you to confirm a time. Usually within a day or two.'}
+      <p style={{ color: '#4b5563', fontSize: 17, lineHeight: 1.6, marginBottom: 24 }}>
+        {'We\'ll reach out to confirm a time.'}
       </p>
+      {bookingId && (
+        <a
+          href={'/service/' + bookingId}
+          style={{
+            display: 'block', padding: '12px 0', marginBottom: 16,
+            background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10,
+            color: '#166534', fontSize: 15, textDecoration: 'none', fontWeight: 600,
+          }}
+        >
+          {'Track your booking \u2192'}
+        </a>
+      )}
       <a
         href="/"
         style={{
-          display: 'inline-block', padding: '12px 28px',
-          background: '#1a3328', color: '#fff', borderRadius: 10,
-          textDecoration: 'none', fontSize: 15,
+          display: 'inline-block',
+          color: '#9ca3af', fontSize: 14, textDecoration: 'underline',
         }}
       >
         Back to home
@@ -358,6 +369,7 @@ export default function ScheduleService() {
   const [pinAddress, setPinAddress] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
+  const [bookingId, setBookingId] = useState(null);
 
   const handlePin = useCallback((lat, lng) => {
     if (lat === null) { setPin(null); return; }
@@ -384,6 +396,7 @@ export default function ScheduleService() {
         setSubmitting(false);
         return;
       }
+      setBookingId(data.booking?.id || null);
       setStep(3);
     } catch {
       setSubmitErr('Network error. Please try again.');
@@ -391,7 +404,7 @@ export default function ScheduleService() {
     }
   }
 
-  if (step === 3) return <DoneStep />;
+  if (step === 3) return <DoneStep bookingId={bookingId} />;
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
