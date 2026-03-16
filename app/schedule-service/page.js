@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../lib/serviceArea';
+import { validateBooking, isFormValid } from '../../lib/bookingValidation';
 
 const ServiceMap = dynamic(() => import('../components/ServiceMap'), { ssr: false });
 
@@ -136,6 +137,7 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 // ─── Step 2: Form ─────────────────────────────────────────────────────────────
 
 function FormStep({ address, onBack, onDone }) {
+  const formRef = useRef(null);
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
     contact_preference: '',
@@ -157,17 +159,21 @@ function FormStep({ address, onBack, onDone }) {
       ...f,
       issues: f.issues.includes(issue) ? f.issues.filter(i => i !== issue) : [...f.issues, issue],
     }));
+    setErrors(e => ({ ...e, issues: '' }));
   }
+
+  const canSubmit = isFormValid(form);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const errs = {};
-    if (!form.name.trim()) errs.name = 'Required';
-    if (!form.phone.trim()) errs.phone = 'Required';
-    if (!form.email.trim()) errs.email = 'Required';
-    if (!form.contact_preference) errs.contact_preference = 'Required';
-    if (!form.address.trim()) errs.address = 'Required';
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    const errs = validateBooking(form);
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      setTimeout(() => {
+        formRef.current?.querySelector('[data-field-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
     setSubmitting(true);
     setSubmitErr('');
     try {
@@ -205,24 +211,24 @@ function FormStep({ address, onBack, onDone }) {
         </p>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form ref={formRef} onSubmit={handleSubmit}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
           <div>
             <label style={lbl}>Name *</label>
             <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#dc2626' : '#d1d5db' }} />
-            {errors.name && <p style={errStyle}>{errors.name}</p>}
+            {errors.name && <p data-field-error style={errStyle}>{errors.name}</p>}
           </div>
           <div>
             <label style={lbl}>Phone *</label>
             <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#dc2626' : '#d1d5db' }} />
-            {errors.phone && <p style={errStyle}>{errors.phone}</p>}
+            {errors.phone && <p data-field-error style={errStyle}>{errors.phone}</p>}
           </div>
         </div>
 
         <div style={{ marginBottom: 16 }}>
           <label style={lbl}>Email *</label>
           <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }} />
-          {errors.email && <p style={errStyle}>{errors.email}</p>}
+          {errors.email && <p data-field-error style={errStyle}>{errors.email}</p>}
         </div>
 
         <div style={{ marginBottom: 16 }}>
@@ -250,7 +256,7 @@ function FormStep({ address, onBack, onDone }) {
               );
             })}
           </div>
-          {errors.contact_preference && <p style={errStyle}>{errors.contact_preference}</p>}
+          {errors.contact_preference && <p data-field-error style={errStyle}>{errors.contact_preference}</p>}
         </div>
 
         <div style={{ marginBottom: 16 }}>
@@ -262,7 +268,7 @@ function FormStep({ address, onBack, onDone }) {
             placeholder="Street address"
             style={{ ...inp, borderColor: errors.address ? '#dc2626' : '#d1d5db' }}
           />
-          {errors.address && <p style={errStyle}>{errors.address}</p>}
+          {errors.address && <p data-field-error style={errStyle}>{errors.address}</p>}
         </div>
 
         <div style={{ marginBottom: 16 }}>
@@ -274,7 +280,7 @@ function FormStep({ address, onBack, onDone }) {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>What needs attention?</label>
+          <label style={{ ...lbl, color: errors.issues ? '#dc2626' : '#374151' }}>What needs attention? *</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {ISSUE_OPTIONS.map(issue => {
               const on = form.issues.includes(issue);
@@ -285,7 +291,7 @@ function FormStep({ address, onBack, onDone }) {
                   onClick={() => toggleIssue(issue)}
                   style={{
                     padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                    border: on ? '2px solid #1a3328' : '1px solid #d1d5db',
+                    border: on ? '2px solid #1a3328' : ('1px solid ' + (errors.issues ? '#dc2626' : '#d1d5db')),
                     background: on ? '#1a3328' : '#fff',
                     color: on ? '#fff' : '#374151',
                   }}
@@ -295,6 +301,7 @@ function FormStep({ address, onBack, onDone }) {
               );
             })}
           </div>
+          {errors.issues && <p data-field-error style={errStyle}>{errors.issues}</p>}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
@@ -329,8 +336,8 @@ function FormStep({ address, onBack, onDone }) {
 
         <button
           type="submit"
-          disabled={submitting}
-          style={{ width: '100%', padding: '13px 0', background: submitting ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, cursor: submitting ? 'default' : 'pointer', fontWeight: 600 }}
+          disabled={submitting || !canSubmit}
+          style={{ width: '100%', padding: '13px 0', background: (submitting || !canSubmit) ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, cursor: (submitting || !canSubmit) ? 'default' : 'pointer', fontWeight: 600 }}
         >
           {submitting ? 'Sending...' : 'Book Service'}
         </button>

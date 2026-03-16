@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
+import { validateBooking, isFormValid } from '../../../lib/bookingValidation';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
@@ -85,17 +86,22 @@ export default function EmbedService() {
       ...f,
       issues: f.issues.includes(issue) ? f.issues.filter(i => i !== issue) : [...f.issues, issue],
     }));
+    setErrors(er => ({ ...er, issues: '' }));
   }
+
+  const formRef = useRef(null);
+  const canSubmit = isFormValid({ ...form, address });
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const errs = {};
-    if (!form.name.trim()) errs.name = 'Required';
-    if (!form.phone.trim()) errs.phone = 'Required';
-    if (!form.email.trim()) errs.email = 'Required';
-    if (!form.contact_preference) errs.contact_preference = 'Required';
-    if (!address.trim()) errs.address = 'We need your address to schedule a pickup.';
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    const errs = validateBooking({ ...form, address });
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      setTimeout(() => {
+        formRef.current?.querySelector('[data-field-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
     setSubmitting(true);
     setSubmitErr('');
     try {
@@ -253,7 +259,7 @@ export default function EmbedService() {
 
       {/* Form — only shown if pin is inside service area */}
       {inArea && (
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           {submitErr && (
             <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#c53030', fontSize: 14 }}>
               {submitErr}
@@ -264,19 +270,19 @@ export default function EmbedService() {
             <div>
               <label style={lbl}>Name *</label>
               <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#e53e3e' : '#e2e8f0' }} />
-              {errors.name && <span style={errStyle}>Required</span>}
+              {errors.name && <span data-field-error style={errStyle}>{errors.name}</span>}
             </div>
             <div>
               <label style={lbl}>Phone *</label>
               <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#e53e3e' : '#e2e8f0' }} />
-              {errors.phone && <span style={errStyle}>Required</span>}
+              {errors.phone && <span data-field-error style={errStyle}>{errors.phone}</span>}
             </div>
           </div>
 
           <div style={{ marginBottom: 12 }}>
             <label style={lbl}>Email *</label>
             <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#e53e3e' : '#e2e8f0' }} />
-            {errors.email && <span style={errStyle}>Required</span>}
+            {errors.email && <span data-field-error style={errStyle}>{errors.email}</span>}
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -304,7 +310,7 @@ export default function EmbedService() {
                 );
               })}
             </div>
-            {errors.contact_preference && <span style={errStyle}>Required</span>}
+            {errors.contact_preference && <span data-field-error style={errStyle}>{errors.contact_preference}</span>}
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -316,7 +322,7 @@ export default function EmbedService() {
               placeholder="Street address"
               style={{ ...inp, borderColor: errors.address ? '#e53e3e' : '#e2e8f0' }}
             />
-            {errors.address && <span style={errStyle}>{errors.address}</span>}
+            {errors.address && <span data-field-error style={errStyle}>{errors.address}</span>}
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -328,7 +334,7 @@ export default function EmbedService() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={lbl}>What needs attention?</label>
+            <label style={{ ...lbl, color: errors.issues ? '#e53e3e' : '#4a5568' }}>What needs attention? *</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
               {ISSUE_OPTIONS.map(issue => {
                 const on = form.issues.includes(issue);
@@ -339,7 +345,7 @@ export default function EmbedService() {
                     onClick={() => toggleIssue(issue)}
                     style={{
                       padding: '6px 13px', borderRadius: 16, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                      border: on ? '2px solid #276749' : '1px solid #e2e8f0',
+                      border: on ? '2px solid #276749' : ('1px solid ' + (errors.issues ? '#e53e3e' : '#e2e8f0')),
                       background: on ? '#276749' : '#fff',
                       color: on ? '#fff' : '#4a5568',
                     }}
@@ -349,6 +355,7 @@ export default function EmbedService() {
                 );
               })}
             </div>
+            {errors.issues && <span data-field-error style={errStyle}>{errors.issues}</span>}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
@@ -383,8 +390,8 @@ export default function EmbedService() {
 
           <button
             type="submit"
-            disabled={submitting}
-            style={{ width: '100%', padding: '13px 0', background: submitting ? '#a0aec0' : '#276749', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: submitting ? 'default' : 'pointer', fontFamily: 'inherit', letterSpacing: '0.01em' }}
+            disabled={submitting || !canSubmit}
+            style={{ width: '100%', padding: '13px 0', background: (submitting || !canSubmit) ? '#a0aec0' : '#276749', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: (submitting || !canSubmit) ? 'default' : 'pointer', fontFamily: 'inherit', letterSpacing: '0.01em' }}
           >
             {submitting ? 'Booking...' : 'Book Service'}
           </button>
