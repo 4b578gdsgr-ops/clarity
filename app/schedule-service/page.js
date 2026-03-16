@@ -301,7 +301,7 @@ export default function ScheduleService() {
           <div style={{ fontSize: 12, color: '#636e72' }}><strong style={{ color: '#2d3436' }}>Name:</strong> {booking?.name}</div>
           {booking?.pickup_type === 'meetup' ? (
             <div style={{ fontSize: 12, color: '#636e72', marginTop: 4 }}>
-              <strong style={{ color: '#2d3436' }}>Meetup:</strong> {booking.meetup_spot || 'TBD — we'll confirm'}
+              <strong style={{ color: '#2d3436' }}>Meetup:</strong> {booking.meetup_spot || `TBD — we'll confirm`}
             </div>
           ) : (
             booking?.address && (
