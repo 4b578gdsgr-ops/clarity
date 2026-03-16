@@ -31,34 +31,40 @@ export async function POST(request) {
   const body = await request.json();
   const { name, address, city, state, zip, phone, email,
           bike_brand, bike_model, issues, notes,
-          pickup_date, time_slot, is_member } = body;
+          pickup_date, time_slot, is_member,
+          pickup_type, meetup_spot } = body;
 
-  if (!name || !address || !zip || !pickup_date || !time_slot) {
+  const isMeetup = pickup_type === 'meetup';
+  if (!name || (!isMeetup && !address) || !zip || !pickup_date || !time_slot) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  // Geocode address for map pin
+  // Geocode address for map pin (home pickups only)
   let lat = null, lng = null;
-  try {
-    const geo = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ' ' + city + ' ' + (state || 'CT'))}&format=json&countrycodes=us&limit=1`,
-      { headers: { 'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)' } }
-    );
-    const geoData = await geo.json();
-    if (geoData[0]) { lat = parseFloat(geoData[0].lat); lng = parseFloat(geoData[0].lon); }
-  } catch { /* proceed without coords */ }
+  if (!isMeetup && address) {
+    try {
+      const geo = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ' ' + city + ' ' + (state || 'CT'))}&format=json&countrycodes=us&limit=1`,
+        { headers: { 'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)' } }
+      );
+      const geoData = await geo.json();
+      if (geoData[0]) { lat = parseFloat(geoData[0].lat); lng = parseFloat(geoData[0].lon); }
+    } catch { /* proceed without coords */ }
+  }
 
   const zone = getZoneForZip(zip);
 
   const { data, error } = await supabaseAdmin
     .from('service_bookings')
     .insert([{
-      name, address, city, state: state || 'CT', zip,
+      name, address: address || null, city: city || null, state: state || 'CT', zip,
       lat, lng, phone, email,
       bike_brand, bike_model,
       issues: Array.isArray(issues) ? issues : [],
       notes, zone, pickup_date, time_slot,
       is_member: !!is_member,
+      pickup_type: pickup_type || 'home',
+      meetup_spot: meetup_spot || null,
       status: 'booked',
     }])
     .select()

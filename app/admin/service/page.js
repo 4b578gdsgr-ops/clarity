@@ -27,7 +27,7 @@ const NEXT_ACTION = {
 
 // ─── Route math ───────────────────────────────────────────────────────────────
 
-// Newington, CT — home base
+// Central CT — route start point
 const DEPOT = { lat: 41.6943, lng: -72.7149 };
 
 function haversine(lat1, lng1, lat2, lng2) {
@@ -341,10 +341,15 @@ export default function AdminPickups() {
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: sc.bg, color: sc.text }}>
                           {b.status.replace('_', ' ')}
                         </span>
+                        <span style={{ fontSize: 11 }} title={b.pickup_type === 'meetup' ? `Meetup: ${b.meetup_spot || 'TBD'}` : 'Home pickup'}>
+                          {b.pickup_type === 'meetup' ? '📍' : '🏠'}
+                        </span>
                       </div>
 
                       <div style={{ fontSize: 12, color: '#636e72' }}>
-                        {b.address}, {b.city} {b.zip}
+                        {b.pickup_type === 'meetup'
+                          ? `Meetup${b.meetup_spot ? ` — ${b.meetup_spot}` : ''} · ${b.city || b.zip}`
+                          : `${b.address}, ${b.city} ${b.zip}`}
                       </div>
 
                       {(b.bike_brand || b.bike_model) && (

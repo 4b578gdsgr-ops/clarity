@@ -86,10 +86,10 @@ function FeeCallout({ zone, isMember }) {
     return (
       <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#2d8653', marginBottom: 2 }}>
-          {`You're close!`}
+          You're nearby — free pickup.
         </div>
         <div style={{ fontSize: 12, color: '#636e72', lineHeight: 1.5 }}>
-          {`Drop off anytime by arrangement, or we'll pick up for free. Text us.`}
+          We'll work out a convenient time. No travel fee.
         </div>
       </div>
     );
@@ -118,6 +118,37 @@ function FeeCallout({ zone, isMember }) {
   );
 }
 
+// ─── Pickup type option card ───────────────────────────────────────────────────
+
+function PickupOption({ id, selected, onSelect, icon, title, subtitle }) {
+  return (
+    <button
+      onClick={() => onSelect(id)}
+      style={{
+        width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 10, cursor: 'pointer',
+        border: selected ? '2px solid #2d8653' : '1px solid #e5e0d8',
+        background: selected ? '#f0faf5' : '#fff',
+        transition: 'all 0.15s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ fontSize: 22, flexShrink: 0 }}>{icon}</div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#2d3436', marginBottom: 2 }}>{title}</div>
+          <div style={{ fontSize: 12, color: '#636e72' }}>{subtitle}</div>
+        </div>
+        <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
+          <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${selected ? '#2d8653' : '#d1d5db'}`, background: selected ? '#2d8653' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {selected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function ScheduleService() {
   const [step, setStep] = useState(0);
   const [zip, setZip] = useState('');
@@ -131,6 +162,7 @@ export default function ScheduleService() {
   const [form, setForm] = useState({
     name: '', address: '', city: '', phone: '', email: '',
     bike_brand: '', bike_model: '', issues: [], notes: '',
+    pickup_type: '', meetup_spot: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -139,7 +171,7 @@ export default function ScheduleService() {
   const [detailsError, setDetailsError] = useState(null);
   const [zipError, setZipError] = useState(null);
 
-  // Step 0 → 1: ZIP + member check
+  // Step 0: find zone, stay on step 0 to show pickup type selector
   const handleLocation = () => {
     const clean = zip.trim().slice(0, 5);
     if (clean.length !== 5 || !/^\d{5}$/.test(clean)) {
@@ -150,12 +182,23 @@ export default function ScheduleService() {
     if (!z) {
       setOutsideArea(true);
       setZipError(null);
+      setZone(null);
       return;
     }
     setOutsideArea(false);
     setZone(z);
     setSlots(getAvailableSlots(z, isMember));
     setZipError(null);
+    // For local zone, default to home pickup
+    if (z === 'zone_local') {
+      setForm(f => ({ ...f, pickup_type: 'home', meetup_spot: '' }));
+    } else {
+      setForm(f => ({ ...f, pickup_type: '', meetup_spot: '' }));
+    }
+  };
+
+  // Continue from zone/pickup-type selection to slot picker
+  const handleContinueToSlots = () => {
     setStep(1);
   };
 
@@ -178,10 +221,9 @@ export default function ScheduleService() {
   };
 
   const handleDetails = () => {
-    if (!form.name.trim() || !form.address.trim()) {
-      setDetailsError('Name and address are required.');
-      return;
-    }
+    const needsAddress = form.pickup_type === 'home' || form.pickup_type === '';
+    if (!form.name.trim()) { setDetailsError('Name is required.'); return; }
+    if (needsAddress && !form.address.trim()) { setDetailsError('Address is required for home pickup.'); return; }
     setDetailsError(null);
     setStep(3);
   };
@@ -207,6 +249,8 @@ export default function ScheduleService() {
           pickup_date: selectedSlot.date,
           time_slot: selectedSlot.timeSlot,
           is_member: isMember,
+          pickup_type: form.pickup_type || 'home',
+          meetup_spot: form.meetup_spot || null,
         }),
       });
       const json = await res.json();
@@ -221,9 +265,23 @@ export default function ScheduleService() {
 
   const zoneInfo = zone ? ZONES[zone] : null;
   const { fee, isFree, isLocal } = zone ? getPickupFee(zone, isMember) : { fee: 0, isFree: true, isLocal: false };
+  const isMeetup = form.pickup_type === 'meetup';
+  const meetupSpots = zoneInfo?.meetupSpots || [];
+  const selectedMeetupSpot = meetupSpots.find(s => s.id === form.meetup_spot);
 
-  // Success screen
+  // Can proceed past zone step?
+  const canContinue = zone && (
+    isLocal ||
+    (form.pickup_type === 'home') ||
+    (form.pickup_type === 'meetup' && form.meetup_spot)
+  );
+
+  // ─── Success screen ────────────────────────────────────────────────────────
+
   if (submitted) {
+    const dateLabel = selectedSlot
+      ? new Date(selectedSlot.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+      : '';
     return (
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '40px 16px', fontFamily: 'system-ui, sans-serif', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🚲</div>
@@ -232,30 +290,46 @@ export default function ScheduleService() {
         </h1>
         <p style={{ color: '#636e72', fontSize: 14, lineHeight: 1.6, maxWidth: 360, margin: '0 auto 24px' }}>
           {isLocal
-            ? `Bring your bike in or let us know when to pick it up — we'll take it from there.`
-            : `We'll pick up your bike on`}{' '}
-          {!isLocal && <><strong>{new Date(selectedSlot.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>{' '}
-          between <strong>{selectedSlot.timeSlot}</strong>.</>}
+            ? `We'll reach out to arrange a pickup time.`
+            : isMeetup
+              ? `We'll meet you on `
+              : `We'll pick up your bike on `}
+          {!isLocal && <><strong>{dateLabel}</strong>{' '}between <strong>{selectedSlot?.timeSlot}</strong>.</>}
         </p>
+
         <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 12, padding: '16px 20px', textAlign: 'left', maxWidth: 360, margin: '0 auto 20px' }}>
           <div style={{ fontSize: 12, color: '#636e72' }}><strong style={{ color: '#2d3436' }}>Name:</strong> {booking?.name}</div>
-          <div style={{ fontSize: 12, color: '#636e72', marginTop: 4 }}><strong style={{ color: '#2d3436' }}>Address:</strong> {booking?.address}, {booking?.city}</div>
+          {booking?.pickup_type === 'meetup' ? (
+            <div style={{ fontSize: 12, color: '#636e72', marginTop: 4 }}>
+              <strong style={{ color: '#2d3436' }}>Meetup:</strong> {booking.meetup_spot || 'TBD — we'll confirm'}
+            </div>
+          ) : (
+            booking?.address && (
+              <div style={{ fontSize: 12, color: '#636e72', marginTop: 4 }}>
+                <strong style={{ color: '#2d3436' }}>Address:</strong> {booking.address}{booking.city ? `, ${booking.city}` : ''}
+              </div>
+            )
+          )}
           {booking?.bike_brand && (
-            <div style={{ fontSize: 12, color: '#636e72', marginTop: 4 }}><strong style={{ color: '#2d3436' }}>Bike:</strong> {booking.bike_brand} {booking.bike_model}</div>
+            <div style={{ fontSize: 12, color: '#636e72', marginTop: 4 }}>
+              <strong style={{ color: '#2d3436' }}>Bike:</strong> {booking.bike_brand} {booking.bike_model}
+            </div>
           )}
           {!isFree && (
             <div style={{ fontSize: 12, color: '#92400e', marginTop: 8, padding: '6px 10px', background: '#fffbeb', borderRadius: 6 }}>
-              Service + Pickup/Dropoff fee: <strong>${fee}</strong> — due at service completion
+              Service + Pickup fee: <strong>${fee}</strong> — due at service completion
             </div>
           )}
         </div>
+
         {!isMember && !isFree && (
           <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 10, padding: '12px 16px', maxWidth: 360, margin: '0 auto 20px', fontSize: 13 }}>
             <strong style={{ color: '#7c3aed' }}>Next time, ride free.</strong>
-            <span style={{ color: '#636e72' }}> Members get free pickup/dropoff on every service visit. </span>
+            <span style={{ color: '#636e72' }}> Members get free pickup on every visit. </span>
             <a href="/membership" style={{ color: '#9333ea', fontWeight: 700 }}>Join for $25/month →</a>
           </div>
         )}
+
         <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.6 }}>
           {`We'll text or call to confirm. No payment due until work is complete.`}
         </p>
@@ -266,6 +340,8 @@ export default function ScheduleService() {
       <ServiceMenu />
     );
   }
+
+  // ─── Main form ─────────────────────────────────────────────────────────────
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '32px 16px', fontFamily: 'system-ui, sans-serif' }}>
@@ -289,7 +365,7 @@ export default function ScheduleService() {
 
       <div style={{ background: '#fff', border: '1px solid #e5e0d8', borderRadius: 16, padding: '24px 20px', boxShadow: '0 2px 16px rgba(45,134,83,0.06)' }}>
 
-        {/* ── Step 0: Location ── */}
+        {/* ── Step 0: Location + pickup type ── */}
         {step === 0 && (
           <div>
             <div style={{ fontWeight: 700, fontSize: 16, color: '#2d3436', marginBottom: 4 }}>Where are you?</div>
@@ -303,7 +379,15 @@ export default function ScheduleService() {
               inputMode="numeric"
               maxLength={5}
               value={zip}
-              onChange={e => { setZip(e.target.value); setZipError(null); setOutsideArea(false); setDemandSent(false); }}
+              onChange={e => {
+                setZip(e.target.value);
+                setZipError(null);
+                setOutsideArea(false);
+                setDemandSent(false);
+                // Reset zone when ZIP changes
+                setZone(null);
+                setForm(f => ({ ...f, pickup_type: '', meetup_spot: '' }));
+              }}
               placeholder="ZIP code"
               style={{ width: '100%', padding: '10px 12px', border: `1px solid ${zipError ? '#fca5a5' : '#e5e0d8'}`, borderRadius: 10, fontSize: 16, marginBottom: 16, boxSizing: 'border-box' }}
             />
@@ -325,21 +409,121 @@ export default function ScheduleService() {
 
             {zipError && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 12 }}>{zipError}</div>}
 
-            <button
-              onClick={handleLocation}
-              style={{ width: '100%', padding: '12px', background: '#2d8653', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
-            >
-              Check availability →
-            </button>
+            {/* Check availability — only show when zone not yet found */}
+            {!zone && !outsideArea && (
+              <button
+                onClick={handleLocation}
+                style={{ width: '100%', padding: '12px', background: '#2d8653', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
+              >
+                Check availability →
+              </button>
+            )}
 
-            {/* Outside service area — warm fallback, never a dead end */}
+            {/* Zone found — show pickup type selector */}
+            {zone && !outsideArea && (
+              <div>
+                {/* Zone badge */}
+                {zoneInfo && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: zoneInfo.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: zoneInfo.color }}>
+                      {zoneInfo.label} zone — service available
+                    </span>
+                    <button
+                      onClick={() => { setZone(null); setForm(f => ({ ...f, pickup_type: '', meetup_spot: '' })); }}
+                      style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 11, color: '#9ca3af', cursor: 'pointer', padding: 0 }}
+                    >
+                      Change ZIP
+                    </button>
+                  </div>
+                )}
+
+                {/* Local zone: we arrange directly */}
+                {isLocal ? (
+                  <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#2d8653', marginBottom: 4 }}>
+                      You're nearby!
+                    </div>
+                    <div style={{ fontSize: 13, color: '#636e72', lineHeight: 1.6 }}>
+                      We'll arrange a convenient pickup — book a time and we'll work out the details.
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Pickup type question */}
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#2d3436', marginBottom: 12 }}>
+                      How do you want to do this?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                      <PickupOption
+                        id="home"
+                        selected={form.pickup_type === 'home'}
+                        onSelect={id => setForm(f => ({ ...f, pickup_type: id, meetup_spot: '' }))}
+                        icon="🏠"
+                        title="Come to me"
+                        subtitle="We pick up and deliver at your address"
+                      />
+                      <PickupOption
+                        id="meetup"
+                        selected={form.pickup_type === 'meetup'}
+                        onSelect={id => setForm(f => ({ ...f, pickup_type: id }))}
+                        icon="📍"
+                        title="I'll meet you"
+                        subtitle="Meet at a nearby spot — no need to be home"
+                      />
+                    </div>
+
+                    {/* Meetup spot selector */}
+                    {form.pickup_type === 'meetup' && (
+                      <div style={{ marginBottom: 20 }}>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 6 }}>
+                          Meetup location
+                        </label>
+                        {meetupSpots.length === 0 ? (
+                          <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic', padding: '10px 12px', border: '1px solid #e5e0d8', borderRadius: 9, background: '#faf9f6' }}>
+                            Meetup locations coming soon — reach out and we'll work something out.
+                          </div>
+                        ) : (
+                          <select
+                            value={form.meetup_spot}
+                            onChange={e => setForm(f => ({ ...f, meetup_spot: e.target.value }))}
+                            style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e0d8', borderRadius: 9, fontSize: 14, boxSizing: 'border-box', background: '#fff' }}
+                          >
+                            <option value="">Select a meetup spot...</option>
+                            {meetupSpots.map(s => (
+                              <option key={s.id} value={s.id}>{s.label}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <button
+                  onClick={handleContinueToSlots}
+                  disabled={!canContinue}
+                  style={{
+                    width: '100%', padding: '12px',
+                    background: canContinue ? '#2d8653' : '#d1ead9',
+                    color: '#fff', border: 'none', borderRadius: 10,
+                    fontWeight: 700, fontSize: 15,
+                    cursor: canContinue ? 'pointer' : 'default',
+                  }}
+                >
+                  See available times →
+                </button>
+              </div>
+            )}
+
+            {/* Outside service area */}
             {outsideArea && (
               <div style={{ marginTop: 20, padding: '18px 16px', background: '#f9f9f6', border: '1px solid #e5e0d8', borderRadius: 12 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#2d3436', marginBottom: 8 }}>
-                  {`We're not in your area yet for regular pickup — but we'd still love to help.`}
+                  {`We're not in your area yet for regular service — but we'd still love to help.`}
                 </div>
                 <p style={{ fontSize: 13, color: '#636e72', lineHeight: 1.6, marginBottom: 16 }}>
-                  {`Drop off at our Newington shop, or reach out and we'll work something out. We don't turn anyone away.`}
+                  {`Reach out and we'll figure something out. We don't turn anyone away.`}
                 </p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
                   <a href="sms:+18605551234"
@@ -391,6 +575,11 @@ export default function ScheduleService() {
                   {zoneInfo.label}
                 </span>
               )}
+              {isMeetup && (
+                <span style={{ background: '#f0f9ff', color: '#0ea5e9', padding: '2px 8px', borderRadius: 10, fontWeight: 600, fontSize: 11 }}>
+                  📍 Meetup
+                </span>
+              )}
             </div>
 
             <FeeCallout zone={zone} isMember={isMember} />
@@ -428,19 +617,69 @@ export default function ScheduleService() {
             </button>
             <div style={{ fontWeight: 700, fontSize: 16, color: '#2d3436', marginBottom: 16 }}>Your details</div>
 
+            {/* Meetup spot reminder */}
+            {isMeetup && selectedMeetupSpot && (
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 9, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#0369a1' }}>
+                📍 Meetup: <strong>{selectedMeetupSpot.label}</strong>
+              </div>
+            )}
+            {isMeetup && !selectedMeetupSpot && (
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 9, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#0369a1' }}>
+                📍 Meetup pickup — we'll confirm the location.
+              </div>
+            )}
+
+            {/* Name */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 4 }}>
+                Your name <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => setForm(x => ({ ...x, name: e.target.value }))}
+                placeholder="Your name"
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e0d8', borderRadius: 9, fontSize: 14, boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Address — only for home pickup */}
+            {!isMeetup && (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 4 }}>
+                    Street address <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.address}
+                    onChange={e => setForm(x => ({ ...x, address: e.target.value }))}
+                    placeholder="123 Main St"
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e0d8', borderRadius: 9, fontSize: 14, boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 4 }}>City</label>
+                  <input
+                    type="text"
+                    value={form.city}
+                    onChange={e => setForm(x => ({ ...x, city: e.target.value }))}
+                    placeholder="City"
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e0d8', borderRadius: 9, fontSize: 14, boxSizing: 'border-box' }}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Phone & email */}
             {[
-              { key: 'name',    label: 'Your name',      placeholder: 'Nate', required: true },
-              { key: 'address', label: 'Street address', placeholder: '123 Main St', required: true },
-              { key: 'city',    label: 'City',            placeholder: 'City' },
-              { key: 'phone',   label: 'Phone',           placeholder: '(860) 555-1234', type: 'tel' },
-              { key: 'email',   label: 'Email',           placeholder: 'nate@example.com', type: 'email' },
+              { key: 'phone', label: 'Phone', placeholder: '(860) 555-1234', type: 'tel' },
+              { key: 'email', label: 'Email', placeholder: 'you@example.com', type: 'email' },
             ].map(f => (
               <div key={f.key} style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 4 }}>
-                  {f.label}{f.required && <span style={{ color: '#dc2626' }}> *</span>}
-                </label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 4 }}>{f.label}</label>
                 <input
-                  type={f.type || 'text'}
+                  type={f.type}
                   value={form[f.key]}
                   onChange={e => setForm(x => ({ ...x, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
@@ -482,7 +721,7 @@ export default function ScheduleService() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 4 }}>Notes for Nate (optional)</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#636e72', marginBottom: 4 }}>Notes (optional)</label>
               <textarea
                 value={form.notes}
                 onChange={e => setForm(x => ({ ...x, notes: e.target.value }))}
@@ -512,8 +751,11 @@ export default function ScheduleService() {
             <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 12, padding: '14px 16px', marginBottom: 16, fontSize: 13, lineHeight: 1.8 }}>
               <div><strong>Date:</strong> {selectedSlot && new Date(selectedSlot.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
               <div><strong>Time:</strong> {selectedSlot?.timeSlot}</div>
+              <div><strong>Pickup:</strong> {isMeetup ? `📍 Meetup${selectedMeetupSpot ? ` — ${selectedMeetupSpot.label}` : ''}` : '🏠 Home pickup'}</div>
               <div><strong>Name:</strong> {form.name}</div>
-              <div><strong>Address:</strong> {form.address}{form.city ? `, ${form.city}` : ''}, CT {zip}</div>
+              {!isMeetup && form.address && (
+                <div><strong>Address:</strong> {form.address}{form.city ? `, ${form.city}` : ''}, CT {zip}</div>
+              )}
               {form.phone && <div><strong>Phone:</strong> {form.phone}</div>}
               {form.bike_brand && <div><strong>Bike:</strong> {form.bike_brand} {form.bike_model}</div>}
               {form.issues.length > 0 && <div><strong>Issues:</strong> {form.issues.join(', ')}</div>}
@@ -521,24 +763,23 @@ export default function ScheduleService() {
               {isMember && <div><strong style={{ color: '#9333ea' }}>♥ Member booking</strong></div>}
             </div>
 
-            {/* Fee — prominent, shown before confirm button */}
             {isLocal ? (
               <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#2d8653', marginBottom: 2 }}>
-                  {`You're close — drop off anytime or we'll pick up for free.`}
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#2d8653' }}>
+                  Free pickup — we'll arrange a time.
                 </div>
               </div>
             ) : isFree ? (
               <div style={{ background: '#f0faf5', border: '1px solid #d1ead9', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 600, color: '#2d8653' }}>
-                Service + Pickup/Dropoff: included {isMember ? `(member perk ♥)` : ``}
+                Service + Pickup: included {isMember ? `(member perk ♥)` : ``}
               </div>
             ) : (
               <div style={{ background: '#fffbeb', border: '2px solid #fde68a', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: '#92400e', marginBottom: 4 }}>
-                  Service + Pickup/Dropoff fee: ${fee}
+                  Service + Pickup fee: ${fee}
                 </div>
                 <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.55 }}>
-                  Members get free pickup/dropoff —{' '}
+                  Members get free pickup —{' '}
                   <a href="/membership" style={{ color: '#d97706', fontWeight: 700 }}>join for $25/month</a>{' '}
                   and save on every visit.
                 </div>
