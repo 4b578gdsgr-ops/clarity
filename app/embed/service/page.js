@@ -330,9 +330,7 @@ function SuccessScreen({ bookingId }) {
       </p>
       {bookingId && (
         <a
-          href={BASE + '/service/' + bookingId}
-          target="_blank"
-          rel="noreferrer"
+          href={'/embed/service/' + bookingId}
           style={{
             display: 'inline-block', padding: '11px 28px',
             background: '#276749', color: '#fff', borderRadius: 10,
