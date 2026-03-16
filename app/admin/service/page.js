@@ -33,22 +33,28 @@ function fmtDate(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
-function buildTemplate(newStatus, booking, date, time) {
+function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
   const name = booking.name;
-  const when = (date ? fmtDate(date) : booking.preferred_day || 'the scheduled day') +
+  const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled Monday') +
     (time ? ' around ' + fmtTime(time) : '');
+  const returnWhen = returnDate ? fmtDate(returnDate) : 'Friday';
+  const autoReturn = pickupToReturn(pickupDate);
+  const isDelayed = returnDate && autoReturn && returnDate !== autoReturn;
   const issues = booking.issues && booking.issues.length > 0
     ? booking.issues.join(', ').toLowerCase()
     : 'your bike';
   switch (newStatus) {
     case 'confirmed':
-      return 'Hi ' + name + ', your service pickup is confirmed for ' + when + '. We\'ll reach out when we\'re 30 min out. — One Love';
+      return 'Hi ' + name + ', your pickup is confirmed for ' + pickupWhen + '. Plan on having it back by ' + returnWhen + '. We\'ll reach out when we\'re on the way. — One Love';
     case 'picked_up':
-      return 'Hi ' + name + ', we\'ve got your bike. We\'ll keep you updated as we work on it. — One Love';
+      return 'Hi ' + name + ', we\'ve got your bike. Plan on having it back by ' + returnWhen + '. We\'ll keep you posted. — One Love';
     case 'in_progress':
-      return 'Hi ' + name + ', we\'re working on ' + issues + '. We\'ll reach out when it\'s ready. — One Love';
+      if (isDelayed) {
+        return 'Hi ' + name + ', parts are on order — updated return is ' + returnWhen + '. We\'ll keep you posted. — One Love';
+      }
+      return 'Hi ' + name + ', we\'re working on ' + issues + '. Your bike will be ready for delivery ' + returnWhen + '. — One Love';
     case 'done':
-      return 'Hi ' + name + ', your bike is ready! We\'ll schedule the dropoff soon. — One Love';
+      return 'Hi ' + name + ', your bike is ready! We\'ll deliver it on ' + returnWhen + '. — One Love';
     default:
       return '';
   }
@@ -63,11 +69,21 @@ function addMins(timeStr, mins) {
 
 function nextServiceDay() {
   const today = new Date();
-  const day = today.getDay();
-  let ahead = day < 2 ? 2 - day : day < 4 ? 4 - day : 9 - day;
+  const day = today.getDay(); // 0=Sun,1=Mon
+  const ahead = (1 - day + 7) % 7 || 7; // days until next Monday
   const d = new Date(today);
   d.setDate(today.getDate() + ahead);
   return d.toISOString().split('T')[0];
+}
+
+function pickupToReturn(pickupDateStr) {
+  if (!pickupDateStr) return '';
+  const [y, m, d] = pickupDateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const dow = date.getDay();
+  const daysToFriday = (5 - dow + 7) % 7 || 7;
+  date.setDate(date.getDate() + daysToFriday);
+  return date.toISOString().split('T')[0];
 }
 
 function buildAppleMapsUrl(stops) {
@@ -197,6 +213,7 @@ function MessageThread({ bookingId }) {
 function BookingCard({ booking, onRefresh }) {
   const [confirmDate, setConfirmDate] = useState(booking.confirmed_date || '');
   const [confirmTime, setConfirmTime] = useState(booking.confirmed_time || '');
+  const [returnDate, setReturnDate] = useState(booking.return_date || (booking.confirmed_date ? pickupToReturn(booking.confirmed_date) : ''));
   const [notes, setNotes] = useState(booking.notes || '');
   const [saving, setSaving] = useState('');
   const [advancing, setAdvancing] = useState(false);
@@ -223,7 +240,7 @@ function BookingCard({ booking, onRefresh }) {
     }
     setAdvancing(true);
     await patch({ status: action.next });
-    setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime));
+    setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime, returnDate));
     setCopied(false);
     setAdvancing(false);
   }
@@ -316,6 +333,18 @@ function BookingCard({ booking, onRefresh }) {
           {booking.preferred_day && (
             <span><strong>Prefers: </strong>{booking.preferred_day}{booking.time_slot ? ', ' + booking.time_slot : ''}</span>
           )}
+          {booking.confirmed_date && (
+            <span><strong>Pickup: </strong>{fmtDate(booking.confirmed_date)}{booking.confirmed_time ? ' at ' + fmtTime(booking.confirmed_time) : ''}</span>
+          )}
+          {(booking.return_date || booking.confirmed_date) && (
+            <span>
+              <strong>Est. return: </strong>
+              {fmtDate(booking.return_date || pickupToReturn(booking.confirmed_date))}
+              {booking.return_date && booking.confirmed_date && booking.return_date !== pickupToReturn(booking.confirmed_date) && (
+                <span style={{ marginLeft: 6, color: '#f59e0b', fontSize: 11, fontWeight: 700 }}>DELAYED</span>
+              )}
+            </span>
+          )}
         </div>
 
         {booking.issues && booking.issues.length > 0 && (
@@ -347,17 +376,25 @@ function BookingCard({ booking, onRefresh }) {
           />
         </div>
 
-        {/* Date + time */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
+        {/* Pickup date + time */}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 8 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Date</label>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Pickup (Monday)</label>
             <input
               type="date"
               value={confirmDate}
               onChange={e => {
-                setConfirmDate(e.target.value);
+                const val = e.target.value;
+                setConfirmDate(val);
+                // Auto-suggest return Friday if return hasn't been manually changed
+                if (val && (!returnDate || returnDate === pickupToReturn(confirmDate))) {
+                  const suggested = pickupToReturn(val);
+                  setReturnDate(suggested);
+                  patch({ confirmed_date: val || null, return_date: suggested || null }).then(() => setSaving(''));
+                } else {
+                  patch({ confirmed_date: val || null }).then(() => setSaving(''));
+                }
                 setSaving('date');
-                patch({ confirmed_date: e.target.value || null }).then(() => setSaving(''));
               }}
               style={{
                 padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
@@ -384,6 +421,37 @@ function BookingCard({ booking, onRefresh }) {
             />
           </div>
           {saving && <span style={{ fontSize: 12, color: '#9ca3af', paddingBottom: 6 }}>Saving...</span>}
+        </div>
+
+        {/* Est. return (Friday) */}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>
+              Est. return (Friday)
+              {returnDate && returnDate !== pickupToReturn(confirmDate) && (
+                <span style={{ marginLeft: 6, color: '#f59e0b', fontWeight: 700 }}>— delayed</span>
+              )}
+            </label>
+            <input
+              type="date"
+              value={returnDate}
+              onChange={e => {
+                const val = e.target.value;
+                setReturnDate(val);
+                setSaving('return');
+                patch({ return_date: val || null }).then(() => setSaving(''));
+              }}
+              style={{
+                padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
+                borderColor: returnDate
+                  ? (returnDate !== pickupToReturn(confirmDate) ? '#f59e0b' : '#16a34a')
+                  : '#d1d5db',
+                color: returnDate
+                  ? (returnDate !== pickupToReturn(confirmDate) ? '#92400e' : '#166534')
+                  : '#374151',
+              }}
+            />
+          </div>
         </div>
 
         {/* Actions */}

@@ -200,8 +200,11 @@ export default function EmbedService() {
           <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1a202c', marginBottom: 8, fontFamily: 'inherit' }}>
             Got it.
           </h3>
-          <p style={{ color: '#718096', fontSize: 15, marginBottom: 24, lineHeight: 1.6 }}>
+          <p style={{ color: '#718096', fontSize: 15, marginBottom: 12, lineHeight: 1.6 }}>
             {'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
+          </p>
+          <p style={{ color: '#718096', fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>
+            {"Here's how it works: We pick up on Mondays and deliver on Fridays. Most jobs take about a week — picked up one Monday, back to you by Friday or the following Monday. If parts need to be ordered, we'll let you know and give you an updated timeline."}
           </p>
           <a
             href={'/embed/service/' + bookingId}
@@ -229,7 +232,7 @@ export default function EmbedService() {
         We come to you.
       </h2>
       <p style={{ fontSize: 14, color: '#718096', lineHeight: 1.5, marginBottom: 20 }}>
-        Pickup, fix, return. Drop a pin or search your address to get started.
+        Pickup Monday. Back by Friday. Drop a pin or search your address to get started.
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit}>
@@ -391,8 +394,8 @@ export default function EmbedService() {
             <label style={lbl}>Preferred day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#1a202c' : '#a0aec0' }}>
               <option value="">No preference</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Thursday">Thursday</option>
+              <option value="Monday">Monday (pickup)</option>
+              <option value="Friday">Friday (delivery)</option>
             </select>
           </div>
           <div>

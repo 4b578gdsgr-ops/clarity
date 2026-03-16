@@ -89,8 +89,11 @@ function ServiceBooking() {
         <div style={{ fontSize: 26, fontWeight: 700, color: '#1a3328', marginBottom: 8, fontFamily: 'Playfair Display, serif' }}>
           Got it.
         </div>
-        <p style={{ color: '#636e72', fontSize: 15, marginBottom: 20, lineHeight: 1.6 }}>
+        <p style={{ color: '#636e72', fontSize: 15, marginBottom: 12, lineHeight: 1.6 }}>
           {'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
+        </p>
+        <p style={{ color: '#636e72', fontSize: 13, marginBottom: 20, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 20px' }}>
+          {"Here's how it works: We pick up on Mondays and deliver on Fridays. Most jobs take about a week — picked up one Monday, back to you by Friday or the following Monday. If parts need to be ordered, we'll let you know and give you an updated timeline."}
         </p>
         <a
           href={'/service/' + bookingId}
@@ -217,8 +220,8 @@ function ServiceBooking() {
           <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)}
             style={{ ...inp, color: form.preferred_day ? '#2d3436' : '#9ca3af' }}>
             <option value="">No preference</option>
-            <option value="Tuesday">Tuesday</option>
-            <option value="Thursday">Thursday</option>
+            <option value="Monday">Monday (pickup)</option>
+            <option value="Friday">Friday (delivery)</option>
           </select>
         </div>
         <div>
@@ -277,7 +280,7 @@ export default function HomePage() {
             We come to you.
           </h1>
           <p style={{ color: '#636e72', fontSize: 15, lineHeight: 1.6 }}>
-            Pickup, fix, return. Book a service stop — we handle the rest.
+            Pickup Monday. Back by Friday. We handle the rest.
           </p>
         </div>
 
