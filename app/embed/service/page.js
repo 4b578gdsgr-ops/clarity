@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
-import { getPricingTier } from '../../../lib/servicePricing';
+import { getPricingTier, getTierByDistance } from '../../../lib/servicePricing';
 import { validateBooking, isFormValid } from '../../../lib/bookingValidation';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
@@ -81,14 +81,14 @@ export default function EmbedService() {
 
   function applyPin(lat, lng, resolvedAddress, zip) {
     setPin({ lat, lng });
-    // ZIP lookup is authoritative; polygon is fallback when ZIP unavailable
+    // ZIP lookup is authoritative; distance-based fallback when ZIP not in tier list
     const tier = getPricingTier(zip);
     if (tier) {
       setOutside(false);
       setPricingTier(tier);
     } else if (isInServiceArea(lat, lng)) {
       setOutside(false);
-      setPricingTier(null);
+      setPricingTier(getTierByDistance(lat, lng));
     } else {
       setOutside(true);
       setPricingTier(null);
@@ -292,7 +292,7 @@ export default function EmbedService() {
         We come to you.
       </h2>
       <p style={{ fontSize: 14, color: '#718096', lineHeight: 1.5, marginBottom: 4 }}>
-        Pickup Monday. Back by Friday.<sup style={{ fontSize: 10 }}>*</sup> Drop a pin or search your address to get started.
+        Pickup Monday. Back by Friday.<sup style={{ fontSize: 10 }}>*</sup>
       </p>
       <p style={{ fontSize: 12, color: '#a0aec0', marginBottom: 16 }}>
         *parts permitting
@@ -352,79 +352,53 @@ export default function EmbedService() {
           )}
           {pin && !outside && (
             <div>
-              <p style={{ fontSize: 13, color: '#276749', fontWeight: 500, marginBottom: pricingTier ? 4 : 0 }}>
-                Pickup: {address || 'location set'}{' '}
-                <button
-                  type="button"
-                  onClick={clearPin}
-                  style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}
-                >
-                  clear
-                </button>
-              </p>
-              {pricingTier && (
-                <div style={{ background: '#f0faf5', border: '1px solid #c6e8d5', borderRadius: 8, padding: '10px 14px', marginTop: 6 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#276749', marginBottom: 3 }}>
-                    {isMember ? 'Pickup & delivery: FREE (member)' : `Pickup & delivery: $${pricingTier.fee}`}
-                  </p>
-                  {!isMember && (
-                    <p style={{ fontSize: 12, color: '#4a7c5f', marginBottom: 6 }}>
-                      Members get free pickup.{' '}
-                      <a
-                        href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: '#276749', fontWeight: 600 }}
-                      >
-                        $25/month →
-                      </a>
-                    </p>
-                  )}
-                  <p style={{ fontSize: 12, color: '#4a7c5f', lineHeight: 1.5, marginBottom: 8 }}>
-                    Labor and parts quoted after we see the bike. No surprises.
-                  </p>
-
-                  {/* Member toggle */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={isMember}
-                      onChange={e => setIsMember(e.target.checked)}
-                      style={{ width: 15, height: 15, accentColor: '#276749', cursor: 'pointer', flexShrink: 0 }}
-                    />
-                    <span style={{ fontSize: 13, color: '#276749', fontWeight: 500 }}>
-                      I'm a One Love member — pickup & delivery is free
-                    </span>
-                  </label>
-
-                  {!isMember && (
-                    <p style={{ fontSize: 11, color: '#6b9e82', marginTop: 6, lineHeight: 1.5 }}>
-                      Members get free pickup & delivery, priority service, and a seasonal tune-up.{' '}
-                      <a
-                        href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: '#276749', fontWeight: 600 }}
-                      >
-                        $25/month →
-                      </a>
-                    </p>
-                  )}
-                </div>
-              )}
-              {!pricingTier && !isMember && (
-                <p style={{ fontSize: 12, color: '#4a7c5f', marginTop: 6 }}>
-                  Members get free pickup & delivery.{' '}
-                  <a
-                    href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: '#276749', fontWeight: 600 }}
-                  >
-                    $25/month →
-                  </a>
+              <div style={{ background: '#f0faf5', border: '1px solid #c6e8d5', borderRadius: 8, padding: '10px 14px', marginTop: 6 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#276749', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  In service area ✓
                 </p>
-              )}
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#276749', marginBottom: 3 }}>
+                  {isMember
+                    ? 'Free pickup & delivery (member) ✓'
+                    : `Pickup & delivery: $${pricingTier ? pricingTier.fee : 25}`}
+                </p>
+                {!isMember && (
+                  <p style={{ fontSize: 12, color: '#4a7c5f', marginBottom: 6 }}>
+                    Members get free pickup & delivery.{' '}
+                    <a
+                      href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#276749', fontWeight: 600 }}
+                    >
+                      $25/month →
+                    </a>
+                  </p>
+                )}
+                <p style={{ fontSize: 12, color: '#4a7c5f', lineHeight: 1.5, marginBottom: 8 }}>
+                  Labor and parts quoted after we see the bike. No surprises.
+                </p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={isMember}
+                    onChange={e => setIsMember(e.target.checked)}
+                    style={{ width: 15, height: 15, accentColor: '#276749', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 13, color: '#276749', fontWeight: 500 }}>
+                    I'm a One Love member — pickup & delivery is free
+                  </span>
+                </label>
+                <p style={{ fontSize: 12, color: '#4a7c5f', marginTop: 6 }}>
+                  {address || 'Location set'}{' '}
+                  <button
+                    type="button"
+                    onClick={clearPin}
+                    style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}
+                  >
+                    clear
+                  </button>
+                </p>
+              </div>
             </div>
           )}
           {errors.address && <span data-field-error style={errStyle}>{errors.address}</span>}
