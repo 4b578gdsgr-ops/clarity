@@ -229,6 +229,8 @@ function BookingCard({ booking, onRefresh }) {
   const [showMsgs, setShowMsgs] = useState(false);
   const [template, setTemplate] = useState('');
   const [copied, setCopied] = useState(false);
+  const [invoiceAmount, setInvoiceAmount] = useState(booking.invoice_amount != null ? String(booking.invoice_amount) : '');
+  const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
 
   // Silent save — updates a field without triggering a full list refresh.
   // Use for field-level edits (date, time, notes) so native pickers aren't interrupted.
@@ -384,6 +386,52 @@ function BookingCard({ booking, onRefresh }) {
             ))}
           </div>
         )}
+
+        {/* Invoice + Payment */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: '0 0 auto' }}>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Invoice amount</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={invoiceAmount}
+              onChange={e => setInvoiceAmount(e.target.value)}
+              onBlur={() => {
+                const val = invoiceAmount === '' ? null : parseFloat(invoiceAmount);
+                if (val !== booking.invoice_amount) {
+                  setSaving('invoice');
+                  save({ invoice_amount: val }).then(() => setSaving(''));
+                }
+              }}
+              style={{
+                width: 100, padding: '6px 9px', border: '1px solid #e5e7eb',
+                borderRadius: 6, fontSize: 13, outline: 'none',
+              }}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Payment link</label>
+            <input
+              type="url"
+              placeholder="https://square.link/..."
+              value={paymentLink}
+              onChange={e => setPaymentLink(e.target.value)}
+              onBlur={() => {
+                const val = paymentLink.trim() || null;
+                if (val !== (booking.payment_link || null)) {
+                  setSaving('payment');
+                  save({ payment_link: val }).then(() => setSaving(''));
+                }
+              }}
+              style={{
+                width: '100%', padding: '6px 9px', border: '1px solid #e5e7eb',
+                borderRadius: 6, fontSize: 13, outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+        </div>
 
         {/* Notes */}
         <div style={{ marginBottom: 14 }}>
