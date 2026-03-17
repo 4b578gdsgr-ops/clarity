@@ -498,7 +498,7 @@ export default function EmbedService() {
         )}
 
         {/* ── Preferred pickup day + time ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 6 }}>
           <div>
             <label style={lbl}>Preferred pickup day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#1a202c' : '#a0aec0' }}>
@@ -516,6 +516,9 @@ export default function EmbedService() {
             </select>
           </div>
         </div>
+        <p style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.5, marginBottom: 12 }}>
+          Pick a day and time that works for you. We'll confirm as close to it as we can — routes shift depending on the day's bookings.
+        </p>
 
         {/* ── Notes ── */}
         <div style={{ marginBottom: 16 }}>

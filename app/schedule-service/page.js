@@ -304,7 +304,7 @@ function FormStep({ address, onBack, onDone }) {
           {errors.issues && <p data-field-error style={errStyle}>{errors.issues}</p>}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 6 }}>
           <div>
             <label style={lbl}>Preferred pickup day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#111827' : '#9ca3af' }}>
@@ -322,6 +322,9 @@ function FormStep({ address, onBack, onDone }) {
             </select>
           </div>
         </div>
+        <p style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.5, marginBottom: 16 }}>
+          Pick a day and time that works for you. We'll confirm as close to it as we can — routes shift depending on the day's bookings.
+        </p>
 
         <div style={{ marginBottom: 24 }}>
           <label style={lbl}>Notes</label>
