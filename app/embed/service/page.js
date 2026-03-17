@@ -15,6 +15,37 @@ const BIKE_BRANDS = [
 
 const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'Other'];
 
+function getEstimateText(issues) {
+  if (!issues.length) return '';
+
+  const hasOther      = issues.includes('Other');
+  const hasSuspension = issues.includes('Suspension');
+  const hasTuneup     = issues.includes('Tune-up');
+  const nonOther      = issues.filter(i => i !== 'Other');
+
+  if (issues.length === 1 && hasOther) {
+    return "We'll take a look and give you a quote. No obligations.";
+  }
+
+  // Suspension is the most specific/expensive — call it out first
+  if (hasSuspension) {
+    return "Suspension service starts at $150. We'll confirm the full scope after pickup.";
+  }
+
+  // Tune-up alone, or tune-up + one other thing — it's likely covered
+  if (hasTuneup && nonOther.length <= 2) {
+    return "A tune-up covers most of this. Usually around $95 + parts.";
+  }
+
+  // Lots of things going on — steer toward overhaul conversation
+  if (nonOther.length >= 3) {
+    return "Sounds like it might need some love. We'll give you an honest quote after pickup — most full overhauls run $200–300.";
+  }
+
+  // Default: 1–2 known items, no suspension, no tune-up
+  return "Most jobs like this run $40–150. We'll confirm after seeing the bike.";
+}
+
 const BASE = 'https://clarity-pi-ten.vercel.app';
 
 export default function EmbedService() {
@@ -135,6 +166,7 @@ export default function EmbedService() {
 
   const formRef = useRef(null);
   const canSubmit = pin && !outside && isFormValid({ ...form, address });
+  const estimateText = getEstimateText(form.issues);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -432,6 +464,18 @@ export default function EmbedService() {
           </div>
           {errors.issues && <span data-field-error style={errStyle}>{errors.issues}</span>}
         </div>
+
+        {/* ── Estimate hint ── */}
+        {estimateText && (
+          <div style={{ marginBottom: 12, padding: '10px 14px', background: '#f0faf5', borderRadius: 8, border: '1px solid #c6e8d5' }}>
+            <p style={{ fontSize: 13, color: '#276749', lineHeight: 1.5, margin: '0 0 3px' }}>
+              {estimateText}
+            </p>
+            <p style={{ fontSize: 11, color: '#6b9e82', margin: 0 }}>
+              No surprises. We quote before we wrench.
+            </p>
+          </div>
+        )}
 
         {/* ── Preferred day + time ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
