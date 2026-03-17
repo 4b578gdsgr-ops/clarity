@@ -131,9 +131,7 @@ export default function EmbedBookingStatusPage({ params }) {
         <div style={{ textAlign: 'center', color: '#6b7280', padding: 32 }}>
           <p style={{ fontSize: 16, marginBottom: 12 }}>Booking not found.</p>
           <a
-            href={BASE + '/schedule-service'}
-            target="_blank"
-            rel="noreferrer"
+            href="/embed/service"
             style={{ color: '#1a3328', fontSize: 14 }}
           >
             Book a service
