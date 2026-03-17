@@ -7,7 +7,7 @@ const PERKS = [
   `Free pickup and dropoff — we come to you`,
   `Priority service — your bike doesn't wait in a queue`,
   `Seasonal tune-up included — we'll remind you`,
-  `Parts sourced at near-cost — we're not marking up to make margin`,
+  `Preferred pricing on parts — we source smart and pass the savings along`,
   `Full suspension service in-house — fork rebuilds, re-valving, and setup for your weight and riding style`,
   `You're funding trail work, community rides, and keeping this tool free for everyone`,
 ];
