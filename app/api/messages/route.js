@@ -14,7 +14,10 @@ export async function GET(request) {
     .eq('booking_id', booking_id)
     .order('created_at', { ascending: true });
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('[messages] GET error:', error.message, { booking_id });
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 
   return Response.json({ messages: data });
 }
@@ -35,11 +38,14 @@ export async function POST(request) {
 
   const { data, error } = await supabaseAdmin
     .from('service_messages')
-    .insert([{ booking_id, sender, body: text.trim() }])
+    .insert([{ booking_id, sender, message: text.trim() }])
     .select()
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('[messages] POST insert error:', error.message, { booking_id, sender });
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 
   return Response.json({ message: data }, { status: 201 });
 }

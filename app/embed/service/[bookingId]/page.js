@@ -217,7 +217,7 @@ export default function EmbedBookingStatusPage({ params }) {
                 color: m.sender === 'customer' ? '#fff' : '#111827',
                 fontSize: 14, lineHeight: 1.4,
               }}>
-                {m.body}
+                {m.message}
                 <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4, textAlign: 'right' }}>
                   {fmt(m.created_at)}
                 </div>

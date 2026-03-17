@@ -137,15 +137,22 @@ function MessageThread({ bookingId }) {
     e.preventDefault();
     if (!text.trim() || sending) return;
     setSending(true);
-    await fetch('/api/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ booking_id: bookingId, sender: 'admin', body: text }),
-    });
-    setText('');
-    await load();
-    setSending(false);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId, sender: 'admin', body: text }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('[admin] message POST failed:', err);
+      }
+      setText('');
+      await load();
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    } finally {
+      setSending(false);
+    }
   }
 
   if (msgs === null) return <div style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 13 }}>Loading...</div>;
@@ -174,7 +181,7 @@ function MessageThread({ bookingId }) {
               color: m.sender === 'admin' ? '#fff' : '#111827',
               border: m.sender === 'customer' ? '1px solid #e5e7eb' : 'none',
             }}>
-              {m.body}
+              {m.message}
               <div style={{ fontSize: 10, opacity: 0.55, marginTop: 3, textAlign: 'right' }}>
                 {new Date(m.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
               </div>
