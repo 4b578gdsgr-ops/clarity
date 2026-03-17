@@ -53,6 +53,7 @@ export default function BookingStatusPage({ params }) {
   const [notFound, setNotFound] = useState(false);
   const [msgText, setMsgText] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState('');
   const bottomRef = useRef(null);
   const intervalRef = useRef(null);
 
@@ -88,14 +89,22 @@ export default function BookingStatusPage({ params }) {
     e.preventDefault();
     if (!msgText.trim() || sending) return;
     setSending(true);
+    setSendErr('');
     try {
-      await fetch('/api/messages', {
+      const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ booking_id: id, sender: 'customer', body: msgText }),
+        body: JSON.stringify({ booking_id: id, sender: 'customer', message: msgText }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setSendErr(err.error || 'Failed to send. Try again.');
+        return;
+      }
       setMsgText('');
       await loadData();
+    } catch {
+      setSendErr('Failed to send. Try again.');
     } finally {
       setSending(false);
     }
@@ -206,7 +215,7 @@ export default function BookingStatusPage({ params }) {
                   color: m.sender === 'customer' ? '#fff' : '#111827',
                   fontSize: 14, lineHeight: 1.4,
                 }}>
-                  {m.body}
+                  {m.message}
                   <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4, textAlign: 'right' }}>
                     {fmt(m.created_at)}
                   </div>
@@ -216,6 +225,11 @@ export default function BookingStatusPage({ params }) {
             <div ref={bottomRef} />
           </div>
 
+          {sendErr && (
+            <p style={{ margin: '0 12px', padding: '6px 10px', background: '#fef2f2', color: '#dc2626', fontSize: 13, borderRadius: 6 }}>
+              {sendErr}
+            </p>
+          )}
           <form onSubmit={sendMessage} style={{ padding: 12, borderTop: '1px solid #f3f4f6', display: 'flex', gap: 8 }}>
             <input
               type="text"

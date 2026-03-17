@@ -141,7 +141,7 @@ function MessageThread({ bookingId }) {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ booking_id: bookingId, sender: 'admin', body: text }),
+        body: JSON.stringify({ booking_id: bookingId, sender: 'admin', message: text }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
