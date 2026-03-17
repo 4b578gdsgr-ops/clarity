@@ -265,6 +265,22 @@ export default function EmbedService() {
               Book another service
             </button>
           </div>
+
+          {!isMember && (
+            <div style={{ marginTop: 28, padding: '14px 16px', background: '#f0faf5', border: '1px solid #c6e8d5', borderRadius: 10, textAlign: 'left' }}>
+              <p style={{ fontSize: 13, color: '#276749', lineHeight: 1.6, margin: '0 0 10px' }}>
+                Want free pickup next time? Join One Love Membership — $25/month, free pickup & delivery, priority service.
+              </p>
+              <a
+                href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: 13, fontWeight: 600, color: '#276749', textDecoration: 'none' }}
+              >
+                Learn more →
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -351,6 +367,14 @@ export default function EmbedService() {
                   <p style={{ fontSize: 15, fontWeight: 700, color: '#276749', marginBottom: 3 }}>
                     {isMember ? 'Pickup & delivery: FREE (member)' : `Pickup & delivery: $${pricingTier.fee}`}
                   </p>
+                  {!isMember && process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL && (
+                    <p style={{ fontSize: 12, color: '#4a7c5f', marginBottom: 6 }}>
+                      Members get free pickup.{' '}
+                      <a href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL} target="_blank" rel="noreferrer" style={{ color: '#276749', fontWeight: 600 }}>
+                        $25/month →
+                      </a>
+                    </p>
+                  )}
                   <p style={{ fontSize: 12, color: '#4a7c5f', lineHeight: 1.5, marginBottom: 8 }}>
                     Labor and parts quoted after we see the bike. No surprises.
                   </p>
@@ -371,7 +395,12 @@ export default function EmbedService() {
                   {!isMember && (
                     <p style={{ fontSize: 11, color: '#6b9e82', marginTop: 6, lineHeight: 1.5 }}>
                       Members get free pickup & delivery, priority service, and a seasonal tune-up.{' '}
-                      <a href="/membership" target="_blank" rel="noreferrer" style={{ color: '#276749', fontWeight: 600 }}>
+                      <a
+                        href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#276749', fontWeight: 600 }}
+                      >
                         $25/month →
                       </a>
                     </p>
