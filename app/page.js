@@ -93,7 +93,7 @@ function ServiceBooking() {
           {'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
         </p>
         <p style={{ color: '#636e72', fontSize: 13, marginBottom: 20, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 20px' }}>
-          {"Here's how it works: We pick up on Mondays and deliver on Fridays. Most jobs take about a week — picked up one Monday, back to you by Friday or the following Monday. If parts need to be ordered, we'll let you know and give you an updated timeline."}
+          {"We pick up and deliver on Mondays and Fridays. Most jobs are back to you within a week. If parts need to be ordered, we'll let you know."}
         </p>
         <a
           href={'/service/' + bookingId}
@@ -220,8 +220,8 @@ function ServiceBooking() {
           <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)}
             style={{ ...inp, color: form.preferred_day ? '#2d3436' : '#9ca3af' }}>
             <option value="">No preference</option>
-            <option value="Monday">Monday (pickup)</option>
-            <option value="Friday">Friday (delivery)</option>
+            <option value="Monday">Monday</option>
+            <option value="Friday">Friday</option>
           </select>
         </div>
         <div>

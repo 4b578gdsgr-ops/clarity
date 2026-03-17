@@ -22,6 +22,7 @@ export default function EmbedService() {
   const [address, setAddress] = useState('');
   const [outside, setOutside] = useState(false);
   const [pricingTier, setPricingTier] = useState(null); // { fee, zip } | null
+  const [isMember, setIsMember] = useState(false);
   const [addrQuery, setAddrQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [form, setForm] = useState({
@@ -114,6 +115,7 @@ export default function EmbedService() {
     setAddress('');
     setOutside(false);
     setPricingTier(null);
+    setIsMember(false);
     setAddrQuery('');
     setErrors(er => ({ ...er, address: '' }));
   }
@@ -161,6 +163,7 @@ export default function EmbedService() {
           address: address || null,
           lat: pin ? pin.lat : null,
           lng: pin ? pin.lng : null,
+          is_member: isMember,
         }),
       });
       const data = await res.json();
@@ -213,7 +216,7 @@ export default function EmbedService() {
             {'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
           </p>
           <p style={{ color: '#718096', fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>
-            {"Here's how it works: We pick up on Mondays and deliver on Fridays. Most jobs take about a week — picked up one Monday, back to you by Friday or the following Monday. If parts need to be ordered, we'll let you know and give you an updated timeline."}
+            {"We pick up and deliver on Mondays and Fridays. Most jobs are back to you within a week. If parts need to be ordered, we'll let you know."}
           </p>
           <a
             href={'/embed/service/' + bookingId}
@@ -311,11 +314,33 @@ export default function EmbedService() {
               {pricingTier && (
                 <div style={{ background: '#f0faf5', border: '1px solid #c6e8d5', borderRadius: 8, padding: '10px 14px', marginTop: 6 }}>
                   <p style={{ fontSize: 15, fontWeight: 700, color: '#276749', marginBottom: 3 }}>
-                    Pickup & delivery: ${pricingTier.fee}
+                    {isMember ? 'Pickup & delivery: FREE (member)' : `Pickup & delivery: $${pricingTier.fee}`}
                   </p>
-                  <p style={{ fontSize: 12, color: '#4a7c5f', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 12, color: '#4a7c5f', lineHeight: 1.5, marginBottom: 8 }}>
                     Labor and parts quoted after we see the bike. No surprises.
                   </p>
+
+                  {/* Member toggle */}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={isMember}
+                      onChange={e => setIsMember(e.target.checked)}
+                      style={{ width: 15, height: 15, accentColor: '#276749', cursor: 'pointer', flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: 13, color: '#276749', fontWeight: 500 }}>
+                      I'm a One Love member — pickup & delivery is free
+                    </span>
+                  </label>
+
+                  {!isMember && (
+                    <p style={{ fontSize: 11, color: '#6b9e82', marginTop: 6, lineHeight: 1.5 }}>
+                      Members get free pickup & delivery, priority service, and a seasonal tune-up.{' '}
+                      <a href="/membership" target="_blank" rel="noreferrer" style={{ color: '#276749', fontWeight: 600 }}>
+                        $25/month →
+                      </a>
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -414,8 +439,8 @@ export default function EmbedService() {
             <label style={lbl}>Preferred day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#1a202c' : '#a0aec0' }}>
               <option value="">No preference</option>
-              <option value="Monday">Monday (pickup)</option>
-              <option value="Friday">Friday (delivery)</option>
+              <option value="Monday">Monday</option>
+              <option value="Friday">Friday</option>
             </select>
           </div>
           <div>
