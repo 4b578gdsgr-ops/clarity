@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase';
-import { sendMessageEmail } from '../../../lib/email';
+import { sendMessageEmail, sendAdminMessageNotification } from '../../../lib/email';
 
 // GET /api/messages?booking_id=xxx
 export async function GET(request) {
@@ -77,8 +77,9 @@ export async function POST(request) {
 
   console.log('[messages] POST insert succeeded, id:', data?.id);
 
-  // Email customer when admin sends a message
+  // Fire-and-forget notification emails
   if (sender === 'admin') {
+    // Email the customer
     const { data: booking, error: bErr } = await supabaseAdmin
       .from('service_bookings')
       .select('id, name, email')
@@ -88,7 +89,21 @@ export async function POST(request) {
       console.error('[messages] POST: failed to fetch booking for email:', bErr.message);
     } else if (booking?.email) {
       sendMessageEmail(booking, message.trim()).catch(err =>
-        console.error('[messages] POST email failed:', err?.message || err)
+        console.error('[messages] POST customer email failed:', err?.message || err)
+      );
+    }
+  } else if (sender === 'customer') {
+    // Email the admin
+    const { data: booking, error: bErr } = await supabaseAdmin
+      .from('service_bookings')
+      .select('name, bike_brand, issues')
+      .eq('id', booking_id)
+      .single();
+    if (bErr) {
+      console.error('[messages] POST: failed to fetch booking for admin email:', bErr.message);
+    } else if (booking) {
+      sendAdminMessageNotification(booking, message.trim()).catch(err =>
+        console.error('[messages] POST admin email failed:', err?.message || err)
       );
     }
   }

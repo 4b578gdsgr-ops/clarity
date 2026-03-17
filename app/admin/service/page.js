@@ -117,7 +117,7 @@ function fmtTime(t) {
 
 // ─── MessageThread (per booking card) ────────────────────────────────────────
 
-function MessageThread({ bookingId }) {
+function MessageThread({ bookingId, onMarkRead }) {
   const [msgs, setMsgs] = useState(null);
   const [loadErr, setLoadErr] = useState('');
   const [text, setText] = useState('');
@@ -127,6 +127,14 @@ function MessageThread({ bookingId }) {
 
   useEffect(() => {
     load();
+    // Mark all customer messages for this booking as read
+    fetch('/api/messages/unread', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: bookingId }),
+    }).then(() => {
+      if (onMarkRead) onMarkRead(bookingId);
+    }).catch(() => {});
   }, [bookingId]);
 
   async function load() {
@@ -244,7 +252,7 @@ function MessageThread({ bookingId }) {
 
 // ─── BookingCard ──────────────────────────────────────────────────────────────
 
-function BookingCard({ booking, onRefresh }) {
+function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [confirmDate, setConfirmDate] = useState(booking.confirmed_date || '');
   const [confirmTime, setConfirmTime] = useState(booking.confirmed_time || '');
   const [returnDate, setReturnDate] = useState(booking.return_date || (booking.confirmed_date ? pickupToReturn(booking.confirmed_date) : ''));
@@ -579,11 +587,21 @@ function BookingCard({ booking, onRefresh }) {
           <button
             onClick={() => setShowMsgs(!showMsgs)}
             style={{
-              padding: '7px 14px', background: '#f3f4f6', color: '#374151',
-              border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+              padding: '7px 14px', background: unreadCount > 0 && !showMsgs ? '#fef2f2' : '#f3f4f6',
+              color: '#374151', border: unreadCount > 0 && !showMsgs ? '1px solid #fca5a5' : '1px solid #e5e7eb',
+              borderRadius: 8, fontSize: 13, cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
             }}
           >
             {showMsgs ? 'Hide messages' : 'Messages'}
+            {unreadCount > 0 && !showMsgs && (
+              <span style={{
+                background: '#dc2626', color: '#fff', borderRadius: 10,
+                padding: '1px 6px', fontSize: 11, fontWeight: 700, lineHeight: 1.4,
+              }}>
+                {unreadCount}
+              </span>
+            )}
           </button>
           <a
             href={'/service/' + booking.id}
@@ -624,7 +642,7 @@ function BookingCard({ booking, onRefresh }) {
         </div>
       )}
 
-      {showMsgs && <MessageThread bookingId={booking.id} />}
+      {showMsgs && <MessageThread bookingId={booking.id} onMarkRead={onMarkRead} />}
     </div>
   );
 }
@@ -844,7 +862,7 @@ function PlanRouteView({ allBookings, onRefresh }) {
 
 // ─── All Requests view ────────────────────────────────────────────────────────
 
-function AllRequestsView({ bookings, onRefresh }) {
+function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead }) {
   const [filter, setFilter] = useState('new');
 
   const FILTERS = [
@@ -894,7 +912,7 @@ function AllRequestsView({ bookings, onRefresh }) {
       )}
 
       {filtered.map(b => (
-        <BookingCard key={b.id} booking={b} onRefresh={onRefresh} />
+        <BookingCard key={b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} />
       ))}
     </div>
   );
@@ -907,20 +925,34 @@ export default function AdminServicePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('plan');
+  const [unreadCounts, setUnreadCounts] = useState({ total: 0, counts: {} });
 
   async function load() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/bookings');
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Failed to load'); return; }
-      setBookings(data.bookings || []);
+      const [bRes, uRes] = await Promise.all([
+        fetch('/api/bookings'),
+        fetch('/api/messages/unread'),
+      ]);
+      const bData = await bRes.json();
+      const uData = uRes.ok ? await uRes.json() : { total: 0, counts: {} };
+      if (!bRes.ok) { setError(bData.error || 'Failed to load'); return; }
+      setBookings(bData.bookings || []);
+      setUnreadCounts({ total: uData.total || 0, counts: uData.counts || {} });
     } catch {
       setError('Network error');
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleMarkRead(bookingId) {
+    setUnreadCounts(prev => {
+      const newCounts = { ...prev.counts, [bookingId]: 0 };
+      const newTotal = Object.values(newCounts).reduce((a, b) => a + b, 0);
+      return { total: newTotal, counts: newCounts };
+    });
   }
 
   useEffect(() => { load(); }, []);
@@ -935,7 +967,7 @@ export default function AdminServicePage() {
       }}>
         <div style={{ display: 'flex', gap: 4 }}>
           {[
-            { key: 'plan',     label: 'Plan Route'    },
+            { key: 'plan',     label: 'Plan Route' },
             { key: 'requests', label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : '') },
           ].map(t => (
             <button
@@ -946,9 +978,16 @@ export default function AdminServicePage() {
                 background: activeTab === t.key ? '#4ade80' : 'transparent',
                 color: activeTab === t.key ? '#0f1a14' : '#9ca3af',
                 border: 'none', fontWeight: activeTab === t.key ? 700 : 400,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
               }}
             >
               {t.label}
+              {t.key === 'requests' && unreadCounts.total > 0 && (
+                <span style={{
+                  width: 8, height: 8, background: '#dc2626', borderRadius: '50%',
+                  display: 'inline-block', flexShrink: 0,
+                }} />
+              )}
             </button>
           ))}
         </div>
@@ -960,6 +999,18 @@ export default function AdminServicePage() {
         </button>
       </div>
 
+      {unreadCounts.total > 0 && (
+        <div
+          onClick={() => setActiveTab('requests')}
+          style={{
+            background: '#dc2626', color: '#fff', padding: '12px 20px',
+            fontSize: 14, fontWeight: 600, textAlign: 'center', cursor: 'pointer',
+          }}
+        >
+          {unreadCounts.total} unread message{unreadCounts.total !== 1 ? 's' : ''} from customers — tap to view
+        </div>
+      )}
+
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '24px 16px 0' }}>
         {loading && <p style={{ color: '#9ca3af', fontSize: 14 }}>Loading...</p>}
         {error && <p style={{ color: '#dc2626', fontSize: 14 }}>{error}</p>}
@@ -968,7 +1019,7 @@ export default function AdminServicePage() {
           <PlanRouteView allBookings={bookings} onRefresh={load} />
         )}
         {!loading && activeTab === 'requests' && (
-          <AllRequestsView bookings={bookings} onRefresh={load} />
+          <AllRequestsView bookings={bookings} onRefresh={load} unreadCounts={unreadCounts.counts} onMarkRead={handleMarkRead} />
         )}
       </div>
     </main>
