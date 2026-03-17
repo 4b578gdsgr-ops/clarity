@@ -2,81 +2,18 @@
 
 import { useState, useEffect } from 'react';
 
-const TIERS = {
-  base: {
-    name: 'One Love Membership',
-    price: '$25/month',
-    color: '#2d8653',
-    bg: '#f0faf5',
-    border: '#a3d9b5',
-    perks: [
-      `Direct line to a real mechanic who actually rides`,
-      `Free pickup and dropoff — we come to you`,
-      `Priority service — your bike doesn't wait in a queue`,
-      `Seasonal tune-up included — we'll remind you`,
-      `Parts sourced at near-cost — we're not marking up to make margin`,
-      `Full suspension service in-house — fork rebuilds, re-valving, and setup for your weight and riding style`,
-      `You're funding trail work, community rides, and keeping this tool free for everyone`,
-    ],
-  },
-  premium: {
-    name: 'One Love Premium',
-    price: '$99/month',
-    color: '#9333ea',
-    bg: '#faf9ff',
-    border: '#c4b5fd',
-    perks: [
-      'Everything in One Love Service Membership',
-      'One free wheel true per month',
-      'Annual full overhaul included',
-      'Custom build consultation included',
-      'Loaner bike during extended service',
-      'Priority access to new custom build slots',
-    ],
-  },
-};
-
-function MembershipCard({ tier, id, selected, onSelect }) {
-  return (
-    <div
-      onClick={() => onSelect(id)}
-      className="p-5 rounded-2xl cursor-pointer transition-all"
-      style={{
-        background: tier.bg,
-        border: selected ? `2px solid ${tier.color}` : `1px solid ${tier.border}`,
-        boxShadow: selected ? `0 4px 20px ${tier.color}20` : 'none',
-      }}>
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="text-base font-bold" style={{ color: tier.color, fontFamily: 'Playfair Display, serif' }}>
-            {tier.name}
-          </div>
-          <div className="text-2xl font-black font-mono mt-0.5" style={{ color: '#2d3436' }}>
-            {tier.price}
-          </div>
-        </div>
-        <div className="mt-1">
-          <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center"
-            style={{ borderColor: tier.color, background: selected ? tier.color : 'transparent' }}>
-            {selected && <div className="w-2 h-2 rounded-full bg-white" />}
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        {tier.perks.map((perk, i) => (
-          <div key={i} className="flex gap-2">
-            <span className="text-sm shrink-0" style={{ color: tier.color }}>♥</span>
-            <span className="text-xs leading-relaxed" style={{ color: '#4a5568' }}>{perk}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+const PERKS = [
+  `Direct line to a real mechanic who actually rides`,
+  `Free pickup and dropoff — we come to you`,
+  `Priority service — your bike doesn't wait in a queue`,
+  `Seasonal tune-up included — we'll remind you`,
+  `Parts sourced at near-cost — we're not marking up to make margin`,
+  `Full suspension service in-house — fork rebuilds, re-valving, and setup for your weight and riding style`,
+  `You're funding trail work, community rides, and keeping this tool free for everyone`,
+];
 
 export default function MembershipPage() {
   const [mounted, setMounted] = useState(false);
-  const [selectedTier, setSelectedTier] = useState('base');
   const [form, setForm] = useState({ name: '', email: '', bikes_owned: '' });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -94,7 +31,7 @@ export default function MembershipPage() {
       const res = await fetch('/api/membership-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, tier: selectedTier }),
+        body: JSON.stringify({ ...form, tier: 'base' }),
       });
       if (!res.ok) throw new Error();
       setSent(true);
@@ -127,13 +64,26 @@ export default function MembershipPage() {
           </p>
         </div>
 
-        {/* Tier selector */}
-        <div className={`flex flex-col gap-4 mb-8 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-          <div className="text-xs font-bold uppercase tracking-widest mb-1 text-center" style={{ color: '#9ca3af' }}>
-            Choose your tier
+        {/* Membership card */}
+        <div className={`mb-8 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+          <div className="p-5 rounded-2xl" style={{ background: '#f0faf5', border: '2px solid #2d8653', boxShadow: '0 4px 20px #2d865320' }}>
+            <div className="mb-4">
+              <div className="text-base font-bold" style={{ color: '#2d8653', fontFamily: 'Playfair Display, serif' }}>
+                One Love Membership
+              </div>
+              <div className="text-2xl font-black font-mono mt-0.5" style={{ color: '#2d3436' }}>
+                $25/month
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              {PERKS.map((perk, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="text-sm shrink-0" style={{ color: '#2d8653' }}>♥</span>
+                  <span className="text-xs leading-relaxed" style={{ color: '#4a5568' }}>{perk}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <MembershipCard tier={TIERS.base} id="base" selected={selectedTier === 'base'} onSelect={setSelectedTier} />
-          <MembershipCard tier={TIERS.premium} id="premium" selected={selectedTier === 'premium'} onSelect={setSelectedTier} />
         </div>
 
         {/* Signup form */}
@@ -152,15 +102,6 @@ export default function MembershipPage() {
             </div>
           ) : (
             <>
-              <div className="mb-5">
-                <div className="text-xs font-bold tracking-[2px] uppercase mb-1" style={{ color: '#9ca3af' }}>
-                  Selected
-                </div>
-                <div className="text-base font-bold" style={{ color: '#2d3436' }}>
-                  {TIERS[selectedTier].name} — {TIERS[selectedTier].price}
-                </div>
-              </div>
-
               <div className="flex flex-col gap-3">
                 <div className="flex gap-3">
                   <div className="flex-1">
