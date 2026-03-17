@@ -14,6 +14,22 @@ const BIKE_BRANDS = [
 
 const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
 
+function getEstimateText(issues) {
+  if (!issues.length) return '';
+  if (issues.includes('New bike assembly')) {
+    return "We'll need some details to quote assembly. We'll reach out with pricing before confirming pickup.";
+  }
+  const hasOther      = issues.includes('Other');
+  const hasSuspension = issues.includes('Suspension');
+  const hasTuneup     = issues.includes('Tune-up');
+  const nonOther      = issues.filter(i => i !== 'Other');
+  if (issues.length === 1 && hasOther) return "We'll take a look and give you a quote. No obligations.";
+  if (nonOther.length >= 3) return "Sounds like it might need some love. We'll give you an honest quote after pickup — most full overhauls run $200–300.";
+  if (hasSuspension) return "Suspension service starts at $150. We'll confirm the full scope after pickup.";
+  if (hasTuneup && nonOther.length <= 2) return "A tune-up covers most of this. Usually around $95 + parts.";
+  return "Most jobs like this run $40–150. We'll confirm after seeing the bike.";
+}
+
 // ─── Step 1: Location ─────────────────────────────────────────────────────────
 
 function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
@@ -164,6 +180,7 @@ function FormStep({ address, onBack, onDone }) {
   }
 
   const isAssembly = form.issues.includes('New bike assembly');
+  const estimateText = getEstimateText(form.issues);
   const canSubmit = isFormValid(form);
 
   async function handleSubmit(e) {
@@ -305,6 +322,13 @@ function FormStep({ address, onBack, onDone }) {
           </div>
           {errors.issues && <p data-field-error style={errStyle}>{errors.issues}</p>}
         </div>
+
+        {estimateText && (
+          <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+            <p style={{ fontSize: 14, color: '#166534', lineHeight: 1.5, margin: '0 0 3px' }}>{estimateText}</p>
+            <p style={{ fontSize: 12, color: '#15803d', margin: 0 }}>No surprises. We quote before we wrench.</p>
+          </div>
+        )}
 
         {isAssembly && (
           <div style={{ marginBottom: 16 }}>
