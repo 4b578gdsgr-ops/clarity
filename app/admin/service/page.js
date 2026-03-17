@@ -216,6 +216,7 @@ function BookingCard({ booking, onRefresh }) {
   const [returnDate, setReturnDate] = useState(booking.return_date || (booking.confirmed_date ? pickupToReturn(booking.confirmed_date) : ''));
   const [notes, setNotes] = useState(booking.notes || '');
   const [saving, setSaving] = useState('');
+  const [saveErr, setSaveErr] = useState('');
   const [advancing, setAdvancing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showMsgs, setShowMsgs] = useState(false);
@@ -225,11 +226,16 @@ function BookingCard({ booking, onRefresh }) {
   // Silent save — updates a field without triggering a full list refresh.
   // Use for field-level edits (date, time, notes) so native pickers aren't interrupted.
   async function save(fields) {
-    await fetch('/api/bookings/' + booking.id, {
+    setSaveErr('');
+    const res = await fetch('/api/bookings/' + booking.id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fields),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setSaveErr(data.error || 'Save failed');
+    }
   }
 
   // Full patch — saves and refreshes the list. Use for status changes and deletes.
@@ -246,7 +252,12 @@ function BookingCard({ booking, onRefresh }) {
       return;
     }
     setAdvancing(true);
-    await patch({ status: action.next });
+    await patch({
+      status: action.next,
+      confirmed_date: confirmDate || null,
+      confirmed_time: confirmTime || null,
+      return_date: returnDate || null,
+    });
     setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime, returnDate));
     setCopied(false);
     setAdvancing(false);
@@ -269,7 +280,7 @@ function BookingCard({ booking, onRefresh }) {
   const color = STATUS_COLOR[booking.status] || '#9ca3af';
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 14, overflow: 'hidden' }}>
+    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 14 }}>
       <div style={{ padding: 18 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
           <div>
@@ -398,7 +409,6 @@ function BookingCard({ booking, onRefresh }) {
               onChange={e => {
                 const val = e.target.value;
                 setConfirmDate(val);
-                // Auto-fill return date if it hasn't been manually changed from the auto-computed value
                 const currentAutoReturn = pickupToReturn(confirmDate);
                 if (val && (!returnDate || returnDate === currentAutoReturn)) {
                   const suggested = pickupToReturn(val);
@@ -411,8 +421,8 @@ function BookingCard({ booking, onRefresh }) {
                 }
               }}
               style={{
-                padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
-                borderColor: confirmDate ? '#16a34a' : '#d1d5db',
+                padding: '6px 9px', borderRadius: 6, fontSize: 13, outline: 'none', cursor: 'pointer',
+                border: '1px solid ' + (confirmDate ? '#16a34a' : '#d1d5db'),
                 color: confirmDate ? '#166534' : '#374151',
               }}
             />
@@ -429,13 +439,14 @@ function BookingCard({ booking, onRefresh }) {
                 save({ confirmed_time: val || null }).then(() => setSaving(''));
               }}
               style={{
-                padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
-                borderColor: confirmTime ? '#16a34a' : '#d1d5db',
+                padding: '6px 9px', borderRadius: 6, fontSize: 13, outline: 'none', cursor: 'pointer',
+                border: '1px solid ' + (confirmTime ? '#16a34a' : '#d1d5db'),
                 color: confirmTime ? '#166534' : '#374151',
               }}
             />
           </div>
           {saving && <span style={{ fontSize: 12, color: '#9ca3af', paddingBottom: 6 }}>Saving...</span>}
+          {saveErr && <span style={{ fontSize: 12, color: '#dc2626', paddingBottom: 6 }}>{saveErr}</span>}
         </div>
 
         {/* Est. return */}
@@ -457,10 +468,10 @@ function BookingCard({ booking, onRefresh }) {
                 save({ return_date: val || null }).then(() => setSaving(''));
               }}
               style={{
-                padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
-                borderColor: returnDate
+                padding: '6px 9px', borderRadius: 6, fontSize: 13, outline: 'none', cursor: 'pointer',
+                border: '1px solid ' + (returnDate
                   ? (returnDate !== pickupToReturn(confirmDate) ? '#f59e0b' : '#16a34a')
-                  : '#d1d5db',
+                  : '#d1d5db'),
                 color: returnDate
                   ? (returnDate !== pickupToReturn(confirmDate) ? '#92400e' : '#166534')
                   : '#374151',

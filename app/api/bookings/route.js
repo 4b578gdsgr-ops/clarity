@@ -27,7 +27,7 @@ export async function POST(request) {
   const body = await request.json();
   const { name, phone, email, lat, lng, address,
           bike_brand, issues, notes,
-          preferred_day, time_slot, contact_preference } = body;
+          preferred_day, time_slot, contact_preference, is_member } = body;
 
   if (!name || !phone) {
     return Response.json({ error: 'Name and phone are required' }, { status: 400 });
@@ -48,6 +48,7 @@ export async function POST(request) {
       preferred_day: preferred_day || null,
       time_slot: time_slot || null,
       contact_preference: contact_preference || null,
+      is_member: is_member === true,
       status: 'new',
     }])
     .select()
