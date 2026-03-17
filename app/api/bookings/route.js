@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase';
+import { sendServiceEmail } from '../../../lib/email';
 
 // GET /api/bookings?status=new
 export async function GET(request) {
@@ -55,6 +56,9 @@ export async function POST(request) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Send confirmation email (fire-and-forget)
+  sendServiceEmail('new', data).catch(() => {});
 
   // Fire-and-forget webhook
   const webhookUrl = process.env.BOOKING_WEBHOOK_URL;
