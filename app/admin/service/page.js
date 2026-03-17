@@ -222,12 +222,19 @@ function BookingCard({ booking, onRefresh }) {
   const [template, setTemplate] = useState('');
   const [copied, setCopied] = useState(false);
 
-  async function patch(fields) {
+  // Silent save — updates a field without triggering a full list refresh.
+  // Use for field-level edits (date, time, notes) so native pickers aren't interrupted.
+  async function save(fields) {
     await fetch('/api/bookings/' + booking.id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fields),
     });
+  }
+
+  // Full patch — saves and refreshes the list. Use for status changes and deletes.
+  async function patch(fields) {
+    await save(fields);
     onRefresh();
   }
 
@@ -365,7 +372,12 @@ function BookingCard({ booking, onRefresh }) {
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            onBlur={() => { if (notes !== booking.notes) { setSaving('notes'); patch({ notes }).then(() => setSaving('')); } }}
+            onBlur={() => {
+              if (notes !== booking.notes) {
+                setSaving('notes');
+                save({ notes }).then(() => setSaving(''));
+              }
+            }}
             placeholder="Notes..."
             rows={2}
             style={{
@@ -379,22 +391,24 @@ function BookingCard({ booking, onRefresh }) {
         {/* Pickup date + time */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 8 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Pickup (Monday)</label>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Pickup date</label>
             <input
               type="date"
               value={confirmDate}
               onChange={e => {
                 const val = e.target.value;
                 setConfirmDate(val);
-                // Auto-suggest return Friday if return hasn't been manually changed
-                if (val && (!returnDate || returnDate === pickupToReturn(confirmDate))) {
+                // Auto-fill return date if it hasn't been manually changed from the auto-computed value
+                const currentAutoReturn = pickupToReturn(confirmDate);
+                if (val && (!returnDate || returnDate === currentAutoReturn)) {
                   const suggested = pickupToReturn(val);
                   setReturnDate(suggested);
-                  patch({ confirmed_date: val || null, return_date: suggested || null }).then(() => setSaving(''));
+                  setSaving('date');
+                  save({ confirmed_date: val || null, return_date: suggested || null }).then(() => setSaving(''));
                 } else {
-                  patch({ confirmed_date: val || null }).then(() => setSaving(''));
+                  setSaving('date');
+                  save({ confirmed_date: val || null }).then(() => setSaving(''));
                 }
-                setSaving('date');
               }}
               style={{
                 padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
@@ -409,9 +423,10 @@ function BookingCard({ booking, onRefresh }) {
               type="time"
               value={confirmTime}
               onChange={e => {
-                setConfirmTime(e.target.value);
+                const val = e.target.value;
+                setConfirmTime(val);
                 setSaving('time');
-                patch({ confirmed_time: e.target.value || null }).then(() => setSaving(''));
+                save({ confirmed_time: val || null }).then(() => setSaving(''));
               }}
               style={{
                 padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
@@ -423,11 +438,11 @@ function BookingCard({ booking, onRefresh }) {
           {saving && <span style={{ fontSize: 12, color: '#9ca3af', paddingBottom: 6 }}>Saving...</span>}
         </div>
 
-        {/* Est. return (Friday) */}
+        {/* Est. return */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
           <div>
             <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>
-              Est. return (Friday)
+              Est. return
               {returnDate && returnDate !== pickupToReturn(confirmDate) && (
                 <span style={{ marginLeft: 6, color: '#f59e0b', fontWeight: 700 }}>— delayed</span>
               )}
@@ -439,7 +454,7 @@ function BookingCard({ booking, onRefresh }) {
                 const val = e.target.value;
                 setReturnDate(val);
                 setSaving('return');
-                patch({ return_date: val || null }).then(() => setSaving(''));
+                save({ return_date: val || null }).then(() => setSaving(''));
               }}
               style={{
                 padding: '6px 9px', border: '1px solid', borderRadius: 6, fontSize: 13, outline: 'none',
