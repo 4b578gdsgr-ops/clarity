@@ -306,7 +306,7 @@ function FormStep({ address, onBack, onDone }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
           <div>
-            <label style={lbl}>Preferred day</label>
+            <label style={lbl}>Preferred pickup day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#111827' : '#9ca3af' }}>
               <option value="">No preference</option>
               <option value="Tuesday">Tuesday</option>
@@ -314,7 +314,7 @@ function FormStep({ address, onBack, onDone }) {
             </select>
           </div>
           <div>
-            <label style={lbl}>Preferred time</label>
+            <label style={lbl}>Preferred pickup time</label>
             <select value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} style={{ ...inp, color: form.time_slot ? '#111827' : '#9ca3af' }}>
               <option value="">No preference</option>
               <option value="morning">Morning</option>

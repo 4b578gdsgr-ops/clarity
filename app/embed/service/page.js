@@ -497,10 +497,10 @@ export default function EmbedService() {
           </div>
         )}
 
-        {/* ── Preferred day + time ── */}
+        {/* ── Preferred pickup day + time ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
           <div>
-            <label style={lbl}>Preferred day</label>
+            <label style={lbl}>Preferred pickup day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#1a202c' : '#a0aec0' }}>
               <option value="">No preference</option>
               <option value="Monday">Monday</option>
@@ -508,7 +508,7 @@ export default function EmbedService() {
             </select>
           </div>
           <div>
-            <label style={lbl}>Preferred time</label>
+            <label style={lbl}>Preferred pickup time</label>
             <select value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} style={{ ...inp, color: form.time_slot ? '#1a202c' : '#a0aec0' }}>
               <option value="">No preference</option>
               <option value="morning">Morning</option>
