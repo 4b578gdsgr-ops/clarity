@@ -538,7 +538,7 @@ export default function EmbedService() {
           </div>
         </div>
         <p style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.5, marginBottom: 12 }}>
-          Pick a day and time that works for you. We'll confirm as close to it as we can — routes shift depending on the day's bookings.
+          We run pickup and delivery routes on Mondays and Fridays. Pick whichever works best. Need a different day? Let us know in the notes and we'll do our best.
         </p>
 
         {/* ── Notes ── */}

@@ -266,6 +266,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [copied, setCopied] = useState(false);
   const [invoiceAmount, setInvoiceAmount] = useState(booking.invoice_amount != null ? String(booking.invoice_amount) : '');
   const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
+  const [address, setAddress] = useState(booking.address || '');
 
   // Silent save — updates a field without triggering a full list refresh.
   // Use for field-level edits (date, time, notes) so native pickers aren't interrupted.
@@ -377,19 +378,26 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               <a href={'mailto:' + booking.email} style={{ color: '#1a3328' }}>{booking.email}</a>
             </span>
           )}
-          {booking.address && (
-            <span>
-              <strong>Address: </strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <strong style={{ whiteSpace: 'nowrap' }}>Address:</strong>
+            <input
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              onBlur={() => save({ address: address || null })}
+              placeholder="Enter address"
+              style={{ flex: 1, fontSize: 13, padding: '2px 6px', border: '1px solid #e5e7eb', borderRadius: 5, fontFamily: 'inherit', color: '#1a3328', background: '#fafafa', minWidth: 0 }}
+            />
+            {address && (
               <a
-                href={'https://maps.apple.com/?q=' + encodeURIComponent(booking.address)}
+                href={'https://maps.apple.com/?q=' + encodeURIComponent(address)}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: '#1a3328' }}
+                style={{ fontSize: 11, color: '#6b7280', whiteSpace: 'nowrap', flexShrink: 0 }}
               >
-                {booking.address}
+                map ↗
               </a>
-            </span>
-          )}
+            )}
+          </div>
           {!booking.address && booking.lat && booking.lng && (
             <span>
               <strong>Pin: </strong>
