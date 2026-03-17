@@ -367,10 +367,15 @@ export default function EmbedService() {
                   <p style={{ fontSize: 15, fontWeight: 700, color: '#276749', marginBottom: 3 }}>
                     {isMember ? 'Pickup & delivery: FREE (member)' : `Pickup & delivery: $${pricingTier.fee}`}
                   </p>
-                  {!isMember && process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL && (
+                  {!isMember && (
                     <p style={{ fontSize: 12, color: '#4a7c5f', marginBottom: 6 }}>
                       Members get free pickup.{' '}
-                      <a href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL} target="_blank" rel="noreferrer" style={{ color: '#276749', fontWeight: 600 }}>
+                      <a
+                        href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#276749', fontWeight: 600 }}
+                      >
                         $25/month →
                       </a>
                     </p>
@@ -406,6 +411,19 @@ export default function EmbedService() {
                     </p>
                   )}
                 </div>
+              )}
+              {!pricingTier && !isMember && (
+                <p style={{ fontSize: 12, color: '#4a7c5f', marginTop: 6 }}>
+                  Members get free pickup & delivery.{' '}
+                  <a
+                    href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: '#276749', fontWeight: 600 }}
+                  >
+                    $25/month →
+                  </a>
+                </p>
               )}
             </div>
           )}
