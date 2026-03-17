@@ -27,7 +27,12 @@ function getEstimateText(issues) {
     return "We'll take a look and give you a quote. No obligations.";
   }
 
-  // Suspension is the most specific/expensive — call it out first
+  // Lots of things going on — overhaul conversation takes priority
+  if (nonOther.length >= 3) {
+    return "Sounds like it might need some love. We'll give you an honest quote after pickup — most full overhauls run $200–300.";
+  }
+
+  // Suspension alone or with one other item
   if (hasSuspension) {
     return "Suspension service starts at $150. We'll confirm the full scope after pickup.";
   }
@@ -35,11 +40,6 @@ function getEstimateText(issues) {
   // Tune-up alone, or tune-up + one other thing — it's likely covered
   if (hasTuneup && nonOther.length <= 2) {
     return "A tune-up covers most of this. Usually around $95 + parts.";
-  }
-
-  // Lots of things going on — steer toward overhaul conversation
-  if (nonOther.length >= 3) {
-    return "Sounds like it might need some love. We'll give you an honest quote after pickup — most full overhauls run $200–300.";
   }
 
   // Default: 1–2 known items, no suspension, no tune-up
