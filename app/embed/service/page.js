@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
+import { getPricingTier } from '../../../lib/servicePricing';
 import { validateBooking, isFormValid } from '../../../lib/bookingValidation';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
@@ -20,6 +21,7 @@ export default function EmbedService() {
   const [pin, setPin] = useState(null);
   const [address, setAddress] = useState('');
   const [outside, setOutside] = useState(false);
+  const [pricingTier, setPricingTier] = useState(null); // { fee, zip } | null
   const [addrQuery, setAddrQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [form, setForm] = useState({
@@ -45,15 +47,25 @@ export default function EmbedService() {
     return () => ro.disconnect();
   }, []);
 
-  function handlePin(lat, lng, resolvedAddress) {
-    const inside = isInServiceArea(lat, lng);
+  function applyPin(lat, lng, resolvedAddress, zip) {
     setPin({ lat, lng });
-    setOutside(!inside);
-    if (!inside) {
-      setAddress('');
-    } else if (resolvedAddress) {
+    // ZIP lookup is authoritative; polygon is fallback when ZIP unavailable
+    const tier = getPricingTier(zip);
+    if (tier) {
+      setOutside(false);
+      setPricingTier(tier);
+    } else if (isInServiceArea(lat, lng)) {
+      setOutside(false);
+      setPricingTier(null);
+    } else {
+      setOutside(true);
+      setPricingTier(null);
+    }
+    if (resolvedAddress) {
       setAddress(resolvedAddress);
       setErrors(er => ({ ...er, address: '' }));
+    } else {
+      setAddress('');
     }
   }
 
@@ -63,7 +75,7 @@ export default function EmbedService() {
     setSearching(true);
     try {
       const res = await fetch(
-        'https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=1&q=' +
+        'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=1&q=' +
         encodeURIComponent(addrQuery),
         { headers: { 'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)' } }
       );
@@ -72,39 +84,36 @@ export default function EmbedService() {
         const lat = parseFloat(results[0].lat);
         const lng = parseFloat(results[0].lon);
         const resolved = results[0].display_name.split(',').slice(0, 3).join(',').trim();
-        handlePin(lat, lng, resolved);
+        const zip = results[0].address?.postcode?.slice(0, 5) || null;
+        applyPin(lat, lng, resolved, zip);
       }
     } catch { /* ignore */ }
     setSearching(false);
   }
 
   async function handleMapClick(lat, lng) {
+    // Optimistically set pin; geocode to get address + ZIP
     setPin({ lat, lng });
-    const inside = isInServiceArea(lat, lng);
-    setOutside(!inside);
-    if (!inside) {
-      setAddress('');
-      return;
-    }
-    // Reverse geocode the clicked point
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`,
         { headers: { 'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)' } }
       );
       const data = await res.json();
-      if (data.display_name) {
-        const resolved = data.display_name.split(',').slice(0, 3).join(',').trim();
-        setAddress(resolved);
-        setErrors(er => ({ ...er, address: '' }));
-      }
-    } catch { /* ignore */ }
+      const resolved = data.display_name ? data.display_name.split(',').slice(0, 3).join(',').trim() : null;
+      const zip = data.address?.postcode?.slice(0, 5) || null;
+      applyPin(lat, lng, resolved, zip);
+    } catch {
+      // Geocode failed — fall back to polygon check with no address
+      applyPin(lat, lng, null, null);
+    }
   }
 
   function clearPin() {
     setPin(null);
     setAddress('');
     setOutside(false);
+    setPricingTier(null);
     setAddrQuery('');
     setErrors(er => ({ ...er, address: '' }));
   }
@@ -280,25 +289,36 @@ export default function EmbedService() {
           {pin && outside && (
             <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px' }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: '#c53030', marginBottom: 2 }}>
-                {'We\'re not in your area yet.'}
+                Not in our service area yet.
               </p>
               <p style={{ fontSize: 12, color: '#742a2a', lineHeight: 1.5 }}>
-                One Love serves Hartford and Tolland counties.{' '}
-                <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#c53030' }}>Reach out to discuss options.</a>
+                <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#c53030' }}>Reach out</a> and we'll see what we can do.
               </p>
             </div>
           )}
           {pin && !outside && (
-            <p style={{ fontSize: 13, color: '#276749', fontWeight: 500 }}>
-              Pickup: {address || 'location set'}{' '}
-              <button
-                type="button"
-                onClick={clearPin}
-                style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}
-              >
-                clear
-              </button>
-            </p>
+            <div>
+              <p style={{ fontSize: 13, color: '#276749', fontWeight: 500, marginBottom: pricingTier ? 4 : 0 }}>
+                Pickup: {address || 'location set'}{' '}
+                <button
+                  type="button"
+                  onClick={clearPin}
+                  style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}
+                >
+                  clear
+                </button>
+              </p>
+              {pricingTier && (
+                <div style={{ background: '#f0faf5', border: '1px solid #c6e8d5', borderRadius: 8, padding: '10px 14px', marginTop: 6 }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: '#276749', marginBottom: 3 }}>
+                    Pickup & delivery: ${pricingTier.fee}
+                  </p>
+                  <p style={{ fontSize: 12, color: '#4a7c5f', lineHeight: 1.5 }}>
+                    Labor and parts quoted after we see the bike. No surprises.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
           {errors.address && <span data-field-error style={errStyle}>{errors.address}</span>}
         </div>
