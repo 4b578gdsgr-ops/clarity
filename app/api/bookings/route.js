@@ -27,7 +27,7 @@ export async function POST(request) {
 
   const body = await request.json();
   const { name, phone, email, lat, lng, address,
-          bike_brand, issues, notes,
+          bike_brand, issues, bike_details, notes,
           preferred_day, time_slot, contact_preference, is_member } = body;
 
   if (!name || !phone) {
@@ -45,6 +45,7 @@ export async function POST(request) {
       address: address || null,
       bike_brand: bike_brand || null,
       issues: Array.isArray(issues) ? issues : [],
+      bike_details: bike_details || null,
       notes: notes || null,
       preferred_day: preferred_day || null,
       time_slot: time_slot || null,

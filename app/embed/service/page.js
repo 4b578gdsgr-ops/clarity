@@ -13,10 +13,14 @@ const BIKE_BRANDS = [
   'Surly', 'Salsa', 'Co-op Cycles', 'Other',
 ];
 
-const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'Other'];
+const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
 
 function getEstimateText(issues) {
   if (!issues.length) return '';
+
+  if (issues.includes('New bike assembly')) {
+    return "We'll need some details to quote assembly. We'll reach out with pricing before confirming pickup.";
+  }
 
   const hasOther      = issues.includes('Other');
   const hasSuspension = issues.includes('Suspension');
@@ -60,6 +64,7 @@ export default function EmbedService() {
     name: '', phone: '', email: '',
     contact_preference: '',
     bike_brand: '', issues: [],
+    bike_details: '',
     preferred_day: '', time_slot: '', notes: '',
   });
   const [errors, setErrors] = useState({});
@@ -165,6 +170,7 @@ export default function EmbedService() {
   }
 
   const formRef = useRef(null);
+  const isAssembly = form.issues.includes('New bike assembly');
   const canSubmit = pin && !outside && isFormValid({ ...form, address });
   const estimateText = getEstimateText(form.issues);
 
@@ -196,6 +202,7 @@ export default function EmbedService() {
           lat: pin ? pin.lat : null,
           lng: pin ? pin.lng : null,
           is_member: isMember,
+          bike_details: form.bike_details || null,
         }),
       });
       const data = await res.json();
@@ -213,7 +220,7 @@ export default function EmbedService() {
     setAddress('');
     setOutside(false);
     setAddrQuery('');
-    setForm({ name: '', phone: '', email: '', contact_preference: '', bike_brand: '', issues: [], preferred_day: '', time_slot: '', notes: '' });
+    setForm({ name: '', phone: '', email: '', contact_preference: '', bike_brand: '', issues: [], bike_details: '', preferred_day: '', time_slot: '', notes: '' });
     setErrors({});
     setSubmitErr('');
     setBookingId(null);
@@ -235,6 +242,7 @@ export default function EmbedService() {
   // ── Confirmation screen ──
   if (bookingId) {
     const via = form.contact_preference === 'email' ? 'email' : 'text';
+    const isAssembly = form.issues.includes('New bike assembly');
     return (
       <div style={container}>
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
@@ -245,7 +253,9 @@ export default function EmbedService() {
             Got it.
           </h3>
           <p style={{ color: '#718096', fontSize: 15, marginBottom: 12, lineHeight: 1.6 }}>
-            {'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
+            {isAssembly
+              ? "Got it. We'll review the details and send you a quote before scheduling pickup."
+              : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
           </p>
           <p style={{ color: '#718096', fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>
             {"We pick up and deliver on Mondays and Fridays. Most jobs are back to you within a week. If parts need to be ordered, we'll let you know."}
@@ -485,6 +495,21 @@ export default function EmbedService() {
           {errors.issues && <span data-field-error style={errStyle}>{errors.issues}</span>}
         </div>
 
+        {/* ── Bike details (assembly only) ── */}
+        {isAssembly && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ ...lbl, color: errors.bike_details ? '#e53e3e' : '#4a5568' }}>Tell us about the bike *</label>
+            <input
+              type="text"
+              value={form.bike_details}
+              onChange={e => setField('bike_details', e.target.value)}
+              placeholder="Brand, model, year, where you ordered it from..."
+              style={{ ...inp, borderColor: errors.bike_details ? '#e53e3e' : '#e2e8f0' }}
+            />
+            {errors.bike_details && <span data-field-error style={errStyle}>{errors.bike_details}</span>}
+          </div>
+        )}
+
         {/* ── Estimate hint ── */}
         {estimateText && (
           <div style={{ marginBottom: 12, padding: '10px 14px', background: '#f0faf5', borderRadius: 8, border: '1px solid #c6e8d5' }}>
@@ -522,7 +547,7 @@ export default function EmbedService() {
           <textarea
             value={form.notes}
             onChange={e => setField('notes', e.target.value)}
-            placeholder="Access instructions, anything specific about the bike..."
+            placeholder={isAssembly ? "Anything else — how it ships, box dimensions, e-bike, etc." : "Access instructions, anything specific about the bike..."}
             rows={2}
             style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
           />

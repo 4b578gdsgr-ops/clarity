@@ -344,6 +344,17 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 {booking.contact_preference === 'text' ? 'Text' : 'Email'}
               </span>
             )}
+            {booking.issues && booking.issues.includes('New bike assembly') && (
+              <span style={{
+                marginLeft: 8,
+                background: '#fff7ed', color: '#c2410c',
+                border: '1px solid #fed7aa',
+                borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Quote needed
+              </span>
+            )}
           </div>
           <span style={{
             background: color + '22', color, border: '1px solid ' + color + '55',
@@ -410,7 +421,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
         </div>
 
         {booking.issues && booking.issues.length > 0 && (
-          <div style={{ marginBottom: 10 }}>
+          <div style={{ marginBottom: booking.bike_details ? 4 : 10 }}>
             {booking.issues.map(i => (
               <span key={i} style={{
                 display: 'inline-block', marginRight: 5, marginBottom: 4,
@@ -419,6 +430,11 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 {i}
               </span>
             ))}
+          </div>
+        )}
+        {booking.bike_details && (
+          <div style={{ marginBottom: 10, fontSize: 13, color: '#374151' }}>
+            <strong>Bike details: </strong>{booking.bike_details}
           </div>
         )}
 

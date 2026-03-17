@@ -12,7 +12,7 @@ const BIKE_BRANDS = [
   'Surly', 'Salsa', 'Co-op Cycles', 'Other',
 ];
 
-const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'Other'];
+const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
 
 // ─── Step 1: Location ─────────────────────────────────────────────────────────
 
@@ -143,6 +143,7 @@ function FormStep({ address, onBack, onDone }) {
     contact_preference: '',
     address: address || '',
     bike_brand: '', issues: [],
+    bike_details: '',
     preferred_day: '', time_slot: '', notes: '',
   });
   const [errors, setErrors] = useState({});
@@ -162,6 +163,7 @@ function FormStep({ address, onBack, onDone }) {
     setErrors(e => ({ ...e, issues: '' }));
   }
 
+  const isAssembly = form.issues.includes('New bike assembly');
   const canSubmit = isFormValid(form);
 
   async function handleSubmit(e) {
@@ -184,7 +186,7 @@ function FormStep({ address, onBack, onDone }) {
       });
       const data = await res.json();
       if (!res.ok) { setSubmitErr(data.error || 'Something went wrong.'); return; }
-      onDone(data.booking.id, form.contact_preference);
+      onDone(data.booking.id, form.contact_preference, form.issues.includes('New bike assembly'));
     } catch {
       setSubmitErr('Network error. Please try again.');
     } finally {
@@ -304,6 +306,20 @@ function FormStep({ address, onBack, onDone }) {
           {errors.issues && <p data-field-error style={errStyle}>{errors.issues}</p>}
         </div>
 
+        {isAssembly && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ ...lbl, color: errors.bike_details ? '#dc2626' : '#374151' }}>Tell us about the bike *</label>
+            <input
+              type="text"
+              value={form.bike_details}
+              onChange={e => setField('bike_details', e.target.value)}
+              placeholder="Brand, model, year, where you ordered it from..."
+              style={{ ...inp, borderColor: errors.bike_details ? '#dc2626' : '#d1d5db' }}
+            />
+            {errors.bike_details && <p data-field-error style={errStyle}>{errors.bike_details}</p>}
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 6 }}>
           <div>
             <label style={lbl}>Preferred pickup day</label>
@@ -327,7 +343,7 @@ function FormStep({ address, onBack, onDone }) {
           <textarea
             value={form.notes}
             onChange={e => setField('notes', e.target.value)}
-            placeholder="Access instructions, anything specific about the bike..."
+            placeholder={isAssembly ? "Anything else — how it ships, box dimensions, e-bike, etc." : "Access instructions, anything specific about the bike..."}
             rows={3}
             style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
           />
@@ -357,7 +373,7 @@ function FormStep({ address, onBack, onDone }) {
 
 // ─── Step 3: Done ─────────────────────────────────────────────────────────────
 
-function DoneStep({ bookingId, contactPreference, onReset }) {
+function DoneStep({ bookingId, contactPreference, isAssembly, onReset }) {
   const via = contactPreference === 'email' ? 'email' : 'text';
   return (
     <div style={{ maxWidth: 540, margin: '80px auto', padding: '0 16px', textAlign: 'center' }}>
@@ -365,7 +381,9 @@ function DoneStep({ bookingId, contactPreference, onReset }) {
         Got it.
       </h2>
       <p style={{ color: '#4b5563', fontSize: 17, lineHeight: 1.6, marginBottom: 28 }}>
-        {'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
+        {isAssembly
+          ? "Got it. We'll review the details and send you a quote before scheduling pickup."
+          : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
       </p>
       {bookingId && (
         <a
@@ -395,6 +413,7 @@ export default function ScheduleService() {
   const [outside, setOutside] = useState(false);
   const [bookingId, setBookingId] = useState(null);
   const [contactPreference, setContactPreference] = useState('');
+  const [bookingIsAssembly, setBookingIsAssembly] = useState(false);
 
   function handlePin(lat, lng) {
     if (lat === null) { setPin(null); setOutside(false); return; }
@@ -409,6 +428,7 @@ export default function ScheduleService() {
     setOutside(false);
     setBookingId(null);
     setContactPreference('');
+    setBookingIsAssembly(false);
   }
 
   if (step === 'done') {
@@ -421,7 +441,7 @@ export default function ScheduleService() {
             </span>
           </a>
         </div>
-        <DoneStep bookingId={bookingId} contactPreference={contactPreference} onReset={reset} />
+        <DoneStep bookingId={bookingId} contactPreference={contactPreference} isAssembly={bookingIsAssembly} onReset={reset} />
       </main>
     );
   }
@@ -457,7 +477,7 @@ export default function ScheduleService() {
         <FormStep
           address={address}
           onBack={() => setStep('location')}
-          onDone={(id, pref) => { setBookingId(id); setContactPreference(pref); setStep('done'); }}
+          onDone={(id, pref, assembly) => { setBookingId(id); setContactPreference(pref); setBookingIsAssembly(!!assembly); setStep('done'); }}
         />
       )}
     </main>
