@@ -119,8 +119,10 @@ function fmtTime(t) {
 
 function MessageThread({ bookingId }) {
   const [msgs, setMsgs] = useState(null);
+  const [loadErr, setLoadErr] = useState('');
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState('');
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -128,28 +130,43 @@ function MessageThread({ bookingId }) {
   }, [bookingId]);
 
   async function load() {
-    const res = await fetch('/api/messages?booking_id=' + bookingId);
-    const data = await res.json();
-    setMsgs(data.messages || []);
+    setLoadErr('');
+    try {
+      const res = await fetch('/api/messages?booking_id=' + bookingId);
+      const data = await res.json();
+      if (!res.ok) {
+        setLoadErr('Error loading messages: ' + (data.error || res.status));
+        setMsgs([]);
+        return;
+      }
+      setMsgs(data.messages || []);
+    } catch (e) {
+      setLoadErr('Network error loading messages');
+      setMsgs([]);
+    }
   }
 
   async function send(e) {
     e.preventDefault();
     if (!text.trim() || sending) return;
     setSending(true);
+    setSendErr('');
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ booking_id: bookingId, sender: 'admin', message: text }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error('[admin] message POST failed:', err);
+        setSendErr('Send failed: ' + (data.error || res.status));
+        return;
       }
       setText('');
       await load();
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    } catch (e) {
+      setSendErr('Network error — try again');
     } finally {
       setSending(false);
     }
@@ -170,7 +187,12 @@ function MessageThread({ bookingId }) {
         display: 'flex', flexDirection: 'column', gap: 8,
         background: '#fafaf7',
       }}>
-        {msgs.length === 0 && (
+        {loadErr && (
+          <p style={{ fontSize: 12, color: '#dc2626', textAlign: 'center', margin: '4px 0', background: '#fef2f2', padding: '6px 10px', borderRadius: 6 }}>
+            {loadErr}
+          </p>
+        )}
+        {!loadErr && msgs.length === 0 && (
           <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', margin: '8px 0' }}>No messages yet.</p>
         )}
         {msgs.map(m => (
@@ -190,6 +212,11 @@ function MessageThread({ bookingId }) {
         ))}
         <div ref={bottomRef} />
       </div>
+      {sendErr && (
+        <div style={{ padding: '6px 14px', background: '#fef2f2', borderTop: '1px solid #fecaca' }}>
+          <span style={{ fontSize: 12, color: '#dc2626' }}>{sendErr}</span>
+        </div>
+      )}
       <form onSubmit={send} style={{ display: 'flex', gap: 6, padding: '8px 14px', background: '#fff', borderTop: '1px solid #f3f4f6' }}>
         <input
           value={text}
