@@ -63,17 +63,22 @@ export default function AboutPage() {
             Love over money. Always.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2" style={{borderTop:'1px solid #e5e0d8'}}>
-            <a href="https://oneloveoutdoors.org" target="_blank" rel="noopener noreferrer"
-              className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-bold"
-              style={{background:'#faf9f6', border:'1px solid #e5e0d8', color:'#2d8653'}}>
-              Visit oneloveoutdoors.org →
-            </a>
-            <a href="https://www.paypal.com/donate/?hosted_button_id=M5YTUPJJDF434" target="_blank" rel="noopener noreferrer"
-              className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white"
-              style={{background:'linear-gradient(135deg, #2d8653, #1a6e3f)'}}>
-              Donate USD
-            </a>
+          <div style={{borderTop:'1px solid #e5e0d8', paddingTop:'16px'}}>
+            <p style={{fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#9ca3af', marginBottom:'10px'}}>
+              Donations to One Love Outdoors 501(c)(3)
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a href="https://oneloveoutdoors.org" target="_blank" rel="noopener noreferrer"
+                className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-bold"
+                style={{background:'#faf9f6', border:'1px solid #e5e0d8', color:'#2d8653'}}>
+                Visit oneloveoutdoors.org →
+              </a>
+              <a href="https://www.paypal.com/donate/?hosted_button_id=M5YTUPJJDF434" target="_blank" rel="noopener noreferrer"
+                className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white"
+                style={{background:'linear-gradient(135deg, #2d8653, #1a6e3f)'}}>
+                Donate USD
+              </a>
+            </div>
           </div>
 
         </div>
