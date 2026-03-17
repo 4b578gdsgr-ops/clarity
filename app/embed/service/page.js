@@ -272,9 +272,7 @@ export default function EmbedService() {
                 Want free pickup next time? Join One Love Membership — $25/month, free pickup & delivery, priority service.
               </p>
               <a
-                href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
-                target="_blank"
-                rel="noreferrer"
+                href="/embed/membership"
                 style={{ fontSize: 13, fontWeight: 600, color: '#276749', textDecoration: 'none' }}
               >
                 Learn more →
@@ -365,9 +363,7 @@ export default function EmbedService() {
                   <p style={{ fontSize: 12, color: '#4a7c5f', marginBottom: 6 }}>
                     Members get free pickup & delivery.{' '}
                     <a
-                      href={process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || '/membership'}
-                      target="_blank"
-                      rel="noreferrer"
+                      href="/embed/membership"
                       style={{ color: '#276749', fontWeight: 600 }}
                     >
                       $25/month →
