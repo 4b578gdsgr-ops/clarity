@@ -3,7 +3,21 @@
 import { useState, useRef } from 'react';
 import { validateBooking, isFormValid } from '../lib/bookingValidation';
 
-const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'Other'];
+const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
+
+function getEstimateText(issues) {
+  if (!issues.length) return '';
+  if (issues.includes('New bike assembly')) return "We'll need some details to quote assembly. We'll reach out with pricing before confirming pickup.";
+  const hasOther = issues.includes('Other');
+  const hasSuspension = issues.includes('Suspension');
+  const hasTuneup = issues.includes('Tune-up');
+  const nonOther = issues.filter(i => i !== 'Other');
+  if (issues.length === 1 && hasOther) return "We'll take a look and give you a quote. No obligations.";
+  if (nonOther.length >= 3) return "Sounds like it might need some love. We'll give you an honest quote after pickup — most full overhauls run $200–300.";
+  if (hasSuspension) return "Suspension service starts at $150. We'll confirm the full scope after pickup.";
+  if (hasTuneup && nonOther.length <= 2) return "A tune-up covers most of this. Usually around $95 + parts.";
+  return "Most jobs like this run $40–150. We'll confirm after seeing the bike.";
+}
 
 const BIKE_BRANDS = [
   'Trek', 'Specialized', 'Giant', 'Cannondale', 'Santa Cruz', 'Yeti',
@@ -20,6 +34,7 @@ function ServiceBooking() {
     contact_preference: '',
     address: '',
     bike_brand: '', issues: [],
+    bike_details: '',
     preferred_day: '', time_slot: '', notes: '',
   });
   const [errors, setErrors] = useState({});
@@ -27,6 +42,8 @@ function ServiceBooking() {
   const [bookingId, setBookingId] = useState(null);
   const [submitErr, setSubmitErr] = useState('');
 
+  const isAssembly = form.issues.includes('New bike assembly');
+  const estimateText = getEstimateText(form.issues);
   const canSubmit = isFormValid(form);
 
   function setField(k, v) {
@@ -69,7 +86,7 @@ function ServiceBooking() {
 
   function reset() {
     setBookingId(null);
-    setForm({ name: '', phone: '', email: '', contact_preference: '', address: '', bike_brand: '', issues: [], preferred_day: '', time_slot: '', notes: '' });
+    setForm({ name: '', phone: '', email: '', contact_preference: '', address: '', bike_brand: '', issues: [], bike_details: '', preferred_day: '', time_slot: '', notes: '' });
     setErrors({});
     setSubmitErr('');
   }
@@ -90,7 +107,9 @@ function ServiceBooking() {
           Got it.
         </div>
         <p style={{ color: '#636e72', fontSize: 15, marginBottom: 12, lineHeight: 1.6 }}>
-          {'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
+          {isAssembly
+            ? "Got it. We'll review the details and send you a quote before scheduling pickup."
+            : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
         </p>
         <p style={{ color: '#636e72', fontSize: 13, marginBottom: 20, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 20px' }}>
           {"We pick up and deliver on Mondays and Fridays. Most jobs are back to you within a week. If parts need to be ordered, we'll let you know."}
@@ -205,6 +224,23 @@ function ServiceBooking() {
         {errors.issues && <span data-field-error style={err}>{errors.issues}</span>}
       </div>
 
+      {estimateText && (
+        <div style={{ marginBottom: 12, padding: '10px 13px', background: '#f0faf5', borderRadius: 8, border: '1px solid #c6e8d5' }}>
+          <p style={{ fontSize: 13, color: '#2d8653', lineHeight: 1.5, margin: '0 0 2px' }}>{estimateText}</p>
+          <p style={{ fontSize: 11, color: '#4a9a6e', margin: 0 }}>No surprises. We quote before we wrench.</p>
+        </div>
+      )}
+
+      {isAssembly && (
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ ...lbl, color: errors.bike_details ? '#dc2626' : '#636e72' }}>Tell us about the bike *</label>
+          <input type="text" value={form.bike_details} onChange={e => setField('bike_details', e.target.value)}
+            placeholder="Brand, model, year, where you ordered it from..."
+            style={{ ...inp, borderColor: errors.bike_details ? '#dc2626' : '#e5e0d8' }} />
+          {errors.bike_details && <span data-field-error style={err}>{errors.bike_details}</span>}
+        </div>
+      )}
+
       <div style={{ marginBottom: 12 }}>
         <label style={lbl}>Bike brand</label>
         <select value={form.bike_brand} onChange={e => setField('bike_brand', e.target.value)}
@@ -238,7 +274,7 @@ function ServiceBooking() {
       <div style={{ marginBottom: 16 }}>
         <label style={lbl}>Notes</label>
         <textarea value={form.notes} onChange={e => setField('notes', e.target.value)}
-          placeholder="Access instructions, anything specific about the bike..."
+          placeholder={isAssembly ? "Anything else — how it ships, box dimensions, e-bike, etc." : "Access instructions, anything specific about the bike..."}
           rows={2}
           style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }} />
       </div>
