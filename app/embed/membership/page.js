@@ -48,7 +48,7 @@ export default function EmbedMembership() {
       <h1 style={s.h1}>This is how we keep the lights on without selling out.</h1>
       <p style={s.sub}>No ads. No investors. Just riders who think this matters.</p>
       <p style={s.note}>
-        One standalone pickup costs $25. The membership is $25/month — free pickups, priority service, seasonal tune-up. Most people join because they want this to exist.
+        One pickup/dropoff can run $15-40 depending on location. The membership is $25/month — free pickups, priority service, seasonal tune-up. Most people join because they want this to exist.
       </p>
 
       <div style={s.card}>
