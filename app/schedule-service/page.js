@@ -315,11 +315,7 @@ function FormStep({ address, onBack, onDone }) {
           </div>
           <div>
             <label style={lbl}>Preferred pickup time</label>
-            <select value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} style={{ ...inp, color: form.time_slot ? '#111827' : '#9ca3af' }}>
-              <option value="">No preference</option>
-              <option value="morning">Morning</option>
-              <option value="afternoon">Afternoon</option>
-            </select>
+            <input type="time" value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} min="08:00" max="17:00" style={{ ...inp, color: form.time_slot ? '#111827' : '#9ca3af' }} />
           </div>
         </div>
         <p style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.5, marginBottom: 16 }}>
