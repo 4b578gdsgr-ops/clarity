@@ -33,6 +33,10 @@ function FlyTo({ pin }) {
 
 export default function ServiceMap({ pin, onMapClick, showBoundary = false }) {
   return (
+    <>
+      {/* Suppress any Leaflet tooltips — we have none intentionally, and the
+          OSM/CartoDB data sometimes surfaces a business tooltip on load */}
+      <style>{`.leaflet-tooltip { display: none !important; }`}</style>
     <MapContainer
       center={[41.88, -72.65]}
       zoom={10}
@@ -53,5 +57,6 @@ export default function ServiceMap({ pin, onMapClick, showBoundary = false }) {
       {pin && <FlyTo pin={pin} />}
       {pin && <Marker position={[pin.lat, pin.lng]} icon={greenDot} />}
     </MapContainer>
+    </>
   );
 }

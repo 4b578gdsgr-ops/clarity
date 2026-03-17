@@ -275,8 +275,11 @@ export default function EmbedService() {
       <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1a202c', marginBottom: 4, marginTop: 0 }}>
         We come to you.
       </h2>
-      <p style={{ fontSize: 14, color: '#718096', lineHeight: 1.5, marginBottom: 20 }}>
-        Pickup Monday. Back by Friday. Drop a pin or search your address to get started.
+      <p style={{ fontSize: 14, color: '#718096', lineHeight: 1.5, marginBottom: 4 }}>
+        Pickup Monday. Back by Friday.<sup style={{ fontSize: 10 }}>*</sup> Drop a pin or search your address to get started.
+      </p>
+      <p style={{ fontSize: 12, color: '#a0aec0', marginBottom: 16 }}>
+        *parts permitting
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit}>
