@@ -12,8 +12,8 @@ const WHY_CUSTOM = [
     body: `A frame that will outlive every trend. Components chosen because they're right, not because some brand manager needed to hit a sales target. Off-the-shelf bikes are built for an average body. This one is built for yours.`,
   },
   {
-    title: 'Higher karma score',
-    body: `Independent frame builders and component makers like Hope, Chris King, and Wolf Tooth score 78–88 on karma vs. 52–55 for big-brand complete bikes. Where your dollar goes matters.`,
+    title: 'Your money stays local',
+    body: `Independent frame builders and component makers like Hope, Chris King, and Wolf Tooth are owned by the people who run them — not private equity, not shareholders. When you buy a custom build, a meaningful share of that money goes to small operations making real decisions about real products.`,
   },
   {
     title: 'This is what bikes were before they became content',
