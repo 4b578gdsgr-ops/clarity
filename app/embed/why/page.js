@@ -32,10 +32,6 @@ export default function EmbedWhy() {
   return (
     <div style={{ fontFamily: 'var(--ol-font-body)', background: 'var(--ol-bg)', color: 'var(--ol-text)', padding: '20px 16px 40px', maxWidth: 560, margin: '0 auto' }}>
 
-      <a href="/embed/service" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--ol-text-muted)', textDecoration: 'none', fontWeight: 500, marginBottom: 24 }}>
-        ← Back to service
-      </a>
-
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ol-accent)', marginBottom: 8 }}>
         One Love Outdoors
       </p>
@@ -79,11 +75,8 @@ export default function EmbedWhy() {
         <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, textAlign: 'center', marginBottom: 14, marginTop: 0 }}>
           Custom builds and memberships fund trail work, community rides, and keeping this tool free.
         </p>
-        <a href="/embed/service" style={{ display: 'block', width: '100%', padding: '13px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', marginBottom: 8, boxSizing: 'border-box' }}>
-          Book a service →
-        </a>
-        <a href="/embed/membership" style={{ display: 'block', width: '100%', padding: '10px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>
-          Learn about membership →
+        <a href="mailto:service@oneloveoutdoors.org" style={{ display: 'block', width: '100%', padding: '13px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', marginBottom: 8, boxSizing: 'border-box' }}>
+          Get in touch →
         </a>
       </div>
 

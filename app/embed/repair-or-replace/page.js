@@ -49,23 +49,23 @@ const RIDING = [
 
 const CTA = {
   fix: {
-    primary:   { label: 'Book a pickup →', href: '/embed/service' },
-    secondary: { label: 'Learn about membership', href: '/embed/membership' },
+    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
+    secondary: { label: 'Learn about membership', href: 'mailto:service@oneloveoutdoors.org' },
     note: 'Members get priority service and free pickups.',
   },
   upgrade: {
-    primary:   { label: 'Book a pickup →', href: '/embed/service' },
-    secondary: { label: 'Or talk to us about custom builds', href: '/embed/custom-builds' },
+    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
+    secondary: { label: 'Talk to us about custom builds', href: 'mailto:service@oneloveoutdoors.org' },
     note: 'A good mechanic can handle most of this. We do custom builds and hand-built wheels if you need to go further.',
   },
   local_shop: {
-    primary:   { label: 'Book a pickup →', href: '/embed/service' },
+    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
     secondary: null,
     note: 'Ask for a frame inspection — most shops do this for free.',
   },
   new_bike: {
-    primary:   { label: 'Book a pickup →', href: '/embed/service' },
-    secondary: { label: 'See custom builds', href: '/embed/custom-builds' },
+    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
+    secondary: { label: 'Talk to us about custom builds', href: 'mailto:service@oneloveoutdoors.org' },
     note: 'Sometimes the right move is a fresh start.',
   },
 };
@@ -135,10 +135,6 @@ export default function EmbedRepairOrReplace() {
 
   return (
     <div style={S.page}>
-
-      <a href="/embed/service" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--ol-text-muted)', textDecoration: 'none', fontWeight: 500, marginBottom: 24 }}>
-        ← Back to service
-      </a>
 
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ol-accent)', marginBottom: 8 }}>
         Repair or Replace?

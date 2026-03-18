@@ -76,10 +76,6 @@ export default function EmbedCustomBuilds() {
   return (
     <div style={{ fontFamily: 'var(--ol-font-body)', background: 'var(--ol-bg)', color: 'var(--ol-text)', padding: '20px 16px 40px', maxWidth: 560, margin: '0 auto' }}>
 
-      <a href="/embed/service" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--ol-text-muted)', textDecoration: 'none', fontWeight: 500, marginBottom: 24 }}>
-        ← Back to service
-      </a>
-
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ol-accent)', marginBottom: 8 }}>
         One Love Custom Builds
       </p>
