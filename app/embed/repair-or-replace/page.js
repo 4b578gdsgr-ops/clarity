@@ -37,6 +37,7 @@ const ISSUES = [
   { id: 'drivetrain',   label: 'Chain / cassette / chainring worn' },
   { id: 'tuneup',       label: 'General tune-up needed' },
   { id: 'feels_wrong',  label: 'It just feels wrong' },
+  { id: 'other',        label: "Something else / not sure" },
 ];
 
 const RIDING = [
