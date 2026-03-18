@@ -47,25 +47,28 @@ const RIDING = [
   { id: 'multiple', label: 'Multiple times a week' },
 ];
 
+const SERVICE_URL    = 'https://oneloveoutdoors.org/schedule-service-app';
+const CONTACT_EMAIL  = 'mailto:service@oneloveoutdoors.org';
+
 const CTA = {
   fix: {
-    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
-    secondary: { label: 'Learn about membership', href: 'mailto:service@oneloveoutdoors.org' },
+    primary:   { label: 'Book a pickup →', href: SERVICE_URL },
+    secondary: { label: 'Learn about membership', href: 'https://oneloveoutdoors.org/membership' },
     note: 'Members get priority service and free pickups.',
   },
   upgrade: {
-    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
-    secondary: { label: 'Talk to us about custom builds', href: 'mailto:service@oneloveoutdoors.org' },
+    primary:   { label: 'Book a pickup →', href: SERVICE_URL },
+    secondary: { label: 'Talk to us about custom builds', href: CONTACT_EMAIL },
     note: 'A good mechanic can handle most of this. We do custom builds and hand-built wheels if you need to go further.',
   },
   local_shop: {
-    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
+    primary:   { label: 'Book a pickup →', href: SERVICE_URL },
     secondary: null,
     note: 'Ask for a frame inspection — most shops do this for free.',
   },
   new_bike: {
-    primary:   { label: 'Book a pickup →', href: 'mailto:service@oneloveoutdoors.org' },
-    secondary: { label: 'Talk to us about custom builds', href: 'mailto:service@oneloveoutdoors.org' },
+    primary:   { label: 'Book a pickup →', href: SERVICE_URL },
+    secondary: { label: 'Talk to us about custom builds', href: CONTACT_EMAIL },
     note: 'Sometimes the right move is a fresh start.',
   },
 };
@@ -258,9 +261,9 @@ export default function EmbedRepairOrReplace() {
 
           {/* CTA */}
           <div style={{ background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px', marginBottom: 12 }}>
-            <a href={cta.primary.href} style={S.primaryBtn}>{cta.primary.label}</a>
+            <a href={cta.primary.href} target="_blank" rel="noopener noreferrer" style={S.primaryBtn}>{cta.primary.label}</a>
             {cta.secondary && (
-              <a href={cta.secondary.href} style={S.secondaryBtn}>{cta.secondary.label}</a>
+              <a href={cta.secondary.href} target="_blank" rel="noopener noreferrer" style={S.secondaryBtn}>{cta.secondary.label}</a>
             )}
             {cta.note && (
               <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 8, marginBottom: 0 }}>{cta.note}</p>

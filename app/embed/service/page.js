@@ -7,7 +7,7 @@ import { validateBooking, isFormValid } from '../../../lib/bookingValidation';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
-const MEMBERSHIP_PAGE_URL = process.env.NEXT_PUBLIC_MEMBERSHIP_PAGE_URL || '/embed/membership';
+const MEMBERSHIP_PAGE_URL = process.env.NEXT_PUBLIC_MEMBERSHIP_PAGE_URL || 'https://oneloveoutdoors.org/membership';
 
 const BIKE_BRANDS = [
   'Trek', 'Specialized', 'Giant', 'Cannondale', 'Santa Cruz', 'Yeti',

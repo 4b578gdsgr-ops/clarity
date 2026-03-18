@@ -1,7 +1,7 @@
 'use client';
 
 const CHECKOUT_URL    = process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || null;
-const SERVICE_PAGE_URL = process.env.NEXT_PUBLIC_SERVICE_PAGE_URL || '/schedule-service';
+const SERVICE_PAGE_URL = 'https://oneloveoutdoors.org/schedule-service-app';
 
 const PERKS = [
   `Direct line to a real mechanic who actually rides`,
