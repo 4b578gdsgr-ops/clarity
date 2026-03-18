@@ -331,12 +331,12 @@ export default function HomePage() {
             More from One Love
           </div>
           <div className="flex flex-col gap-3">
-            <a href="/fix-or-ride" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
+            <a href="/repair-or-replace" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
               style={{ background: '#fffbeb', border: '1px solid #fde68a' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = '#d97706'}
               onMouseLeave={e => e.currentTarget.style.borderColor = '#fde68a'}>
               <div>
-                <div className="text-sm font-bold mb-0.5" style={{ color: '#d97706' }}>Fix or Ride?</div>
+                <div className="text-sm font-bold mb-0.5" style={{ color: '#d97706' }}>Repair or Replace?</div>
                 <div className="text-xs leading-relaxed" style={{ color: '#636e72' }}>
                   Got a bike collecting dust? Tell us what is wrong. We will tell you if it is worth fixing.
                 </div>

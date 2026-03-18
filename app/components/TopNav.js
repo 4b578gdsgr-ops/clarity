@@ -3,7 +3,7 @@ import { usePathname } from 'next/navigation';
 
 const NAV_LINKS = [
   { label: 'Service',       href: '/' },
-  { label: 'Fix or Ride',   href: '/fix-or-ride' },
+  { label: 'Repair or Replace?', href: '/repair-or-replace' },
   { label: 'Custom Builds', href: '/custom-builds' },
   { label: 'Membership',    href: '/membership' },
   { label: 'About',         href: '/about' },
