@@ -90,7 +90,7 @@ export default function CustomBuildsPage() {
           <div className="flex flex-col gap-3">
             {[
               { step: '01', title: 'Start the conversation', body: 'Fill out the form below. Tell us what you\'re after — or just that you\'re curious.' },
-              { step: '02', title: 'We talk', body: 'Nate reaches back within 48 hours. Phone, text, email — whatever works. No sales pitch.' },
+              { step: '02', title: 'We talk', body: 'We reach back within 48 hours. Phone, text, email — whatever works. No sales pitch.' },
               { step: '03', title: 'We spec it together', body: 'Frame, wheels, drivetrain, components. We explain every choice — who makes it, where it comes from, why it belongs on your bike.' },
               { step: '04', title: 'We build it', body: 'We source from our network of small builders and assemble it to your fit. You pick it up or we ship.' },
             ].map(s => (
