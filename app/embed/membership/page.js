@@ -1,6 +1,7 @@
 'use client';
 
-const CHECKOUT_URL = process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || null;
+const CHECKOUT_URL    = process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || null;
+const SERVICE_PAGE_URL = process.env.NEXT_PUBLIC_SERVICE_PAGE_URL || '/schedule-service';
 
 const PERKS = [
   `Direct line to a real mechanic who actually rides`,
@@ -21,6 +22,13 @@ const FAQ = [
 export default function EmbedMembership() {
   return (
     <div style={{ fontFamily: 'var(--ol-font-body)', background: 'var(--ol-bg)', color: 'var(--ol-text)', padding: '20px 16px 40px', maxWidth: 560, margin: '0 auto' }}>
+
+      <button
+        onClick={() => history.back()}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--ol-text-muted)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 500, marginBottom: 24, fontFamily: 'var(--ol-font-body)' }}
+      >
+        ← Back
+      </button>
 
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ol-accent)', marginBottom: 8 }}>
         One Love Membership
@@ -51,7 +59,7 @@ export default function EmbedMembership() {
         ))}
       </div>
 
-      {/* CTA */}
+      {/* Join CTA */}
       {CHECKOUT_URL ? (
         <>
           <a
@@ -87,6 +95,22 @@ export default function EmbedMembership() {
           <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, margin: 0 }}>{item.a}</p>
         </div>
       ))}
+
+      {/* Book service CTA */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--ol-border)' }}>
+        <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', textAlign: 'center', lineHeight: 1.6, marginBottom: 14, marginTop: 0 }}>
+          Ready to book? Members get free pickup and priority scheduling.
+        </p>
+        <a
+          href={SERVICE_PAGE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'block', width: '100%', padding: '13px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}
+        >
+          Book a service →
+        </a>
+      </div>
+
     </div>
   );
 }

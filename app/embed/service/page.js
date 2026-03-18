@@ -7,6 +7,8 @@ import { validateBooking, isFormValid } from '../../../lib/bookingValidation';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
+const MEMBERSHIP_PAGE_URL = process.env.NEXT_PUBLIC_MEMBERSHIP_PAGE_URL || '/embed/membership';
+
 const BIKE_BRANDS = [
   'Trek', 'Specialized', 'Giant', 'Cannondale', 'Santa Cruz', 'Yeti',
   'Pivot', 'Ibis', 'Marin', 'Kona', 'Canyon', 'Scott', 'GT',
@@ -282,7 +284,9 @@ export default function EmbedService() {
                 Want free pickup next time? Join One Love Membership — $25/month, free pickup & delivery, priority service.
               </p>
               <a
-                href="/embed/membership"
+                href={MEMBERSHIP_PAGE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', textDecoration: 'none' }}
               >
                 Learn more →
@@ -373,7 +377,9 @@ export default function EmbedService() {
                   <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginBottom: 6 }}>
                     Members get free pickup & delivery.{' '}
                     <a
-                      href="/embed/membership"
+                      href={MEMBERSHIP_PAGE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       style={{ color: 'var(--ol-accent)', fontWeight: 600 }}
                     >
                       $25/month →
