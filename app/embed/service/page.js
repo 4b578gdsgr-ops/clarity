@@ -227,17 +227,17 @@ export default function EmbedService() {
   }
 
   const container = {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    background: 'transparent',
+    fontFamily: 'var(--ol-font-body)',
+    background: 'var(--ol-bg)',
     padding: '20px 16px 28px',
     maxWidth: 560,
     margin: '0 auto',
-    boxSizing: 'border-box',
+    color: 'var(--ol-text)',
   };
 
-  const inp = { width: '100%', padding: '10px 13px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box', background: '#fff', color: '#1a202c', fontFamily: 'inherit' };
-  const lbl = { display: 'block', fontSize: 13, fontWeight: 600, color: '#4a5568', marginBottom: 4 };
-  const errStyle = { fontSize: 12, color: '#e53e3e', marginTop: 3, display: 'block' };
+  const inp = { width: '100%', padding: '10px 13px', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', fontSize: 15, outline: 'none', boxSizing: 'border-box', background: 'var(--ol-bg-input)', color: 'var(--ol-text)', fontFamily: 'inherit' };
+  const lbl = { display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ol-text-muted)', marginBottom: 4, letterSpacing: '0.01em' };
+  const errStyle = { fontSize: 12, color: 'var(--ol-border-error)', marginTop: 3, display: 'block' };
 
   // ── Confirmation screen ──
   if (bookingId) {
@@ -246,23 +246,23 @@ export default function EmbedService() {
     return (
       <div style={container}>
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <div style={{ width: 52, height: 52, background: '#f0fff4', border: '2px solid #9ae6b4', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 22 }}>
-            {'\u2713'}
+          <div style={{ width: 48, height: 48, background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 20, color: 'var(--ol-accent)' }}>
+            ✓
           </div>
-          <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1a202c', marginBottom: 8, fontFamily: 'inherit' }}>
+          <h3 style={{ fontSize: 22, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 8, fontFamily: 'var(--ol-font-heading)' }}>
             Got it.
           </h3>
-          <p style={{ color: '#718096', fontSize: 15, marginBottom: 12, lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--ol-text-muted)', fontSize: 15, marginBottom: 12, lineHeight: 1.6 }}>
             {isAssembly
               ? "Got it. We'll review the details and send you a quote before scheduling pickup."
               : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
           </p>
-          <p style={{ color: '#718096', fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>
+          <p style={{ color: 'var(--ol-text-hint)', fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>
             {"We pick up and deliver on Mondays and Fridays. Most jobs are back to you within a week. If parts need to be ordered, we'll let you know."}
           </p>
           <a
             href={'/embed/service/' + bookingId}
-            style={{ display: 'inline-block', padding: '11px 28px', background: '#276749', color: '#fff', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', marginBottom: 14 }}
+            style={{ display: 'inline-block', padding: '12px 28px', background: 'var(--ol-btn-bg)', color: 'var(--ol-btn-text)', borderRadius: 'var(--ol-radius-md)', textDecoration: 'none', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', marginBottom: 14, letterSpacing: '0.02em' }}
           >
             Track your booking
           </a>
@@ -270,20 +270,20 @@ export default function EmbedService() {
             <button
               type="button"
               onClick={reset}
-              style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 13, textDecoration: 'underline', fontFamily: 'inherit' }}
+              style={{ background: 'none', border: 'none', color: 'var(--ol-text-hint)', cursor: 'pointer', fontSize: 13, textDecoration: 'underline', fontFamily: 'inherit' }}
             >
               Book another service
             </button>
           </div>
 
           {!isMember && (
-            <div style={{ marginTop: 28, padding: '14px 16px', background: '#f0faf5', border: '1px solid #c6e8d5', borderRadius: 10, textAlign: 'left' }}>
-              <p style={{ fontSize: 13, color: '#276749', lineHeight: 1.6, margin: '0 0 10px' }}>
+            <div style={{ marginTop: 28, padding: '14px 16px', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', borderRadius: 'var(--ol-radius-lg)', textAlign: 'left' }}>
+              <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, margin: '0 0 10px' }}>
                 Want free pickup next time? Join One Love Membership — $25/month, free pickup & delivery, priority service.
               </p>
               <a
                 href="/embed/membership"
-                style={{ fontSize: 13, fontWeight: 600, color: '#276749', textDecoration: 'none' }}
+                style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', textDecoration: 'none' }}
               >
                 Learn more →
               </a>
@@ -296,19 +296,19 @@ export default function EmbedService() {
 
   return (
     <div style={container}>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1a202c', marginBottom: 4, marginTop: 0 }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 4, marginTop: 0, fontFamily: 'var(--ol-font-heading)' }}>
         We come to you.
       </h2>
-      <p style={{ fontSize: 14, color: '#718096', lineHeight: 1.5, marginBottom: 4 }}>
+      <p style={{ fontSize: 14, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 4 }}>
         Pickup Monday. Back by Friday.<sup style={{ fontSize: 10 }}>*</sup>
       </p>
-      <p style={{ fontSize: 12, color: '#a0aec0', marginBottom: 16 }}>
+      <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', marginBottom: 16 }}>
         *parts permitting
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit}>
         {submitErr && (
-          <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#c53030', fontSize: 14 }}>
+          <div style={{ background: 'var(--ol-bg-error)', border: '1px solid var(--ol-border-error)', borderRadius: 'var(--ol-radius-md)', padding: '10px 14px', marginBottom: 14, color: 'var(--ol-border-error)', fontSize: 14 }}>
             {submitErr}
           </div>
         )}
@@ -328,13 +328,13 @@ export default function EmbedService() {
               type="button"
               onClick={searchAddr}
               disabled={searching}
-              style={{ padding: '8px 14px', background: '#276749', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+              style={{ padding: '8px 14px', background: 'var(--ol-btn-bg)', color: 'var(--ol-btn-text)', border: 'none', borderRadius: 'var(--ol-radius-md)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, letterSpacing: '0.02em' }}
             >
               {searching ? '...' : 'Find'}
             </button>
           </div>
 
-          <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: errors.address ? '1px solid #e53e3e' : '1px solid #e2e8f0', marginBottom: 6 }}>
+          <div style={{ height: 220, borderRadius: 'var(--ol-radius-lg)', overflow: 'hidden', border: errors.address ? '1px solid var(--ol-border-error)' : '1px solid var(--ol-border)', marginBottom: 6 }}>
             <ServiceMap
               pin={pin}
               onMapClick={handleMapClick}
@@ -344,43 +344,43 @@ export default function EmbedService() {
 
           {/* Address confirmation / hints */}
           {!pin && (
-            <p style={{ fontSize: 12, color: '#a0aec0' }}>
+            <p style={{ fontSize: 12, color: 'var(--ol-text-hint)' }}>
               Search above or click the map to set your pickup location.
             </p>
           )}
           {pin && outside && (
-            <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#c53030', marginBottom: 2 }}>
+            <div style={{ background: 'var(--ol-bg-error)', border: '1px solid var(--ol-border-error)', borderRadius: 'var(--ol-radius-md)', padding: '10px 14px' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-border-error)', marginBottom: 2 }}>
                 Not in our service area yet.
               </p>
-              <p style={{ fontSize: 12, color: '#742a2a', lineHeight: 1.5 }}>
-                <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#c53030' }}>Reach out</a> and we'll see what we can do.
+              <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5 }}>
+                <a href="mailto:service@oneloveoutdoors.org" style={{ color: 'var(--ol-border-error)' }}>Reach out</a> and we'll see what we can do.
               </p>
             </div>
           )}
           {pin && !outside && (
             <div>
-              <div style={{ background: '#f0faf5', border: '1px solid #c6e8d5', borderRadius: 8, padding: '10px 14px', marginTop: 6 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: '#276749', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', borderRadius: 'var(--ol-radius-md)', padding: '10px 14px', marginTop: 6 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--ol-accent)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                   In service area ✓
                 </p>
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#276749', marginBottom: 3 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 3 }}>
                   {isMember
                     ? 'Free pickup & delivery (member) ✓'
                     : `Pickup & delivery: $${pricingTier ? pricingTier.fee : 25}`}
                 </p>
                 {!isMember && (
-                  <p style={{ fontSize: 12, color: '#4a7c5f', marginBottom: 6 }}>
+                  <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginBottom: 6 }}>
                     Members get free pickup & delivery.{' '}
                     <a
                       href="/embed/membership"
-                      style={{ color: '#276749', fontWeight: 600 }}
+                      style={{ color: 'var(--ol-accent)', fontWeight: 600 }}
                     >
                       $25/month →
                     </a>
                   </p>
                 )}
-                <p style={{ fontSize: 12, color: '#4a7c5f', lineHeight: 1.5, marginBottom: 8 }}>
+                <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
                   Labor and parts quoted after we see the bike. No surprises.
                 </p>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -388,18 +388,18 @@ export default function EmbedService() {
                     type="checkbox"
                     checked={isMember}
                     onChange={e => setIsMember(e.target.checked)}
-                    style={{ width: 15, height: 15, accentColor: '#276749', cursor: 'pointer', flexShrink: 0 }}
+                    style={{ width: 15, height: 15, accentColor: 'var(--ol-accent)', cursor: 'pointer', flexShrink: 0 }}
                   />
-                  <span style={{ fontSize: 13, color: '#276749', fontWeight: 500 }}>
+                  <span style={{ fontSize: 13, color: 'var(--ol-text)', fontWeight: 500 }}>
                     I'm a One Love member — pickup & delivery is free
                   </span>
                 </label>
-                <p style={{ fontSize: 12, color: '#4a7c5f', marginTop: 6 }}>
+                <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginTop: 6 }}>
                   {address || 'Location set'}{' '}
                   <button
                     type="button"
                     onClick={clearPin}
-                    style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}
+                    style={{ background: 'none', border: 'none', color: 'var(--ol-text-hint)', cursor: 'pointer', fontSize: 12, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}
                   >
                     clear
                   </button>
@@ -445,11 +445,12 @@ export default function EmbedService() {
                   type="button"
                   onClick={() => setField('contact_preference', opt)}
                   style={{
-                    flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                    border: sel ? '2px solid #276749' : ('1px solid ' + (errors.contact_preference ? '#e53e3e' : '#e2e8f0')),
-                    background: sel ? '#276749' : '#fff',
-                    color: sel ? '#fff' : '#4a5568',
+                    flex: 1, padding: '10px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                    border: sel ? '2px solid var(--ol-chip-selected-border)' : ('1px solid ' + (errors.contact_preference ? 'var(--ol-border-error)' : 'var(--ol-chip-border)')),
+                    background: sel ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
+                    color: sel ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
                     fontWeight: sel ? 600 : 400,
+                    letterSpacing: '0.01em',
                   }}
                 >
                   {opt === 'text' ? 'Text' : 'Email'}
@@ -481,10 +482,10 @@ export default function EmbedService() {
                   type="button"
                   onClick={() => toggleIssue(issue)}
                   style={{
-                    padding: '6px 13px', borderRadius: 16, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                    border: on ? '2px solid #276749' : ('1px solid ' + (errors.issues ? '#e53e3e' : '#e2e8f0')),
-                    background: on ? '#276749' : '#fff',
-                    color: on ? '#fff' : '#4a5568',
+                    padding: '6px 13px', borderRadius: '20px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                    border: on ? '2px solid var(--ol-chip-selected-border)' : ('1px solid ' + (errors.issues ? 'var(--ol-border-error)' : 'var(--ol-chip-border)')),
+                    background: on ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
+                    color: on ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
                   }}
                 >
                   {issue}
@@ -512,11 +513,11 @@ export default function EmbedService() {
 
         {/* ── Estimate hint ── */}
         {estimateText && (
-          <div style={{ marginBottom: 12, padding: '10px 14px', background: '#f0faf5', borderRadius: 8, border: '1px solid #c6e8d5' }}>
-            <p style={{ fontSize: 13, color: '#276749', lineHeight: 1.5, margin: '0 0 3px' }}>
+          <div style={{ marginBottom: 12, padding: '10px 14px', background: 'var(--ol-bg-callout)', borderRadius: 'var(--ol-radius-md)', border: '1px solid var(--ol-border)' }}>
+            <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.5, margin: '0 0 3px' }}>
               {estimateText}
             </p>
-            <p style={{ fontSize: 11, color: '#6b9e82', margin: 0 }}>
+            <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', margin: 0 }}>
               No surprises. We quote before we wrench.
             </p>
           </div>
@@ -537,7 +538,7 @@ export default function EmbedService() {
             <input type="time" value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} min="08:00" max="17:00" style={{ ...inp, color: form.time_slot ? '#1a202c' : '#a0aec0' }} />
           </div>
         </div>
-        <p style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.5, marginBottom: 12 }}>
+        <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', lineHeight: 1.5, marginBottom: 12 }}>
           We run pickup and delivery routes on Mondays and Fridays. Pick whichever works best. Need a different day? Let us know in the notes and we'll do our best.
         </p>
 
@@ -556,12 +557,12 @@ export default function EmbedService() {
         <button
           type="submit"
           disabled={submitting || !canSubmit}
-          style={{ width: '100%', padding: '13px 0', background: (submitting || !canSubmit) ? '#a0aec0' : '#276749', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: (submitting || !canSubmit) ? 'default' : 'pointer', fontFamily: 'inherit', letterSpacing: '0.01em' }}
+          style={{ width: '100%', padding: '13px 0', background: (submitting || !canSubmit) ? 'var(--ol-btn-disabled)' : 'var(--ol-btn-bg)', color: 'var(--ol-btn-text)', border: 'none', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 600, cursor: (submitting || !canSubmit) ? 'default' : 'pointer', fontFamily: 'inherit', letterSpacing: '0.04em' }}
         >
           {submitting ? 'Booking...' : 'Book Service'}
         </button>
 
-        <p style={{ fontSize: 12, color: '#a0aec0', textAlign: 'center', marginTop: 8 }}>
+        <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 8 }}>
           {'We\'ll confirm a time within 24 hours.'}
         </p>
       </form>
