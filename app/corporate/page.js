@@ -245,7 +245,7 @@ export default function CorporatePage() {
         <div className="mt-10 mb-6 text-center">
           <div className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#b0b8b4' }}>Support the work</div>
           <p className="text-xs mb-4 max-w-xs mx-auto leading-relaxed" style={{ color: '#9ca3af' }}>
-            Love Over Money is free, ad-free, and nonprofit. Help us keep it that way.
+            One Love Outdoors is free, ad-free, and nonprofit. Help us keep it that way.
           </p>
           <a href="https://www.paypal.com/donate/?hosted_button_id=M5YTUPJJDF434" target="_blank" rel="noopener noreferrer"
             className="inline-block px-5 py-2.5 rounded-lg text-sm font-bold text-white mb-6"
@@ -260,7 +260,7 @@ export default function CorporatePage() {
           <p className="mb-4 max-w-sm mx-auto" style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', color: '#636e72', fontSize: '0.82rem', lineHeight: 1.6 }}>
             "Doing the right thing may never pay, but we'll keep doing it anyway."
           </p>
-          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
+          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>One Love Outdoors</div>
           <div className="flex justify-center gap-4 mt-1">
             <a href="/about" className="text-[10px] hover:underline" style={{ color: '#b0b8b4' }}>Why this exists</a>
             <a href="/methodology" className="text-[10px] hover:underline" style={{ color: '#b0b8b4' }}>How we score</a>

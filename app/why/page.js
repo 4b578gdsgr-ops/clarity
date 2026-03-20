@@ -26,7 +26,7 @@ const SECTIONS = [
   {
     number: '05',
     heading: `That's what this is.`,
-    body: `A free tool to help you find a bike and a shop worth caring about.\nA small operation that builds things by hand because we think that matters.\nA bet that enough people feel the same way.\n\nLove over money. Always.`,
+    body: `A free tool to help you find a bike and a shop worth caring about.\nA small operation that builds things by hand because we think that matters.\nA bet that enough people feel the same way.`,
   },
 ];
 
@@ -114,10 +114,7 @@ export default function WhyPage() {
         </div>
 
         <div className="text-center pb-6">
-          <p className="mb-3 max-w-sm mx-auto" style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', color: '#636e72', fontSize: '0.82rem', lineHeight: 1.6 }}>
-            Love over money. Always.
-          </p>
-          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
+          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>One Love Outdoors</div>
         </div>
       </div>
     </div>

@@ -24,7 +24,7 @@ const SECTIONS = [
   {
     number: '05',
     heading: `That's what this is.`,
-    body: `A free tool to help you find a bike and a shop worth caring about.\nA small operation that builds things by hand because we think that matters.\nA bet that enough people feel the same way.\n\nLove over money. Always.`,
+    body: `A free tool to help you find a bike and a shop worth caring about.\nA small operation that builds things by hand because we think that matters.\nA bet that enough people feel the same way.`,
   },
 ];
 
@@ -80,9 +80,6 @@ export default function EmbedWhy() {
         </a>
       </div>
 
-      <p style={{ fontFamily: 'var(--ol-font-heading)', fontStyle: 'italic', fontSize: 13, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 24, lineHeight: 1.6 }}>
-        Love over money. Always.
-      </p>
     </div>
   );
 }

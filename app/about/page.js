@@ -1,8 +1,8 @@
 import CryptoDonate from '../components/CryptoDonate';
 
 export const metadata = {
-  title: 'Why This Exists — Love Over Money',
-  description: 'The story behind Love Over Money. A bike shop owner in Connecticut on corporate consolidation, money in politics, and why transparency matters.',
+  title: 'Why This Exists — One Love Outdoors',
+  description: 'The story behind One Love Outdoors. A bike shop owner in Connecticut on corporate consolidation, money in politics, and why transparency matters.',
   alternates: { canonical: 'https://loveovermoney.oneloveoutdoors.org/about' },
 };
 
@@ -60,7 +60,7 @@ export default function AboutPage() {
           <P>This tool exists because the way our buying choices shape the world tomorrow shouldn't be hidden behind corporate PR.</P>
 
           <p style={{fontFamily:'Playfair Display, serif', fontWeight:700, color:'#2d3436', fontSize:'16px', lineHeight:'1.8', marginBottom:'24px'}}>
-            Love over money. Always.
+            — One Love Outdoors
           </p>
 
           <div style={{borderTop:'1px solid #e5e0d8', paddingTop:'16px'}}>

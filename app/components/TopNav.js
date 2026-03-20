@@ -24,10 +24,8 @@ export default function TopNav() {
         maxWidth: 672, margin: '0 auto', padding: '0 1rem',
         height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'baseline', gap: '0.18em', flexShrink: 0 }}>
-          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '1rem', letterSpacing: '-0.01em' }}>Love</span>
-          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d8653', fontSize: '1.35rem', lineHeight: 0.85 }}>&gt;</span>
-          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '1rem', letterSpacing: '-0.01em' }}>Money</span>
+        <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, color: '#2d3436', fontSize: '1rem', letterSpacing: '-0.01em' }}>One Love Outdoors</span>
         </a>
         <div style={{
           display: 'flex', gap: '0.9rem', alignItems: 'center',

@@ -13,11 +13,11 @@ function fmt(a) {
 export async function generateMetadata({ params }) {
   const company = getCompanyById(params.id);
   if (!company) {
-    return { title: 'Company Not Found — Love Over Money' };
+    return { title: 'Company Not Found — One Love Outdoors' };
   }
 
   const url = `${BASE_URL}/company/${params.id}`;
-  const title = `${company.name} Karma Score — Love Over Money`;
+  const title = `${company.name} Karma Score — One Love Outdoors`;
   const description = `${company.name} has a Karma Score of ${company.karmaScore}/100. See their political spending, foreign ties, and ethical alternatives.`;
   const spending = fmt(company.totalPoliticalSpending);
   const kLabel = company.karmaScore >= 75 ? 'Force for Good'
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }) {
       description: `Political spending: ${spending}. Transparency: ${company.transparencyScore}/100. ${description}`,
       type: 'article',
       url,
-      siteName: 'Love Over Money',
+      siteName: 'One Love Outdoors',
     },
     twitter: {
       card: 'summary',
@@ -51,7 +51,7 @@ export default function CompanyPage({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: company.name,
-    description: `${company.name} has a Karma Score of ${company.karmaScore}/100 on Love Over Money. Political spending: ${fmt(company.totalPoliticalSpending)}. Transparency score: ${company.transparencyScore}/100.`,
+    description: `${company.name} has a Karma Score of ${company.karmaScore}/100. Political spending: ${fmt(company.totalPoliticalSpending)}. Transparency score: ${company.transparencyScore}/100.`,
     url,
     sameAs: url,
   } : null;
@@ -72,10 +72,10 @@ export default function CompanyPage({ params }) {
           <div className="mb-6 flex items-center justify-between">
             <Link href="/" className="text-xs font-bold tracking-wider uppercase"
               style={{color:'#2d8653'}}>
-              ← Love Over Money
+              ← One Love Outdoors
             </Link>
             <div className="text-right flex flex-col items-end gap-0.5">
-              <span className="text-[10px]" style={{color:'#9ca3af'}}>A One Love Outdoors 501(c)(3) project</span>
+              <span className="text-[10px]" style={{color:'#9ca3af'}}>One Love Outdoors</span>
               <div className="flex gap-3">
                 <Link href="/about" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>About</Link>
                 <Link href="/methodology" className="text-[10px] hover:underline" style={{color:'#b0b8b4'}}>How we score</Link>

@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'How We Score Companies — Love Over Money Methodology',
-  description: 'How Love Over Money calculates Karma Scores and Transparency Scores. Data sources, editorial process, and scoring philosophy.',
+  title: 'How We Score Companies — One Love Outdoors',
+  description: 'How One Love Outdoors calculates Karma Scores and Transparency Scores. Data sources, editorial process, and scoring philosophy.',
   alternates: { canonical: 'https://loveovermoney.oneloveoutdoors.org/methodology' },
 };
 
@@ -54,9 +54,9 @@ export default function MethodologyPage() {
         {/* Nav */}
         <div className="mb-8 flex items-center justify-between">
           <Link href="/" className="text-xs font-bold tracking-wider uppercase" style={{color:'#2d8653'}}>
-            ← Love Over Money
+            ← One Love Outdoors
           </Link>
-          <span className="text-[10px]" style={{color:'#9ca3af'}}>A One Love Outdoors 501(c)(3) project</span>
+          <span className="text-[10px]" style={{color:'#9ca3af'}}>One Love Outdoors</span>
         </div>
 
         {/* Header */}
@@ -229,7 +229,7 @@ export default function MethodologyPage() {
         {/* Footer */}
         <div className="text-center pt-4 pb-8">
           <div className="text-[10px]" style={{color:'#c4bdb5'}}>
-            Love Over Money · A One Love Outdoors 501(c)(3) project
+            One Love Outdoors
           </div>
         </div>
 

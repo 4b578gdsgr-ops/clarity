@@ -211,7 +211,7 @@ export default function FindAShopPage() {
         </div>
 
         <div className="text-center pt-10 pb-4">
-          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>Love Over Money · A One Love Outdoors 501(c)(3) project</div>
+          <div className="text-[10px]" style={{ color: '#c4bdb5' }}>One Love Outdoors</div>
         </div>
       </div>
     </div>

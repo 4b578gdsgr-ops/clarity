@@ -461,7 +461,7 @@ export default function ScheduleService() {
         <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '12px 20px' }}>
           <a href="/" style={{ textDecoration: 'none' }}>
             <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: '#0f1a14', fontStyle: 'italic' }}>
-              {'Love > Money'}
+              {'One Love Outdoors'}
             </span>
           </a>
         </div>
@@ -475,7 +475,7 @@ export default function ScheduleService() {
       <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '12px 20px' }}>
         <a href="/" style={{ textDecoration: 'none' }}>
           <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: '#0f1a14', fontStyle: 'italic' }}>
-            {'Love > Money'}
+            {'One Love Outdoors'}
           </span>
         </a>
       </div>

@@ -5,19 +5,19 @@ import Footer from './components/Footer';
 
 export const metadata = {
   metadataBase: new URL('https://loveovermoney.oneloveoutdoors.org'),
-  title: 'Love Over Money — Find Your Bike, Find Your Shop',
+  title: 'One Love Outdoors — Find Your Bike, Find Your Shop',
   description: 'Find the right bike and a local shop that can help. A One Love Outdoors project.',
   keywords: 'bike finder, local bike shop, ethical shopping, corporate transparency, karma score, outdoor industry',
   openGraph: {
-    title: 'Love Over Money',
+    title: 'One Love Outdoors',
     description: 'Find the right bike and a local shop near you.',
     type: 'website',
     url: 'https://loveovermoney.oneloveoutdoors.org',
-    siteName: 'Love Over Money',
+    siteName: 'One Love Outdoors',
   },
   twitter: {
     card: 'summary',
-    title: 'Love Over Money',
+    title: 'One Love Outdoors',
     description: 'Find the right bike and a local shop near you.',
   },
   alternates: {
