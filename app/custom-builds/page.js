@@ -117,7 +117,7 @@ export default function CustomBuildsPage() {
             {`Stumpjumper, Tallboy, whatever — we don't judge the frame, we just make sure everything bolted to it is right. Drivetrain, wheels, cockpit, suspension setup — all spec'd and built by hand. The frame is yours. Every other choice is ours to make together.`}
           </p>
           <div className="text-xs leading-relaxed" style={{ color: '#4a9e6b' }}>
-            {`We also do full suspension service — fork rebuilds, re-valving, and setup for your weight and riding style. Ask about it when you reach out.`}
+            {`We also do full suspension service — fork and shock rebuilds, personalized setup for your weight and riding style. Ask about it when you reach out.`}
           </div>
         </div>
 
