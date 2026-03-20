@@ -23,12 +23,17 @@ export async function GET(request) {
 
 // POST /api/bookings
 export async function POST(request) {
-  if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+  console.log('[bookings] POST handler reached');
+  if (!supabaseAdmin) {
+    console.error('[bookings] supabaseAdmin not initialized — check SUPABASE_SERVICE_ROLE_KEY');
+    return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+  }
 
   const body = await request.json();
   const { name, phone, email, lat, lng, address,
           bike_brand, issues, bike_details, notes,
           preferred_day, time_slot, contact_preference, is_member } = body;
+  console.log('[bookings] new booking from:', name, '| email present:', !!email);
 
   if (!name || !phone) {
     return Response.json({ error: 'Name and phone are required' }, { status: 400 });
@@ -59,8 +64,9 @@ export async function POST(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   // Send confirmation to customer + notification to admin (fire-and-forget)
-  sendServiceEmail('new', data).catch(() => {});
-  sendNewBookingNotification(data).catch(() => {});
+  console.log('[bookings] triggering emails for booking id:', data.id);
+  sendServiceEmail('new', data).catch(err => console.error('[bookings] sendServiceEmail threw:', err?.message || err));
+  sendNewBookingNotification(data).catch(err => console.error('[bookings] sendNewBookingNotification threw:', err?.message || err));;
 
   // Fire-and-forget webhook
   const webhookUrl = process.env.BOOKING_WEBHOOK_URL;
