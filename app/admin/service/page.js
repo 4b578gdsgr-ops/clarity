@@ -1303,7 +1303,7 @@ export default function AdminServicePage() {
   const [memberMessages, setMemberMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('plan');
+  const [activeTab, setActiveTab] = useState('requests');
   const [unreadCounts, setUnreadCounts] = useState({ total: 0, counts: {} });
   const [memberUnread, setMemberUnread] = useState(0);
 
@@ -1359,8 +1359,8 @@ export default function AdminServicePage() {
       }}>
         <div style={{ display: 'flex', gap: 4 }}>
           {[
-            { key: 'plan',     label: 'Plan Route', badge: 0 },
             { key: 'requests', label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), badge: unreadCounts.total },
+            { key: 'plan',     label: 'Plan Route', badge: 0 },
             { key: 'members',  label: 'Member Messages', badge: memberUnread },
             { key: 'email',    label: 'Send Email', badge: 0 },
           ].map(t => (
