@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { Resend } from 'resend';
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function POST(request) {
   try {
@@ -23,6 +26,25 @@ export async function POST(request) {
       if (error) throw error;
     } catch (dbErr) {
       console.log('Custom build inquiry (no DB):', { name, email, budget_range });
+    }
+
+    if (resend) {
+      resend.emails.send({
+        from: 'One Love Outdoors <service@oneloveoutdoors.org>',
+        to: ['service@oneloveoutdoors.org'],
+        subject: `New custom build inquiry — ${name}`,
+        text: [
+          `${name} is interested in a custom build.`,
+          '',
+          `Email: ${email || 'not provided'}`,
+          `Phone: ${phone || 'not provided'}`,
+          `Budget: ${budget_range || 'not provided'}`,
+          `Riding style: ${riding_style || 'not provided'}`,
+          `Dream bike: ${dream_bike_description || 'not provided'}`,
+          '',
+          'View in admin: https://clarity-pi-ten.vercel.app/admin/service',
+        ].join('\n'),
+      }).catch(err => console.error('[custom-build] admin email failed:', err?.message));
     }
 
     return NextResponse.json({ success: true });
