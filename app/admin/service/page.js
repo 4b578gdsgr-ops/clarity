@@ -993,28 +993,204 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead })
   );
 }
 
+// ─── Member Messages ──────────────────────────────────────────────────────────
+
+function MemberThread({ thread, onRefresh, onMarkRead }) {
+  const [expanded, setExpanded] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState('');
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    if (expanded && thread.unreadCount > 0) {
+      fetch('/api/member-messages', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ thread_id: thread.thread_id, sender: 'member' }),
+      }).then(() => onMarkRead(thread.thread_id)).catch(() => {});
+    }
+  }, [expanded]);
+
+  useEffect(() => {
+    if (expanded) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [expanded, thread.messages.length]);
+
+  async function sendReply(e) {
+    e.preventDefault();
+    if (!replyText.trim() || sending) return;
+    setSending(true);
+    setSendErr('');
+    try {
+      const res = await fetch('/api/member-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ thread_id: thread.thread_id, message: replyText, sender: 'admin' }),
+      });
+      if (!res.ok) throw new Error();
+      setReplyText('');
+      onRefresh();
+    } catch {
+      setSendErr('Send failed — try again');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const lastMsg = thread.messages[thread.messages.length - 1];
+
+  function fmtET(ts) {
+    return new Date(ts).toLocaleString('en-US', {
+      timeZone: 'America/New_York', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit',
+    });
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 10 }}>
+      <div
+        onClick={() => setExpanded(!expanded)}
+        style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+            <span style={{ fontWeight: 700, fontSize: 15 }}>{thread.name || 'Member'}</span>
+            {thread.unreadCount > 0 && (
+              <span style={{ background: '#dc2626', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>
+                {thread.unreadCount}
+              </span>
+            )}
+            {thread.email && (
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>{thread.email}</span>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {lastMsg.sender === 'admin' ? '↩ ' : ''}{lastMsg.message}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtET(lastMsg.created_at)}</span>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>{expanded ? '▲' : '▼'}</span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div style={{ borderTop: '1px solid #f3f4f6' }}>
+          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto', background: '#fafaf7' }}>
+            {thread.messages.map(m => (
+              <div key={m.id} style={{ display: 'flex', justifyContent: m.sender === 'admin' ? 'flex-end' : 'flex-start' }}>
+                <div style={{
+                  maxWidth: '80%', padding: '8px 12px', borderRadius: 10, fontSize: 13, lineHeight: 1.4,
+                  background: m.sender === 'admin' ? '#1a3328' : '#fff',
+                  color: m.sender === 'admin' ? '#fff' : '#111827',
+                  border: m.sender === 'member' ? '1px solid #e5e7eb' : 'none',
+                }}>
+                  {m.message}
+                  <div style={{ fontSize: 10, opacity: 0.55, marginTop: 3, textAlign: 'right' }}>
+                    {fmtET(m.created_at)}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </div>
+          {thread.email && (
+            <div style={{ padding: '4px 16px 2px', fontSize: 11, color: '#9ca3af', background: '#fff' }}>
+              Reply will be emailed to {thread.email}
+            </div>
+          )}
+          {!thread.email && (
+            <div style={{ padding: '4px 16px 2px', fontSize: 11, color: '#f59e0b', background: '#fff' }}>
+              No email on file — reply won't be sent
+            </div>
+          )}
+          {sendErr && <div style={{ padding: '4px 16px', color: '#dc2626', fontSize: 12 }}>{sendErr}</div>}
+          <form onSubmit={sendReply} style={{ display: 'flex', gap: 6, padding: '8px 14px', background: '#fff', borderTop: '1px solid #f3f4f6' }}>
+            <input
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              placeholder="Reply..."
+              style={{ flex: 1, padding: '7px 11px', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 13, outline: 'none' }}
+            />
+            <button
+              type="submit"
+              disabled={!replyText.trim() || sending}
+              style={{
+                padding: '7px 14px', background: replyText.trim() ? '#1a3328' : '#9ca3af',
+                color: '#fff', border: 'none', borderRadius: 7, fontSize: 13,
+                cursor: replyText.trim() ? 'pointer' : 'default',
+              }}
+            >
+              {sending ? '...' : 'Send'}
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MemberMessagesView({ messages, onRefresh, onMarkRead }) {
+  const threadsMap = {};
+  for (const msg of messages) {
+    const tid = msg.thread_id;
+    if (!threadsMap[tid]) {
+      threadsMap[tid] = { thread_id: tid, name: '', email: '', messages: [], unreadCount: 0 };
+    }
+    threadsMap[tid].messages.push(msg);
+    if (!threadsMap[tid].name && msg.sender === 'member' && msg.name) threadsMap[tid].name = msg.name;
+    if (!threadsMap[tid].email && msg.email) threadsMap[tid].email = msg.email;
+    if (msg.sender === 'member' && msg.unread) threadsMap[tid].unreadCount++;
+  }
+
+  const threads = Object.values(threadsMap).sort((a, b) => {
+    const aLast = a.messages[a.messages.length - 1].created_at;
+    const bLast = b.messages[b.messages.length - 1].created_at;
+    return new Date(bLast) - new Date(aLast);
+  });
+
+  if (threads.length === 0) {
+    return <p style={{ color: '#9ca3af', fontSize: 14 }}>No member messages yet.</p>;
+  }
+
+  return (
+    <div>
+      {threads.map(thread => (
+        <MemberThread key={thread.thread_id} thread={thread} onRefresh={onRefresh} onMarkRead={onMarkRead} />
+      ))}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AdminServicePage() {
   const [bookings, setBookings] = useState([]);
+  const [memberMessages, setMemberMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('plan');
   const [unreadCounts, setUnreadCounts] = useState({ total: 0, counts: {} });
+  const [memberUnread, setMemberUnread] = useState(0);
 
   async function load() {
     setLoading(true);
     setError('');
     try {
-      const [bRes, uRes] = await Promise.all([
+      const [bRes, uRes, mmRes] = await Promise.all([
         fetch('/api/bookings'),
         fetch('/api/messages/unread'),
+        fetch('/api/member-messages'),
       ]);
       const bData = await bRes.json();
       const uData = uRes.ok ? await uRes.json() : { total: 0, counts: {} };
+      const mmData = mmRes.ok ? await mmRes.json() : { messages: [] };
       if (!bRes.ok) { setError(bData.error || 'Failed to load'); return; }
       setBookings(bData.bookings || []);
       setUnreadCounts({ total: uData.total || 0, counts: uData.counts || {} });
+      const msgs = mmData.messages || [];
+      setMemberMessages(msgs);
+      setMemberUnread(msgs.filter(m => m.sender === 'member' && m.unread).length);
     } catch {
       setError('Network error');
     } finally {
@@ -1030,6 +1206,13 @@ export default function AdminServicePage() {
     });
   }
 
+  function handleMemberMarkRead(threadId) {
+    setMemberMessages(prev => prev.map(m =>
+      m.thread_id === threadId && m.sender === 'member' ? { ...m, unread: false } : m
+    ));
+    setMemberUnread(prev => Math.max(0, prev - 1));
+  }
+
   useEffect(() => { load(); }, []);
 
   const newCount = bookings.filter(b => b.status === 'new').length;
@@ -1042,8 +1225,9 @@ export default function AdminServicePage() {
       }}>
         <div style={{ display: 'flex', gap: 4 }}>
           {[
-            { key: 'plan',     label: 'Plan Route' },
-            { key: 'requests', label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : '') },
+            { key: 'plan',     label: 'Plan Route', badge: 0 },
+            { key: 'requests', label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), badge: unreadCounts.total },
+            { key: 'members',  label: 'Member Messages', badge: memberUnread },
           ].map(t => (
             <button
               key={t.key}
@@ -1057,7 +1241,7 @@ export default function AdminServicePage() {
               }}
             >
               {t.label}
-              {t.key === 'requests' && unreadCounts.total > 0 && (
+              {t.badge > 0 && (
                 <span style={{
                   width: 8, height: 8, background: '#dc2626', borderRadius: '50%',
                   display: 'inline-block', flexShrink: 0,
@@ -1095,6 +1279,9 @@ export default function AdminServicePage() {
         )}
         {!loading && activeTab === 'requests' && (
           <AllRequestsView bookings={bookings} onRefresh={load} unreadCounts={unreadCounts.counts} onMarkRead={handleMarkRead} />
+        )}
+        {!loading && activeTab === 'members' && (
+          <MemberMessagesView messages={memberMessages} onRefresh={load} onMarkRead={handleMemberMarkRead} />
         )}
       </div>
     </main>
