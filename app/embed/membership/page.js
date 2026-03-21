@@ -59,30 +59,24 @@ export default function EmbedMembership() {
         ))}
       </div>
 
-      {/* Join CTA */}
-      {CHECKOUT_URL ? (
-        <>
-          <a
-            href={CHECKOUT_URL}
-            target="_top"
-            style={{ display: 'block', width: '100%', padding: '14px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', letterSpacing: '0.04em', boxSizing: 'border-box' }}
-          >
-            Join — $25/month
-          </a>
-          <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 8 }}>
-            Billed monthly through Square. Cancel anytime.
-          </p>
-        </>
-      ) : (
-        <a
-          href="/membership"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: 'block', width: '100%', padding: '14px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', letterSpacing: '0.04em', boxSizing: 'border-box' }}
-        >
-          Learn about membership →
-        </a>
-      )}
+      {/* Join CTA — Square embed */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+        <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', width: 259, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '-2px 10px 5px rgba(0,0,0,0)', borderRadius: 10, fontFamily: 'SQ Market, Helvetica, Arial, sans-serif' }}>
+          <div style={{ padding: 20 }}>
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://square.link/u/cQHbqSTS?src=embed"
+              style={{ display: 'inline-block', fontSize: 18, lineHeight: '48px', height: 48, color: '#ffffff', minWidth: 212, backgroundColor: '#006aff', textAlign: 'center', boxShadow: '0 0 0 1px rgba(0,0,0,.1) inset', borderRadius: 6, textDecoration: 'none' }}
+            >
+              Buy now
+            </a>
+          </div>
+        </div>
+      </div>
+      <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 4, marginBottom: 0 }}>
+        Billed monthly through Square. Cancel anytime.
+      </p>
 
       {/* FAQ */}
       <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-text-hint)', textAlign: 'center', marginBottom: 12, marginTop: 28 }}>
