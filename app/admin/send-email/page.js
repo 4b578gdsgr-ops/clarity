@@ -37,7 +37,10 @@ export default function SendEmailPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Send failed');
-      setResult({ ok: true, message: `Sent to ${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}.` });
+      const msg = data.warning
+        ? `Partial send — ${data.warning}`
+        : `Sent to ${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}.`;
+      setResult({ ok: !data.warning, message: msg });
     } catch (err) {
       setResult({ ok: false, message: err.message });
     } finally {

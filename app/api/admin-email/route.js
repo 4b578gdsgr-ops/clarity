@@ -11,15 +11,25 @@ export async function POST(request) {
     return Response.json({ error: 'to, subject, and text are required' }, { status: 400 });
   }
 
-  try {
-    await resend.emails.send({
-      from: 'One Love Outdoors <service@oneloveoutdoors.org>',
-      to,
-      subject,
-      text,
-    });
-    return Response.json({ ok: true });
-  } catch (err) {
-    return Response.json({ error: err?.message || 'Send failed' }, { status: 500 });
+  const errors = [];
+  for (const recipient of to) {
+    try {
+      await resend.emails.send({
+        from: 'One Love Outdoors <service@oneloveoutdoors.org>',
+        to: [recipient],
+        subject,
+        text,
+      });
+    } catch (err) {
+      errors.push(recipient + ': ' + (err?.message || 'failed'));
+    }
   }
+
+  if (errors.length === to.length) {
+    return Response.json({ error: 'All sends failed: ' + errors.join('; ') }, { status: 500 });
+  }
+  if (errors.length > 0) {
+    return Response.json({ ok: true, warning: 'Some failed: ' + errors.join('; ') });
+  }
+  return Response.json({ ok: true });
 }
