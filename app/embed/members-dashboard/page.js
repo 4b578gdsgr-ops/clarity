@@ -5,14 +5,6 @@ const SERVICE_URL    = 'https://oneloveoutdoors.org/schedule-service-app';
 const DIAGNOSTIC_URL = 'https://oneloveoutdoors.org/repair-or-replace';
 const STORAGE_KEY    = 'ol_member_thread';
 
-const PRICING = [
-  { service: 'Tune-up',            price: '$95',     note: 'pickup/delivery included' },
-  { service: 'Brake service',      price: '$40–120', note: 'pickup/delivery included' },
-  { service: 'Wheel true',         price: '$40',     note: 'pickup/delivery included' },
-  { service: 'Suspension service', price: '$150+',   note: 'pickup/delivery included' },
-  { service: 'Full overhaul',      price: '$200+',   note: 'pickup/delivery included' },
-  { service: 'New bike assembly',  price: 'Quoted',  note: 'per bike' },
-];
 
 function fmt(ts) {
   return new Date(ts).toLocaleString('en-US', {
@@ -216,23 +208,9 @@ export default function MembersDashboard() {
       </div>
 
       {/* Member Pricing */}
-      <div style={{ marginBottom: 20 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ol-accent)', marginBottom: 12, marginTop: 0 }}>
-          Your member rates
-        </p>
-        <div style={{ background: '#fff', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', overflow: 'hidden' }}>
-          {PRICING.map((item, i) => (
-            <div key={item.service} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: i < PRICING.length - 1 ? '1px solid var(--ol-border)' : 'none' }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ol-text)' }}>{item.service}</div>
-                <div style={{ fontSize: 11, color: 'var(--ol-text-hint)', marginTop: 2 }}>{item.note}</div>
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ol-accent)', flexShrink: 0, marginLeft: 12 }}>{item.price}</div>
-            </div>
-          ))}
-        </div>
-        <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
-          Parts at preferred pricing. No pickup fees. Ever.
+      <div style={{ marginBottom: 20, padding: '16px 20px', background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)' }}>
+        <p style={{ fontSize: 14, color: 'var(--ol-text-muted)', margin: 0, lineHeight: 1.7 }}>
+          As a member, pickup and delivery is always free. You get preferred pricing on parts and labor. No surprises — we quote everything before we start.
         </p>
       </div>
 
