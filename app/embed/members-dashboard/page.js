@@ -46,6 +46,8 @@ export default function MembersDashboard() {
         setThreadId(stored.threadId);
         setStoredName(stored.name || '');
         setStoredEmail(stored.email || '');
+        setName(stored.name || '');
+        setEmail(stored.email || '');
         loadThread(stored.threadId);
       }
     } catch {}
@@ -73,8 +75,8 @@ export default function MembersDashboard() {
 
   async function handleSend(e) {
     e.preventDefault();
-    const useName = threadId ? storedName : name.trim();
-    const useEmail = threadId ? storedEmail : email.trim();
+    const useName = name.trim();
+    const useEmail = email.trim();
     if (!useName || !message.trim() || sending) return;
     setSending(true);
     setSendErr('');
@@ -110,7 +112,7 @@ export default function MembersDashboard() {
     }
   }
 
-  const isReady = threadId ? message.trim() : (name.trim() && message.trim());
+  const isReady = name.trim() && message.trim();
 
   return (
     <div style={{ fontFamily: 'var(--ol-font-body)', color: 'var(--ol-text)', padding: '24px 16px 48px', maxWidth: 560, margin: '0 auto' }}>
@@ -180,25 +182,21 @@ export default function MembersDashboard() {
 
         {/* Form */}
         <form onSubmit={handleSend} style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10, borderTop: messages.length > 0 ? '1px solid var(--ol-border)' : 'none' }}>
-          {!threadId && (
-            <>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Your name *"
-                required
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', fontSize: 14, outline: 'none', color: 'var(--ol-text)', background: 'var(--ol-bg-input)', boxSizing: 'border-box' }}
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Your email (optional — so we can reply)"
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', fontSize: 14, outline: 'none', color: 'var(--ol-text)', background: 'var(--ol-bg-input)', boxSizing: 'border-box' }}
-              />
-            </>
-          )}
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Your name *"
+            required
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', fontSize: 14, outline: 'none', color: 'var(--ol-text)', background: 'var(--ol-bg-input)', boxSizing: 'border-box' }}
+          />
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Your email (optional — so we can reply)"
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', fontSize: 14, outline: 'none', color: 'var(--ol-text)', background: 'var(--ol-bg-input)', boxSizing: 'border-box' }}
+          />
           <textarea
             value={message}
             onChange={e => setMessage(e.target.value)}
