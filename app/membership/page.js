@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const CHECKOUT_URL = process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || 'https://square.link/u/cQHbqSTS';
+const CHECKOUT_URL = 'https://square.link/u/cQHbqSTS';
 
 const PERKS = [
   `Direct line to a real mechanic who actually rides`,

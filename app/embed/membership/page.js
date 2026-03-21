@@ -1,6 +1,6 @@
 'use client';
 
-const CHECKOUT_URL    = process.env.NEXT_PUBLIC_MEMBERSHIP_CHECKOUT_URL || 'https://square.link/u/cQHbqSTS';
+const CHECKOUT_URL = 'https://square.link/u/cQHbqSTS';
 const SERVICE_PAGE_URL = 'https://oneloveoutdoors.org/schedule-service-app';
 
 const PERKS = [
