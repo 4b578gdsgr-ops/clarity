@@ -14,6 +14,7 @@ const PRICING = [
 ];
 
 export default function MembersDashboard() {
+  const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
@@ -29,10 +30,11 @@ export default function MembersDashboard() {
       const res = await fetch('/api/member-messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message.trim(), email: email.trim() || null }),
+        body: JSON.stringify({ name: name.trim(), message: message.trim(), email: email.trim() || null }),
       });
       if (!res.ok) throw new Error();
       setSent(true);
+      setName('');
       setMessage('');
       setEmail('');
     } catch {
@@ -92,6 +94,18 @@ export default function MembersDashboard() {
           </div>
         ) : (
           <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Your name *"
+              required
+              style={{
+                width: '100%', padding: '10px 12px', border: '1px solid var(--ol-border)',
+                borderRadius: 'var(--ol-radius-md)', fontSize: 14, outline: 'none',
+                color: 'var(--ol-text)', background: 'var(--ol-bg-input)', boxSizing: 'border-box',
+              }}
+            />
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
@@ -120,12 +134,12 @@ export default function MembersDashboard() {
             )}
             <button
               type="submit"
-              disabled={!message.trim() || sending}
+              disabled={!name.trim() || !message.trim() || sending}
               style={{
                 padding: '11px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 14,
                 fontWeight: 700, color: 'var(--ol-btn-text)',
-                background: message.trim() ? 'var(--ol-btn-bg)' : 'var(--ol-btn-disabled)',
-                border: 'none', cursor: message.trim() ? 'pointer' : 'default',
+                background: (name.trim() && message.trim()) ? 'var(--ol-btn-bg)' : 'var(--ol-btn-disabled)',
+                border: 'none', cursor: (name.trim() && message.trim()) ? 'pointer' : 'default',
               }}
             >
               {sending ? 'Sending...' : 'Send'}
