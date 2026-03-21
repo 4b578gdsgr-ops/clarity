@@ -53,7 +53,7 @@ const CONTACT_EMAIL  = 'mailto:service@oneloveoutdoors.org';
 const CTA = {
   fix: {
     primary:   { label: 'Book a pickup →', href: SERVICE_URL },
-    secondary: { label: 'Learn about membership', href: 'https://oneloveoutdoors.org/membership' },
+    secondary: { label: 'Learn about membership', href: 'https://oneloveoutdoors.org/member-site-homepage-2-2-1' },
     note: 'Members get priority service and free pickups.',
   },
   upgrade: {

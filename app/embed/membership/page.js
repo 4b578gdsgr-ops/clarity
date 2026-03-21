@@ -1,6 +1,6 @@
 'use client';
 
-const CHECKOUT_URL = 'https://square.link/u/cQHbqSTS';
+const CHECKOUT_URL = 'https://oneloveoutdoors.org/member-site-homepage-2-2-1';
 const SERVICE_PAGE_URL = 'https://oneloveoutdoors.org/schedule-service-app';
 
 const PERKS = [
@@ -61,7 +61,7 @@ export default function EmbedMembership() {
 
       {/* Join CTA */}
       <a
-        href="https://square.link/u/cQHbqSTS"
+        href="https://oneloveoutdoors.org/member-site-homepage-2-2-1"
         target="_top"
         style={{ display: 'block', width: '100%', padding: '14px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', letterSpacing: '0.04em', boxSizing: 'border-box' }}
       >
