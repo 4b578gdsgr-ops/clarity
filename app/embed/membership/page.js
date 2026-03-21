@@ -64,8 +64,7 @@ export default function EmbedMembership() {
         <>
           <a
             href={CHECKOUT_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            target="_top"
             style={{ display: 'block', width: '100%', padding: '14px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', letterSpacing: '0.04em', boxSizing: 'border-box' }}
           >
             Join — $25/month
@@ -103,8 +102,7 @@ export default function EmbedMembership() {
         </p>
         <a
           href={SERVICE_PAGE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+          target="_top"
           style={{ display: 'block', width: '100%', padding: '13px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}
         >
           Book a service →
