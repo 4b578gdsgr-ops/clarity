@@ -2,9 +2,9 @@ import { supabaseAdmin } from '../../../../lib/supabase';
 import { sendServiceEmail } from '../../../../lib/email';
 
 const VALID_STATUSES = [
-  'new', 'confirmed', 'picked_up', 'in_progress', 'done', 'cancelled',
+  'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled',
   // legacy values kept for backwards compat
-  'booked', 'ready', 'delivered',
+  'booked', 'done', 'delivered',
 ];
 
 // GET /api/bookings/[id]
@@ -31,7 +31,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json();
 
   const allowed = ['status', 'notes', 'time_slot', 'preferred_day',
-                   'confirmed_date', 'confirmed_time', 'return_date', 'zone', 'preferred_time',
+                   'confirmed_date', 'confirmed_time', 'return_date', 'delivery_time', 'zone', 'preferred_time',
                    'invoice_amount', 'payment_link', 'address'];
   const update = {};
   for (const key of allowed) {
@@ -56,7 +56,7 @@ export async function PATCH(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   // Send email when status advances to a customer-facing milestone
-  const EMAIL_TRIGGERS = new Set(['confirmed', 'picked_up', 'done']);
+  const EMAIL_TRIGGERS = new Set(['confirmed', 'picked_up', 'ready', 'out_for_delivery', 'complete']);
   if (update.status && EMAIL_TRIGGERS.has(update.status)) {
     sendServiceEmail(update.status, data).catch(() => {});
   }

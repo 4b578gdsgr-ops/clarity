@@ -2,25 +2,32 @@
 import { useState, useEffect, useRef } from 'react';
 
 const STATUS_LABEL = {
-  new:         'Request received',
-  confirmed:   'Confirmed',
-  picked_up:   'Picked up',
-  in_progress: 'In progress',
-  done:        'Done',
-  cancelled:   'Cancelled',
-  booked:      'Confirmed',
-  delivered:   'Done',
+  new:             'Request received',
+  confirmed:       'Confirmed',
+  picked_up:       'Picked up',
+  in_progress:     'In progress',
+  ready:           'Ready for delivery',
+  out_for_delivery:'On its way',
+  complete:        'Delivered',
+  cancelled:       'Cancelled',
+  // legacy
+  done:            'Done',
+  booked:          'Confirmed',
+  delivered:       'Delivered',
 };
 
-const STATUS_STEPS = ['new', 'confirmed', 'picked_up', 'in_progress', 'done'];
+const STATUS_STEPS = ['new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete'];
 
 const STATUS_COLOR = {
-  new:         '#f59e0b',
-  confirmed:   '#3b82f6',
-  picked_up:   '#8b5cf6',
-  in_progress: '#f97316',
-  done:        '#16a34a',
-  cancelled:   '#9ca3af',
+  new:             '#f59e0b',
+  confirmed:       '#3b82f6',
+  picked_up:       '#8b5cf6',
+  in_progress:     '#f97316',
+  ready:           '#0ea5e9',
+  out_for_delivery:'#2d8653',
+  complete:        '#16a34a',
+  done:            '#16a34a',
+  cancelled:       '#9ca3af',
 };
 
 function fmt(ts) {
@@ -184,11 +191,28 @@ export default function EmbedBookingStatusPage({ params }) {
         </div>
 
         {booking.confirmed_date && (
-          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
-            <div style={{ fontSize: 13, color: '#166534', fontWeight: 600 }}>
-              {'Confirmed: '}
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 8 }}>
+            <div style={{ fontSize: 13, color: '#1d4ed8', fontWeight: 600 }}>
+              {'Pickup: '}
               {fmtDate(booking.confirmed_date)}
-              {booking.confirmed_time && ' at ' + fmtTime(booking.confirmed_time)}
+              {booking.confirmed_time && ' around ' + fmtTime(booking.confirmed_time)}
+            </div>
+          </div>
+        )}
+        {booking.return_date && !['out_for_delivery', 'complete', 'delivered'].includes(booking.status) && (
+          <div style={{ background: '#fafafa', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 14px', marginBottom: 8 }}>
+            <div style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>
+              {'Estimated return: '}
+              {fmtDate(booking.return_date)}
+            </div>
+          </div>
+        )}
+        {['out_for_delivery', 'complete', 'delivered'].includes(booking.status) && booking.return_date && (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 8 }}>
+            <div style={{ fontSize: 13, color: '#166534', fontWeight: 600 }}>
+              {booking.status === 'complete' || booking.status === 'delivered' ? 'Delivered: ' : 'Delivery: '}
+              {fmtDate(booking.return_date)}
+              {booking.delivery_time && ' around ' + fmtTime(booking.delivery_time)}
             </div>
           </div>
         )}

@@ -7,22 +7,26 @@ const RouteMap = dynamic(() => import('../../components/RouteMap'), { ssr: false
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const NEXT_ACTION = {
-  new:         { label: 'Confirm',      next: 'confirmed'   },
-  confirmed:   { label: 'Picked up',    next: 'picked_up'   },
-  picked_up:   { label: 'In Progress',  next: 'in_progress' },
-  in_progress: { label: 'Done',         next: 'done'        },
+  new:             { label: 'Confirm',          next: 'confirmed'       },
+  confirmed:       { label: 'Picked up',        next: 'picked_up'       },
+  picked_up:       { label: 'In Progress',      next: 'in_progress'     },
+  in_progress:     { label: 'Ready',            next: 'ready'           },
+  ready:           { label: 'Out for Delivery', next: 'out_for_delivery' },
+  out_for_delivery:{ label: 'Complete',         next: 'complete'        },
 };
 
 const STATUS_COLOR = {
-  new:         '#f59e0b',
-  confirmed:   '#3b82f6',
-  picked_up:   '#8b5cf6',
-  in_progress: '#f97316',
-  done:        '#16a34a',
-  cancelled:   '#9ca3af',
-  booked:      '#f59e0b',
-  ready:       '#16a34a',
-  delivered:   '#16a34a',
+  new:             '#f59e0b',
+  confirmed:       '#3b82f6',
+  picked_up:       '#8b5cf6',
+  in_progress:     '#f97316',
+  ready:           '#0ea5e9',
+  out_for_delivery:'#2d8653',
+  complete:        '#16a34a',
+  done:            '#16a34a',
+  cancelled:       '#9ca3af',
+  booked:          '#f59e0b',
+  delivered:       '#16a34a',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -55,6 +59,12 @@ function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
       return 'Hi ' + name + ', we\'re working on ' + issues + '. Your bike will be ready for delivery ' + returnWhen + '. — One Love';
     case 'done':
       return 'Hi ' + name + ', your bike is ready! We\'ll deliver it on ' + returnWhen + '. — One Love';
+    case 'ready':
+      return 'Hi ' + name + ', your bike is ready! We\'ll deliver it on ' + returnWhen + '. We\'ll confirm an exact time closer to the day. — One Love';
+    case 'out_for_delivery':
+      return 'Hi ' + name + ', your bike is on its way back. See you today. — One Love';
+    case 'complete':
+      return 'Hi ' + name + ', delivered. Thanks for riding with us. — One Love';
     default:
       return '';
   }
@@ -256,6 +266,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [confirmDate, setConfirmDate] = useState(booking.confirmed_date || '');
   const [confirmTime, setConfirmTime] = useState(booking.confirmed_time || '');
   const [returnDate, setReturnDate] = useState(booking.return_date || (booking.confirmed_date ? pickupToReturn(booking.confirmed_date) : ''));
+  const [deliveryTime, setDeliveryTime] = useState(booking.delivery_time || '');
   const [notes, setNotes] = useState(booking.notes || '');
   const [saving, setSaving] = useState('');
   const [saveErr, setSaveErr] = useState('');
@@ -302,6 +313,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       confirmed_date: confirmDate || null,
       confirmed_time: confirmTime || null,
       return_date: returnDate || null,
+      delivery_time: deliveryTime || null,
     });
     setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime, returnDate));
     setCopied(false);
@@ -563,7 +575,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           {saveErr && <span style={{ fontSize: 12, color: '#dc2626', paddingBottom: 6 }}>{saveErr}</span>}
         </div>
 
-        {/* Est. return */}
+        {/* Est. return + Delivery time */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
           <div>
             <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>
@@ -589,6 +601,24 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 color: returnDate
                   ? (returnDate !== pickupToReturn(confirmDate) ? '#92400e' : '#166534')
                   : '#374151',
+              }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Delivery time</label>
+            <input
+              type="time"
+              value={deliveryTime}
+              onChange={e => {
+                const val = e.target.value;
+                setDeliveryTime(val);
+                setSaving('delivery');
+                save({ delivery_time: val || null }).then(() => setSaving(''));
+              }}
+              style={{
+                padding: '6px 9px', borderRadius: 6, fontSize: 13, outline: 'none', cursor: 'pointer',
+                border: '1px solid ' + (deliveryTime ? '#2d8653' : '#d1d5db'),
+                color: deliveryTime ? '#166534' : '#374151',
               }}
             />
           </div>
@@ -683,9 +713,13 @@ function PlanRouteView({ allBookings, onRefresh }) {
   const dragIndex = useRef(null);
 
   useEffect(() => {
-    const dayBookings = allBookings.filter(b =>
-      b.confirmed_date === date && b.status !== 'done' && b.status !== 'cancelled'
-    );
+    const pickups = allBookings
+      .filter(b => b.confirmed_date === date && ['new', 'confirmed'].includes(b.status))
+      .map(b => ({ ...b, _stopType: 'pickup' }));
+    const deliveries = allBookings
+      .filter(b => b.return_date === date && ['ready', 'out_for_delivery'].includes(b.status))
+      .map(b => ({ ...b, _stopType: 'delivery' }));
+    const dayBookings = [...pickups, ...deliveries];
     setStops(dayBookings);
     setTimes(autoTimes(dayBookings, startTime));
     setConfirmed(false);
@@ -718,17 +752,20 @@ function PlanRouteView({ allBookings, onRefresh }) {
   async function confirmRoute() {
     if (!stops.length) return;
     setConfirming(true);
-    await Promise.all(stops.map(s =>
-      fetch('/api/bookings/' + s.id, {
+    await Promise.all(stops.map(s => {
+      const isDelivery = s._stopType === 'delivery';
+      return fetch('/api/bookings/' + s.id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(isDelivery ? {
+          delivery_time: times[s.id] || null,
+        } : {
           status: s.status === 'new' ? 'confirmed' : s.status,
           confirmed_date: date,
           confirmed_time: times[s.id] || null,
         }),
-      })
-    ));
+      });
+    }));
     setConfirming(false);
     setConfirmed(true);
     onRefresh();
@@ -781,7 +818,7 @@ function PlanRouteView({ allBookings, onRefresh }) {
       ) : (
         <div style={{ height: 120, borderRadius: 12, border: '1px dashed #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
           <p style={{ color: '#9ca3af', fontSize: 14 }}>
-            {'No bookings with confirmed_date = ' + date}
+            {'No pickups or deliveries for ' + date}
           </p>
         </div>
       )}
@@ -804,14 +841,26 @@ function PlanRouteView({ allBookings, onRefresh }) {
               }}
             >
               <div style={{
-                width: 28, height: 28, background: '#1a3328', color: '#fff',
+                width: 28, height: 28,
+                background: stop._stopType === 'delivery' ? '#2d8653' : '#1a3328',
+                color: '#fff',
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 13, fontWeight: 700, flexShrink: 0,
               }}>
                 {i + 1}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{stop.name}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {stop.name}
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                    background: stop._stopType === 'delivery' ? '#dcfce7' : '#dbeafe',
+                    color: stop._stopType === 'delivery' ? '#166534' : '#1d4ed8',
+                    borderRadius: 4, padding: '1px 5px',
+                  }}>
+                    {stop._stopType === 'delivery' ? 'Delivery' : 'Pickup'}
+                  </span>
+                </div>
                 {stop.address && <div style={{ fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stop.address}</div>}
                 {stop.issues && stop.issues.length > 0 && (
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>{stop.issues.join(', ')}</div>
@@ -890,12 +939,14 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead })
   const [filter, setFilter] = useState('new');
 
   const FILTERS = [
-    { key: 'new',         label: 'New'         },
-    { key: 'confirmed',   label: 'Confirmed'   },
-    { key: 'picked_up',  label: 'Picked Up'   },
-    { key: 'in_progress', label: 'In Progress' },
-    { key: 'done',        label: 'Done'        },
-    { key: 'all',         label: 'All'         },
+    { key: 'new',             label: 'New'             },
+    { key: 'confirmed',       label: 'Confirmed'       },
+    { key: 'picked_up',       label: 'Picked Up'       },
+    { key: 'in_progress',     label: 'In Progress'     },
+    { key: 'ready',           label: 'Ready'           },
+    { key: 'out_for_delivery',label: 'Out for Delivery'},
+    { key: 'complete',        label: 'Complete'        },
+    { key: 'all',             label: 'All'             },
   ];
 
   const counts = {};
