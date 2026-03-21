@@ -1000,6 +1000,7 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -1037,6 +1038,13 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
     }
   }
 
+  async function handleDelete() {
+    if (!window.confirm('Delete this entire thread? This cannot be undone.')) return;
+    setDeleting(true);
+    await fetch('/api/member-messages?thread_id=' + thread.thread_id, { method: 'DELETE' });
+    onRefresh();
+  }
+
   const lastMsg = thread.messages[thread.messages.length - 1];
 
   function fmtET(ts) {
@@ -1068,9 +1076,18 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
             {lastMsg.sender === 'admin' ? '↩ ' : ''}{lastMsg.message}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
           <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtET(lastMsg.created_at)}</span>
-          <span style={{ fontSize: 11, color: '#9ca3af' }}>{expanded ? '▲' : '▼'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={e => { e.stopPropagation(); handleDelete(); }}
+              disabled={deleting}
+              style={{ padding: '3px 10px', background: 'none', border: '1px solid #fca5a5', borderRadius: 6, fontSize: 11, color: '#dc2626', cursor: 'pointer' }}
+            >
+              {deleting ? '...' : 'Delete'}
+            </button>
+            <span style={{ fontSize: 11, color: '#9ca3af' }}>{expanded ? '▲' : '▼'}</span>
+          </div>
         </div>
       </div>
 

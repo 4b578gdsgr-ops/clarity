@@ -91,6 +91,24 @@ export async function POST(request) {
   return Response.json({ message: data, thread_id: newThreadId });
 }
 
+// DELETE /api/member-messages?thread_id=xxx
+export async function DELETE(request) {
+  if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+
+  const { searchParams } = new URL(request.url);
+  const thread_id = searchParams.get('thread_id');
+  if (!thread_id) return Response.json({ error: 'thread_id required' }, { status: 400 });
+
+  const { error } = await supabaseAdmin
+    .from('member_messages')
+    .delete()
+    .eq('thread_id', thread_id);
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  return Response.json({ ok: true });
+}
+
 // PATCH /api/member-messages
 // body: { thread_id, sender } — marks all messages from that sender in thread as read
 export async function PATCH(request) {
