@@ -22,7 +22,6 @@ export default function MembersDashboard() {
 
   // New message form
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
@@ -39,7 +38,6 @@ export default function MembersDashboard() {
         setStoredName(stored.name || '');
         setStoredEmail(stored.email || '');
         setName(stored.name || '');
-        setEmail(stored.email || '');
         loadThread(stored.threadId);
       }
     } catch {}
@@ -68,7 +66,7 @@ export default function MembersDashboard() {
   async function handleSend(e) {
     e.preventDefault();
     const useName = name.trim();
-    const useEmail = email.trim();
+    const useEmail = storedEmail;
     if (!useName || !message.trim() || sending) return;
     setSending(true);
     setSendErr('');
@@ -180,13 +178,6 @@ export default function MembersDashboard() {
             onChange={e => setName(e.target.value)}
             placeholder="Your name *"
             required
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', fontSize: 14, outline: 'none', color: 'var(--ol-text)', background: 'var(--ol-bg-input)', boxSizing: 'border-box' }}
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="Your email (optional — so we can reply)"
             style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', fontSize: 14, outline: 'none', color: 'var(--ol-text)', background: 'var(--ol-bg-input)', boxSizing: 'border-box' }}
           />
           <textarea
