@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../lib/serviceArea';
 import { validateBooking, isFormValid } from '../../lib/bookingValidation';
+import PhotoUpload from '../components/PhotoUpload';
 
 const ServiceMap = dynamic(() => import('../components/ServiceMap'), { ssr: false });
 
@@ -162,6 +163,7 @@ function FormStep({ address, onBack, onDone }) {
     bike_details: '',
     preferred_day: '', time_slot: '', notes: '',
   });
+  const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
@@ -196,10 +198,11 @@ function FormStep({ address, onBack, onDone }) {
     setSubmitting(true);
     setSubmitErr('');
     try {
+      const photoUrls = photos.filter(p => p.url).map(p => p.url);
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form }),
+        body: JSON.stringify({ ...form, photos: photoUrls }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitErr(data.error || 'Something went wrong.'); return; }
@@ -329,6 +332,10 @@ function FormStep({ address, onBack, onDone }) {
             <p style={{ fontSize: 12, color: '#15803d', margin: 0 }}>No surprises. We quote before we wrench.</p>
           </div>
         )}
+
+        <div style={{ marginBottom: 16 }}>
+          <PhotoUpload photos={photos} onChange={setPhotos} />
+        </div>
 
         {isAssembly && (
           <div style={{ marginBottom: 16 }}>

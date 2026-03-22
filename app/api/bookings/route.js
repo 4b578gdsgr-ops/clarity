@@ -32,7 +32,8 @@ export async function POST(request) {
   const body = await request.json();
   const { name, phone, email, lat, lng, address,
           bike_brand, issues, bike_details, notes,
-          preferred_day, time_slot, contact_preference, is_member } = body;
+          preferred_day, time_slot, contact_preference, is_member,
+          photos } = body;
   console.log('[bookings] new booking from:', name, '| email present:', !!email);
 
   if (!name || !phone) {
@@ -56,6 +57,7 @@ export async function POST(request) {
       time_slot: time_slot || null,
       contact_preference: contact_preference || null,
       is_member: is_member === true,
+      photos: Array.isArray(photos) && photos.length > 0 ? photos : null,
       status: 'new',
     }])
     .select()

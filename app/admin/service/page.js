@@ -458,6 +458,32 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           </div>
         )}
 
+        {/* Photos */}
+        {booking.photos && booking.photos.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+              Photos ({booking.photos.length})
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {booking.photos.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }}>
+                  <img
+                    src={url}
+                    alt={'Photo ' + (i + 1)}
+                    style={{
+                      width: 80, height: 80, objectFit: 'cover', borderRadius: 8,
+                      border: '1px solid #e5e7eb', display: 'block',
+                      cursor: 'pointer', transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={e => e.target.style.opacity = '0.8'}
+                    onMouseLeave={e => e.target.style.opacity = '1'}
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Invoice + Payment */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
           <div style={{ flex: '0 0 auto' }}>

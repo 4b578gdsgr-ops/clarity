@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
 import { getPricingTier, getTierByDistance } from '../../../lib/servicePricing';
 import { validateBooking, isFormValid } from '../../../lib/bookingValidation';
+import PhotoUpload from '../../components/PhotoUpload';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
@@ -69,6 +70,7 @@ export default function EmbedService() {
     bike_details: '',
     preferred_day: '', time_slot: '', notes: '',
   });
+  const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
@@ -195,6 +197,7 @@ export default function EmbedService() {
     setSubmitting(true);
     setSubmitErr('');
     try {
+      const photoUrls = photos.filter(p => p.url).map(p => p.url);
       const res = await fetch(BASE + '/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -205,6 +208,7 @@ export default function EmbedService() {
           lng: pin ? pin.lng : null,
           is_member: isMember,
           bike_details: form.bike_details || null,
+          photos: photoUrls,
         }),
       });
       const data = await res.json();
@@ -528,6 +532,11 @@ export default function EmbedService() {
             </p>
           </div>
         )}
+
+        {/* ── Photos ── */}
+        <div style={{ marginBottom: 14 }}>
+          <PhotoUpload photos={photos} onChange={setPhotos} useVars />
+        </div>
 
         {/* ── Preferred pickup day + time ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 6 }}>
