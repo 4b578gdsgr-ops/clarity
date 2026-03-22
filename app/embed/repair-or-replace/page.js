@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { diagnose, BRAND_GROUPS, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
+import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
 import PhotoUpload from '../../components/PhotoUpload';
 
 const SERVICE_URL   = 'https://oneloveoutdoors.org/schedule-service-app';
@@ -137,11 +137,7 @@ export default function EmbedRepairOrReplace() {
           <label style={S.label}>What brand is it?</label>
           <select value={brand} onChange={e => setBrand(e.target.value)} style={{ ...S.select, color: brand ? 'var(--ol-text)' : 'var(--ol-text-hint)' }}>
             <option value="">Select brand...</option>
-            {BRAND_GROUPS.map(g => (
-              <optgroup key={g.label} label={g.label}>
-                {g.brands.map(b => <option key={b} value={b}>{b}</option>)}
-              </optgroup>
-            ))}
+            {BRANDS_FLAT.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
 

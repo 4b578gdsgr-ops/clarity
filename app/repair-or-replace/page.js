@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { diagnose, BRAND_GROUPS, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../lib/bikeRepairEngine';
+import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../lib/bikeRepairEngine';
 
 // ─── CTA config per verdict ───────────────────────────────────────────────────
 
@@ -97,11 +97,7 @@ export default function RepairOrReplacePage() {
               className="w-full px-4 py-3 rounded-xl text-sm outline-none"
               style={{ background: '#faf9f6', border: '1px solid #e5e0d8', color: brand ? '#2d3436' : '#9ca3af' }}>
               <option value="">Select brand...</option>
-              {BRAND_GROUPS.map(g => (
-                <optgroup key={g.label} label={g.label}>
-                  {g.brands.map(b => <option key={b} value={b}>{b}</option>)}
-                </optgroup>
-              ))}
+              {BRANDS_FLAT.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
           </div>
 
