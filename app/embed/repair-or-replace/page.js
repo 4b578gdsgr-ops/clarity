@@ -1,54 +1,11 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { diagnose } from '../../../lib/bikeRepairEngine';
+import { diagnose, BRAND_GROUPS, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
+import PhotoUpload from '../../components/PhotoUpload';
 
-const BRAND_GROUPS = [
-  {
-    label: 'Premium / Artisan',
-    brands: ['Bianchi', 'BMC', 'Cervelo', 'Colnago', 'Ibis', 'Litespeed', 'Lynskey', 'Moots', 'Pinarello', 'Pivot', 'Santa Cruz', 'Seven', 'Yeti'],
-  },
-  {
-    label: 'Quality Brands',
-    brands: ['Cannondale', 'Canyon', 'Giant', 'Kona', 'Marin', 'Norco', 'Orbea', 'Rocky Mountain', 'Salsa', 'Scott', 'Specialized', 'Surly', 'Trek'],
-  },
-  {
-    label: 'Other',
-    brands: ["I don't know", 'Other', 'Department store / big box'],
-  },
-];
-
-const AGES = [
-  { id: 'under2',  label: 'Less than 2 years' },
-  { id: '2to5',   label: '2–5 years' },
-  { id: '5to10',  label: '5–10 years' },
-  { id: '10to20', label: '10–20 years' },
-  { id: '20plus', label: '20+ years / vintage' },
-];
-
-const ISSUES = [
-  { id: 'shifting',     label: 'Shifting issues' },
-  { id: 'brakes',       label: 'Brake problems' },
-  { id: 'wheels',       label: 'Wheels out of true / need rebuild' },
-  { id: 'bb_noise',     label: 'Bottom bracket noise or creak' },
-  { id: 'headset',      label: 'Headset issues' },
-  { id: 'suspension',   label: 'Fork or shock service needed' },
-  { id: 'frame_damage', label: 'Frame damage or crack' },
-  { id: 'drivetrain',   label: 'Chain / cassette / chainring worn' },
-  { id: 'tuneup',       label: 'General tune-up needed' },
-  { id: 'feels_wrong',  label: 'It just feels wrong' },
-  { id: 'other',        label: "Something else / not sure" },
-];
-
-const RIDING = [
-  { id: 'rarely',   label: 'Rarely' },
-  { id: 'monthly',  label: 'Few times a month' },
-  { id: 'weekly',   label: 'Weekly' },
-  { id: 'multiple', label: 'Multiple times a week' },
-];
-
-const SERVICE_URL    = 'https://oneloveoutdoors.org/schedule-service-app';
-const CONTACT_EMAIL  = 'mailto:service@oneloveoutdoors.org';
+const SERVICE_URL   = 'https://oneloveoutdoors.org/schedule-service-app';
+const CONTACT_EMAIL = 'mailto:service@oneloveoutdoors.org';
 
 const CTA = {
   fix: {
@@ -64,57 +21,79 @@ const CTA = {
   local_shop: {
     primary:   { label: 'Book a pickup →', href: SERVICE_URL },
     secondary: null,
-    note: 'Ask for a frame inspection — most shops do this for free.',
+    note: 'Ask for a frame inspection — we do this for free.',
   },
   new_bike: {
     primary:   { label: 'Book a pickup →', href: SERVICE_URL },
-    secondary: { label: 'Talk to us about custom builds', href: CONTACT_EMAIL },
+    secondary: { label: 'Talk to us about next steps', href: CONTACT_EMAIL },
     note: 'Sometimes the right move is a fresh start.',
   },
 };
 
 const S = {
-  page:       { fontFamily: 'var(--ol-font-body)', background: 'var(--ol-bg)', color: 'var(--ol-text)', padding: '20px 16px 40px', maxWidth: 560, margin: '0 auto' },
-  label:      { fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ol-text-hint)', display: 'block', marginBottom: 8 },
-  card:       { background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '16px 18px', marginBottom: 16 },
-  optBtn:     (selected) => ({
+  page:     { fontFamily: 'var(--ol-font-body)', background: 'var(--ol-bg)', color: 'var(--ol-text)', padding: '20px 16px 40px', maxWidth: 560, margin: '0 auto' },
+  label:    { fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ol-text-hint)', display: 'block', marginBottom: 8 },
+  card:     { background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '16px 18px', marginBottom: 16 },
+  optBtn:   (sel) => ({
     display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px',
     borderRadius: 'var(--ol-radius-md)', fontSize: 13, cursor: 'pointer', marginBottom: 6,
-    background: selected ? 'var(--ol-accent-light)' : 'var(--ol-bg-callout)',
-    border: selected ? '1px solid var(--ol-accent-border)' : '1px solid var(--ol-border)',
+    background: sel ? 'var(--ol-accent-light)' : 'var(--ol-bg-callout)',
+    border: sel ? '1px solid var(--ol-accent-border)' : '1px solid var(--ol-border)',
     color: 'var(--ol-text)',
   }),
-  checkBtn:   (selected) => ({
+  gridBtn:  (sel) => ({
+    padding: '9px 8px', borderRadius: 'var(--ol-radius-md)', fontSize: 13, cursor: 'pointer',
+    background: sel ? 'var(--ol-accent-light)' : 'var(--ol-bg-callout)',
+    border: sel ? '1px solid var(--ol-accent-border)' : '1px solid var(--ol-border)',
+    color: 'var(--ol-text)', textAlign: 'center',
+  }),
+  checkBtn: (sel) => ({
     display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
     borderRadius: 'var(--ol-radius-md)', fontSize: 13, cursor: 'pointer', marginBottom: 6,
-    background: selected ? 'var(--ol-accent-light)' : 'var(--ol-bg-callout)',
-    border: selected ? '1px solid var(--ol-accent-border)' : '1px solid var(--ol-border)',
+    background: sel ? 'var(--ol-accent-light)' : 'var(--ol-bg-callout)',
+    border: sel ? '1px solid var(--ol-accent-border)' : '1px solid var(--ol-border)',
     color: 'var(--ol-text)',
   }),
-  rideBtn:    (selected) => ({
+  rideBtn:  (sel) => ({
     flex: 1, padding: '9px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 13, cursor: 'pointer',
-    background: selected ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
-    color: selected ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
-    border: selected ? '1px solid var(--ol-chip-selected-border)' : '1px solid var(--ol-chip-border)',
+    background: sel ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
+    color: sel ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
+    border: sel ? '1px solid var(--ol-chip-selected-border)' : '1px solid var(--ol-chip-border)',
     textAlign: 'center',
   }),
-  submitBtn:  (enabled) => ({
+  submitBtn: (enabled) => ({
     display: 'block', width: '100%', padding: '13px 0', borderRadius: 'var(--ol-radius-md)',
     fontSize: 15, fontWeight: 700, cursor: enabled ? 'pointer' : 'default',
     background: enabled ? 'var(--ol-btn-bg)' : 'var(--ol-btn-disabled)',
     color: 'var(--ol-btn-text)', border: 'none', marginTop: 4,
   }),
-  primaryBtn: { display: 'block', width: '100%', padding: '13px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', marginBottom: 8, boxSizing: 'border-box' },
-  secondaryBtn: { display: 'block', width: '100%', padding: '10px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' },
-  select:     { width: '100%', padding: '10px 12px', borderRadius: 'var(--ol-radius-md)', fontSize: 13, background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', color: 'var(--ol-text)', outline: 'none', marginBottom: 0 },
+  primaryBtn: {
+    display: 'block', width: '100%', padding: '13px 0', borderRadius: 'var(--ol-radius-md)',
+    fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)',
+    textAlign: 'center', textDecoration: 'none', marginBottom: 8, boxSizing: 'border-box',
+  },
+  secondaryBtn: {
+    display: 'block', width: '100%', padding: '10px 0', borderRadius: 'var(--ol-radius-md)',
+    fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', background: 'var(--ol-accent-light)',
+    border: '1px solid var(--ol-accent-border)', textAlign: 'center', textDecoration: 'none',
+    boxSizing: 'border-box',
+  },
+  select: {
+    width: '100%', padding: '10px 12px', borderRadius: 'var(--ol-radius-md)', fontSize: 13,
+    background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)',
+    color: 'var(--ol-text)', outline: 'none',
+  },
 };
 
 export default function EmbedRepairOrReplace() {
-  const [brand, setBrand]   = useState('');
-  const [age, setAge]       = useState('');
-  const [issues, setIssues] = useState([]);
-  const [riding, setRiding] = useState('');
-  const [result, setResult] = useState(null);
+  const [brand, setBrand]               = useState('');
+  const [frameMaterial, setFrameMaterial] = useState('');
+  const [age, setAge]                   = useState('');
+  const [suspType, setSuspType]         = useState('');
+  const [issues, setIssues]             = useState([]);
+  const [riding, setRiding]             = useState('');
+  const [photos, setPhotos]             = useState([]);
+  const [result, setResult]             = useState(null);
   const resultRef = useRef(null);
 
   const canSubmit = brand && age && issues.length > 0 && riding;
@@ -123,14 +102,15 @@ export default function EmbedRepairOrReplace() {
     setIssues(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   const handleSubmit = () => {
-    const r = diagnose({ brand, age, issues, riding });
+    const r = diagnose({ brand, age, issues, riding, frameMaterial, suspType });
     setResult(r);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   };
 
   const reset = () => {
     setResult(null);
-    setBrand(''); setAge(''); setIssues([]); setRiding('');
+    setBrand(''); setFrameMaterial(''); setAge(''); setSuspType('');
+    setIssues([]); setRiding(''); setPhotos([]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -165,6 +145,21 @@ export default function EmbedRepairOrReplace() {
           </select>
         </div>
 
+        {/* Frame material */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={S.label}>
+            Frame material{' '}
+            <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10 }}>— if you know it</span>
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            {FRAME_MATERIALS.map(m => (
+              <button key={m.id} onClick={() => setFrameMaterial(frameMaterial === m.id ? '' : m.id)} style={S.gridBtn(frameMaterial === m.id)}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Age */}
         <div style={{ marginBottom: 16 }}>
           <label style={S.label}>How old is it?</label>
@@ -173,6 +168,21 @@ export default function EmbedRepairOrReplace() {
               {a.label}
             </button>
           ))}
+        </div>
+
+        {/* Suspension type */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={S.label}>
+            Suspension type{' '}
+            <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10 }}>— helps a lot</span>
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {SUSP_TYPES.map(t => (
+              <button key={t.id} onClick={() => setSuspType(suspType === t.id ? '' : t.id)} style={S.gridBtn(suspType === t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Issues */}
@@ -244,8 +254,24 @@ export default function EmbedRepairOrReplace() {
             </div>
           </div>
 
-          {/* Issue notes */}
-          {result.repairNotes.length > 0 && (
+          {/* Conversational sections */}
+          {result.sections && result.sections.length > 0 && (
+            <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px', marginBottom: 12 }}>
+              {result.sections.map((sec, i) => (
+                <div key={i} style={{ marginBottom: i < result.sections.length - 1 ? 14 : 0 }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-accent)', marginBottom: 4, marginTop: 0 }}>
+                    {sec.title}
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, margin: 0 }}>
+                    {sec.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Issue cost table — only when no sections */}
+          {(!result.sections || result.sections.length === 0) && result.repairNotes.length > 0 && (
             <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '12px 14px', marginBottom: 12 }}>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-text-hint)', marginBottom: 8, marginTop: 0 }}>
                 What each issue actually costs
@@ -258,6 +284,16 @@ export default function EmbedRepairOrReplace() {
               ))}
             </div>
           )}
+
+          {/* Photo upload */}
+          <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px', marginBottom: 12 }}>
+            <PhotoUpload photos={photos} onChange={setPhotos} useVars />
+            {photos.filter(p => p.url).length > 0 && (
+              <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+                We'll have these ready to review when you book service — helps us confirm the quote before pickup.
+              </p>
+            )}
+          </div>
 
           {/* CTA */}
           <div style={{ background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px', marginBottom: 12 }}>

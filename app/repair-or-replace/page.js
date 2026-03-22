@@ -1,53 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { diagnose } from '../../lib/bikeRepairEngine';
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const BRAND_GROUPS = [
-  {
-    label: 'Premium / Artisan',
-    brands: ['Bianchi', 'BMC', 'Cervelo', 'Colnago', 'Ibis', 'Litespeed', 'Lynskey', 'Moots', 'Pinarello', 'Pivot', 'Santa Cruz', 'Seven', 'Yeti'],
-  },
-  {
-    label: 'Quality Brands',
-    brands: ['Cannondale', 'Canyon', 'Giant', 'Kona', 'Marin', 'Norco', 'Orbea', 'Rocky Mountain', 'Salsa', 'Scott', 'Specialized', 'Surly', 'Trek'],
-  },
-  {
-    label: 'Other',
-    brands: ["I don't know", 'Other', 'Department store / big box'],
-  },
-];
-
-const AGES = [
-  { id: 'under2',  label: 'Less than 2 years' },
-  { id: '2to5',   label: '2–5 years' },
-  { id: '5to10',  label: '5–10 years' },
-  { id: '10to20', label: '10–20 years' },
-  { id: '20plus', label: '20+ years / vintage' },
-];
-
-const ISSUES = [
-  { id: 'shifting',     label: 'Shifting issues' },
-  { id: 'brakes',       label: 'Brake problems' },
-  { id: 'wheels',       label: 'Wheels out of true / need rebuild' },
-  { id: 'bb_noise',     label: 'Bottom bracket noise or creak' },
-  { id: 'headset',      label: 'Headset issues' },
-  { id: 'suspension',   label: 'Fork or shock service needed' },
-  { id: 'frame_damage', label: 'Frame damage or crack' },
-  { id: 'drivetrain',   label: 'Chain / cassette / chainring worn' },
-  { id: 'tuneup',       label: 'General tune-up needed' },
-  { id: 'feels_wrong',  label: 'It just feels wrong' },
-  { id: 'other',        label: "Something else / not sure" },
-];
-
-const RIDING = [
-  { id: 'rarely',   label: 'Rarely' },
-  { id: 'monthly',  label: 'Few times a month' },
-  { id: 'weekly',   label: 'Weekly' },
-  { id: 'multiple', label: 'Multiple times a week' },
-];
+import { diagnose, BRAND_GROUPS, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../lib/bikeRepairEngine';
 
 // ─── CTA config per verdict ───────────────────────────────────────────────────
 
@@ -59,8 +13,8 @@ const CTA = {
   },
   upgrade: {
     primary:   { label: 'Find a local shop →', href: '/find-a-shop' },
-    secondary: { label: 'Or talk to us about component work', href: '/custom-builds' },
-    note: 'A good local mechanic can handle most of this. We do custom builds and hand-built wheels if you need to go further.',
+    secondary: { label: 'Talk to us about component work', href: '/custom-builds' },
+    note: 'A good local mechanic can handle most of this. We do custom builds and hand-built wheels if you want to go further.',
   },
   local_shop: {
     primary:   { label: 'Find a shop near you →', href: '/find-a-shop' },
@@ -77,11 +31,13 @@ const CTA = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function RepairOrReplacePage() {
-  const [brand, setBrand]   = useState('');
-  const [age, setAge]       = useState('');
-  const [issues, setIssues] = useState([]);
-  const [riding, setRiding] = useState('');
-  const [result, setResult] = useState(null);
+  const [brand, setBrand]               = useState('');
+  const [frameMaterial, setFrameMaterial] = useState('');
+  const [age, setAge]                   = useState('');
+  const [suspType, setSuspType]         = useState('');
+  const [issues, setIssues]             = useState([]);
+  const [riding, setRiding]             = useState('');
+  const [result, setResult]             = useState(null);
   const resultRef = useRef(null);
 
   const canSubmit = brand && age && issues.length > 0 && riding;
@@ -90,18 +46,25 @@ export default function RepairOrReplacePage() {
     setIssues(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   const handleSubmit = () => {
-    const r = diagnose({ brand, age, issues, riding });
+    const r = diagnose({ brand, age, issues, riding, frameMaterial, suspType });
     setResult(r);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   };
 
   const reset = () => {
     setResult(null);
-    setBrand(''); setAge(''); setIssues([]); setRiding('');
+    setBrand(''); setFrameMaterial(''); setAge(''); setSuspType('');
+    setIssues([]); setRiding('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cta = result ? (CTA[result.ctaVerdict] || CTA.fix) : null;
+
+  const selBtn = (active) => ({
+    background: active ? '#f0faf5' : '#faf9f6',
+    border: active ? '1px solid #2d8653' : '1px solid #e5e0d8',
+    color: '#2d3436',
+  });
 
   return (
     <div className="min-h-screen relative">
@@ -142,6 +105,22 @@ export default function RepairOrReplacePage() {
             </select>
           </div>
 
+          {/* Frame material */}
+          <div className="mb-5">
+            <label className="block text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: '#9ca3af' }}>
+              Frame material <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— if you know it</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {FRAME_MATERIALS.map(m => (
+                <button key={m.id} onClick={() => setFrameMaterial(frameMaterial === m.id ? '' : m.id)}
+                  className="px-3 py-2.5 rounded-lg text-sm transition-all"
+                  style={selBtn(frameMaterial === m.id)}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Age */}
           <div className="mb-5">
             <label className="block text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: '#9ca3af' }}>
@@ -151,12 +130,24 @@ export default function RepairOrReplacePage() {
               {AGES.map(a => (
                 <button key={a.id} onClick={() => setAge(a.id)}
                   className="text-left px-4 py-2.5 rounded-lg text-sm transition-all"
-                  style={{
-                    background: age === a.id ? '#f0faf5' : '#faf9f6',
-                    border: age === a.id ? '1px solid #2d8653' : '1px solid #e5e0d8',
-                    color: '#2d3436',
-                  }}>
+                  style={selBtn(age === a.id)}>
                   {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Suspension type */}
+          <div className="mb-5">
+            <label className="block text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: '#9ca3af' }}>
+              What kind of bike? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— suspension type</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {SUSP_TYPES.map(t => (
+                <button key={t.id} onClick={() => setSuspType(suspType === t.id ? '' : t.id)}
+                  className="px-3 py-2.5 rounded-lg text-sm transition-all"
+                  style={selBtn(suspType === t.id)}>
+                  {t.label}
                 </button>
               ))}
             </div>
@@ -239,7 +230,7 @@ export default function RepairOrReplacePage() {
                   <div className="text-lg font-bold leading-snug mb-1" style={{ color: result.color, fontFamily: 'Playfair Display, serif' }}>
                     {result.headline}
                   </div>
-                  <div className="text-sm font-medium mb-3" style={{ color: '#2d3436' }}>
+                  <div className="text-sm font-medium mb-2" style={{ color: '#2d3436' }}>
                     {result.subheadline}
                   </div>
                   <p className="text-sm leading-relaxed" style={{ color: '#636e72' }}>
@@ -254,8 +245,26 @@ export default function RepairOrReplacePage() {
               </div>
             </div>
 
-            {/* Issue-by-issue notes */}
-            {result.repairNotes.length > 0 && (
+            {/* Conversational sections */}
+            {result.sections && result.sections.length > 0 && (
+              <div className="rounded-xl p-4 mb-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+                <div className="flex flex-col gap-4">
+                  {result.sections.map((sec, i) => (
+                    <div key={i}>
+                      <div className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: '#2d8653' }}>
+                        {sec.title}
+                      </div>
+                      <p className="text-sm leading-relaxed" style={{ color: '#4b5563' }}>
+                        {sec.body}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Issue cost table — only shown when there are no sections */}
+            {(!result.sections || result.sections.length === 0) && result.repairNotes.length > 0 && (
               <div className="rounded-xl p-4 mb-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
                 <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#9ca3af' }}>
                   What each issue actually costs
