@@ -1,6 +1,6 @@
 'use client';
 
-const CHECKOUT_URL = 'https://oneloveoutdoors.org/member-site-homepage-2-2-1';
+const CHECKOUT_URL = 'https://oneloveoutdoors.org/onelove-members-only';
 const SERVICE_PAGE_URL = 'https://oneloveoutdoors.org/schedule-service-app';
 
 const PERKS = [
@@ -61,8 +61,9 @@ export default function EmbedMembership() {
 
       {/* Join CTA */}
       <a
-        href="https://oneloveoutdoors.org/member-site-homepage-2-2-1"
-        target="_top"
+        href="https://oneloveoutdoors.org/onelove-members-only"
+        target="_blank"
+        rel="noopener noreferrer"
         style={{ display: 'block', width: '100%', padding: '14px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 700, color: 'var(--ol-btn-text)', background: 'var(--ol-btn-bg)', textAlign: 'center', textDecoration: 'none', letterSpacing: '0.04em', boxSizing: 'border-box' }}
       >
         Join — $25/month

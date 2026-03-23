@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const CHECKOUT_URL = 'https://oneloveoutdoors.org/member-site-homepage-2-2-1';
+const CHECKOUT_URL = 'https://oneloveoutdoors.org/onelove-members-only';
 
 const PERKS = [
   `Direct line to a real mechanic who actually rides`,

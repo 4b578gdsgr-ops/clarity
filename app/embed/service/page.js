@@ -8,7 +8,7 @@ import PhotoUpload from '../../components/PhotoUpload';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
-const MEMBERSHIP_PAGE_URL = 'https://oneloveoutdoors.org/member-site-homepage-2-2-1';
+const MEMBERSHIP_PAGE_URL = 'https://oneloveoutdoors.org/onelove-members-only';
 
 const BIKE_BRANDS = [
   'Trek', 'Specialized', 'Giant', 'Cannondale', 'Santa Cruz', 'Yeti',
