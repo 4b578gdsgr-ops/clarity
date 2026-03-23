@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
-import PhotoUpload from '../../components/PhotoUpload';
 
 const SERVICE_URL   = 'https://oneloveoutdoors.org/schedule-service-app';
 const CONTACT_EMAIL = 'mailto:service@oneloveoutdoors.org';
@@ -92,8 +91,7 @@ export default function EmbedRepairOrReplace() {
   const [suspType, setSuspType]         = useState('');
   const [issues, setIssues]             = useState([]);
   const [riding, setRiding]             = useState('');
-  const [photos, setPhotos]             = useState([]);
-  const [result, setResult]             = useState(null);
+const [result, setResult]             = useState(null);
   const resultRef = useRef(null);
 
   const canSubmit = brand && age && issues.length > 0 && riding;
@@ -110,7 +108,7 @@ export default function EmbedRepairOrReplace() {
   const reset = () => {
     setResult(null);
     setBrand(''); setFrameMaterial(''); setAge(''); setSuspType('');
-    setIssues([]); setRiding(''); setPhotos([]);
+    setIssues([]); setRiding('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -280,16 +278,6 @@ export default function EmbedRepairOrReplace() {
               ))}
             </div>
           )}
-
-          {/* Photo upload */}
-          <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px', marginBottom: 12 }}>
-            <PhotoUpload photos={photos} onChange={setPhotos} useVars />
-            {photos.filter(p => p.url).length > 0 && (
-              <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
-                We'll have these ready to review when you book service — helps us confirm the quote before pickup.
-              </p>
-            )}
-          </div>
 
           {/* CTA */}
           <div style={{ background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px', marginBottom: 12 }}>
