@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../lib/bikeRepairEngine';
+import { diagnose, BRAND_TIER, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../lib/bikeRepairEngine';
 import { LOCAL_SHOPS } from '../../lib/localShops';
 
 const NEW_BIKE_BUDGETS = ['Under $500', '$500–$1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
@@ -441,13 +441,15 @@ export default function RepairOrReplacePage() {
                   </div>
                 )}
 
-                {/* Always — pass along old bike */}
-                <div className="rounded-xl px-4 py-3" style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
-                  <p className="text-sm leading-relaxed" style={{ color: '#636e72', margin: 0 }}>
-                    <strong style={{ color: '#2d3436' }}>Want us to handle the old bike?</strong>{' '}
-                    We can help you pass it along to someone who needs it.
-                  </p>
-                </div>
+                {/* Interesting frame offer — only for tier 3+ brands */}
+                {(BRAND_TIER[brand] ?? 0) >= 3 && (
+                  <div className="rounded-xl px-4 py-3" style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
+                    <p className="text-sm leading-relaxed" style={{ color: '#636e72', margin: 0 }}>
+                      <strong style={{ color: '#2d3436' }}>Got something cool collecting dust?</strong>{' '}
+                      We're always on the lookout for interesting frames and builds. Reach out — if it's something special, we might take it off your hands.
+                    </p>
+                  </div>
+                )}
 
               </div>
             )}

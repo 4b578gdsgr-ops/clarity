@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
+import { diagnose, BRAND_TIER, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
 import { LOCAL_SHOPS } from '../../../lib/localShops';
 
 const NEW_BIKE_BUDGETS = ['Under $500', '$500–$1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
@@ -422,13 +422,15 @@ const [result, setResult]             = useState(null);
                 </div>
               )}
 
-              {/* Always — pass along old bike */}
-              <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', padding: '10px 14px' }}>
-                <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.5, margin: 0 }}>
-                  <strong style={{ color: 'var(--ol-text)' }}>Want us to handle the old bike?</strong>{' '}
-                  We can help you pass it along to someone who needs it.
-                </p>
-              </div>
+              {/* Interesting frame offer — only for tier 3+ brands */}
+              {(BRAND_TIER[brand] ?? 0) >= 3 && (
+                <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', padding: '10px 14px' }}>
+                  <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.5, margin: 0 }}>
+                    <strong style={{ color: 'var(--ol-text)' }}>Got something cool collecting dust?</strong>{' '}
+                    We're always on the lookout for interesting frames and builds. Reach out — if it's something special, we might take it off your hands.
+                  </p>
+                </div>
+              )}
 
             </div>
           )}
