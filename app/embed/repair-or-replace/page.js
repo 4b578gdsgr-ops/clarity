@@ -2,6 +2,9 @@
 
 import { useState, useRef } from 'react';
 import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
+import { LOCAL_SHOPS } from '../../../lib/localShops';
+
+const NEW_BIKE_BUDGETS = ['Under $1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
 
 const SERVICE_URL   = 'https://oneloveoutdoors.org/schedule-service-app';
 const CONTACT_EMAIL = 'mailto:service@oneloveoutdoors.org';
@@ -92,6 +95,7 @@ export default function EmbedRepairOrReplace() {
   const [issues, setIssues]             = useState([]);
   const [riding, setRiding]             = useState('');
 const [result, setResult]             = useState(null);
+  const [newBikeBudget, setNewBikeBudget] = useState('');
   const resultRef = useRef(null);
 
   const canSubmit = brand && age && issues.length > 0 && riding;
@@ -107,6 +111,7 @@ const [result, setResult]             = useState(null);
 
   const reset = () => {
     setResult(null);
+    setNewBikeBudget('');
     setBrand(''); setFrameMaterial(''); setAge(''); setSuspType('');
     setIssues([]); setRiding('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -289,6 +294,81 @@ const [result, setResult]             = useState(null);
               <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 8, marginBottom: 0 }}>{cta.note}</p>
             )}
           </div>
+
+          {/* Replace next-step section */}
+          {result.ctaVerdict === 'new_bike' && (
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+              {/* Budget selector */}
+              <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-text-hint)', marginBottom: 10, marginTop: 0 }}>
+                  What's your budget for a new bike?
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                  {NEW_BIKE_BUDGETS.map(b => (
+                    <button key={b} onClick={() => setNewBikeBudget(b === newBikeBudget ? '' : b)}
+                      style={S.gridBtn(newBikeBudget === b)}>
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Under $5k — local shops */}
+              {newBikeBudget && newBikeBudget !== '$5,000+' && (
+                <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-text-hint)', marginBottom: 6, marginTop: 0 }}>
+                    Shops near you
+                  </p>
+                  <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 10, marginTop: 0 }}>
+                    Supporting your local shop matters. These are good people doing good work.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {LOCAL_SHOPS.map(shop => (
+                      <div key={shop.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        {shop.town && <span style={{ fontSize: 11, color: 'var(--ol-text-hint)' }}>{shop.town}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--ol-border)' }}>
+                    <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 8, marginTop: 0 }}>
+                      Want help figuring out what to look for? Book a free consultation and we'll point you in the right direction.
+                    </p>
+                    <a href="https://oneloveoutdoors.org/schedule-service-app" target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'block', width: '100%', padding: '11px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>
+                      Book a free consultation →
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* $5k+ — custom builds */}
+              {newBikeBudget === '$5,000+' && (
+                <div style={{ background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-accent)', marginBottom: 6, marginTop: 0 }}>
+                    At this budget, you deserve something built for you.
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, marginBottom: 12, marginTop: 0 }}>
+                    Custom builds mean every part is chosen with intention. Independent frame builders working in small batches. Components selected for how you ride, not what came in the box.
+                  </p>
+                  <a href="https://oneloveoutdoors.org/schedule-service-app" target="_blank" rel="noopener noreferrer"
+                    style={S.primaryBtn}>
+                    Tell us about your dream bike →
+                  </a>
+                </div>
+              )}
+
+              {/* Always — pass along old bike */}
+              <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)', padding: '10px 14px' }}>
+                <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.5, margin: 0 }}>
+                  <strong style={{ color: 'var(--ol-text)' }}>Want us to handle the old bike?</strong>{' '}
+                  We can help you pass it along to someone who needs it.
+                </p>
+              </div>
+
+            </div>
+          )}
 
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             <button onClick={reset} style={{ fontSize: 12, color: 'var(--ol-text-hint)', background: 'none', border: 'none', cursor: 'pointer' }}>

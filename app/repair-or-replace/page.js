@@ -2,6 +2,9 @@
 
 import { useState, useRef } from 'react';
 import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../lib/bikeRepairEngine';
+import { LOCAL_SHOPS } from '../../lib/localShops';
+
+const NEW_BIKE_BUDGETS = ['Under $1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
 
 // ─── CTA config per verdict ───────────────────────────────────────────────────
 
@@ -38,6 +41,7 @@ export default function RepairOrReplacePage() {
   const [issues, setIssues]             = useState([]);
   const [riding, setRiding]             = useState('');
   const [result, setResult]             = useState(null);
+  const [newBikeBudget, setNewBikeBudget] = useState('');
   const resultRef = useRef(null);
 
   const canSubmit = brand && age && issues.length > 0 && riding;
@@ -53,6 +57,7 @@ export default function RepairOrReplacePage() {
 
   const reset = () => {
     setResult(null);
+    setNewBikeBudget('');
     setBrand(''); setFrameMaterial(''); setAge(''); setSuspType('');
     setIssues([]); setRiding('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -296,6 +301,89 @@ export default function RepairOrReplacePage() {
                 <p className="text-center text-xs mt-3" style={{ color: '#9ca3af' }}>{cta.note}</p>
               )}
             </div>
+
+            {/* Replace next-step section */}
+            {result.ctaVerdict === 'new_bike' && (
+              <div className="mt-4 flex flex-col gap-3">
+
+                {/* Budget selector */}
+                <div className="rounded-xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+                  <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#9ca3af' }}>
+                    What's your budget for a new bike?
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {NEW_BIKE_BUDGETS.map(b => (
+                      <button key={b} onClick={() => setNewBikeBudget(b === newBikeBudget ? '' : b)}
+                        className="py-2.5 rounded-lg text-sm transition-all"
+                        style={{
+                          background: newBikeBudget === b ? '#f0faf5' : '#faf9f6',
+                          border: newBikeBudget === b ? '1px solid #2d8653' : '1px solid #e5e0d8',
+                          color: '#2d3436',
+                        }}>
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Under $5k — local shops */}
+                {newBikeBudget && newBikeBudget !== '$5,000+' && (
+                  <div className="rounded-xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+                    <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#9ca3af' }}>
+                      Shops near you
+                    </div>
+                    <p className="text-xs mb-3" style={{ color: '#636e72' }}>
+                      Supporting your local shop matters. These are good people doing good work.
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {LOCAL_SHOPS.map(shop => (
+                        <div key={shop.name} className="flex justify-between items-center px-3 py-2 rounded-lg"
+                          style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
+                          <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          {shop.town && <span className="text-xs" style={{ color: '#9ca3af' }}>{shop.town}</span>}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-3" style={{ borderTop: '1px solid #e5e0d8' }}>
+                      <p className="text-xs mb-2" style={{ color: '#636e72' }}>
+                        Want help figuring out what to look for? Book a free consultation and we'll point you in the right direction.
+                      </p>
+                      <a href="/schedule-service"
+                        className="block text-center py-2.5 rounded-xl text-sm font-medium"
+                        style={{ background: '#f6fbf8', color: '#2d8653', border: '1px solid #d1ead9' }}>
+                        Book a free consultation →
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* $5k+ — custom builds */}
+                {newBikeBudget === '$5,000+' && (
+                  <div className="rounded-xl p-4" style={{ background: '#f6fbf8', border: '1px solid #d1ead9' }}>
+                    <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#2d8653' }}>
+                      At this budget, you deserve something built for you.
+                    </div>
+                    <p className="text-sm leading-relaxed mb-4" style={{ color: '#4b5563' }}>
+                      Custom builds mean every part is chosen with intention. Independent frame builders working in small batches. Components selected for how you ride, not what came in the box.
+                    </p>
+                    <a href="/custom-builds"
+                      className="block text-center py-3 rounded-xl text-sm font-bold text-white"
+                      style={{ background: 'linear-gradient(135deg, #2d8653, #1a6e3f)' }}>
+                      Tell us about your dream bike →
+                    </a>
+                  </div>
+                )}
+
+                {/* Always — pass along old bike */}
+                <div className="rounded-xl px-4 py-3" style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: '#636e72', margin: 0 }}>
+                    <strong style={{ color: '#2d3436' }}>Want us to handle the old bike?</strong>{' '}
+                    We can help you pass it along to someone who needs it.
+                  </p>
+                </div>
+
+              </div>
+            )}
 
             {/* Start over */}
             <div className="mt-6 text-center">
