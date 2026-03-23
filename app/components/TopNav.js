@@ -5,7 +5,7 @@ const NAV_LINKS = [
   { label: 'Service',       href: '/' },
   { label: 'Repair or Replace?', href: '/repair-or-replace' },
   { label: 'Custom Builds', href: '/custom-builds' },
-  { label: 'Membership',    href: '/membership' },
+  { label: 'Membership',    href: 'https://oneloveoutdoors.org/onelove-members-only', external: true },
   { label: 'About',         href: '/about' },
 ];
 
@@ -32,12 +32,13 @@ export default function TopNav() {
           overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch',
           paddingLeft: 8,
         }}>
-          {NAV_LINKS.map(({ label, href }) => {
-            const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          {NAV_LINKS.map(({ label, href, external }) => {
+            const active = !external && (href === '/' ? pathname === '/' : pathname.startsWith(href));
             return (
               <a
                 key={href}
                 href={href}
+                {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 style={{
                   fontSize: '0.72rem', fontWeight: active ? 700 : 600,
                   color: active ? '#1a6e3f' : '#2d8653',

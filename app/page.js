@@ -355,7 +355,7 @@ export default function HomePage() {
               </div>
             </a>
 
-            <a href="/membership" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
+            <a href="https://oneloveoutdoors.org/onelove-members-only" target="_blank" rel="noopener noreferrer" className="flex gap-4 px-4 py-4 rounded-xl no-underline transition-all"
               style={{ background: '#faf9ff', border: '1px solid #e0d9f7' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = '#9333ea'}
               onMouseLeave={e => e.currentTarget.style.borderColor = '#e0d9f7'}>

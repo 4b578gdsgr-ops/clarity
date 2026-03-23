@@ -8,7 +8,7 @@ export default function Footer() {
   return (
     <footer style={{ borderTop: '1px solid #e5e0d8', marginTop: 48, padding: '32px 20px 40px', textAlign: 'center', background: '#faf9f6' }}>
       <p style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', fontSize: 15, color: '#636e72', marginBottom: 10, lineHeight: 1.6 }}>
-        No ads. No investors. No private equity. Just this.
+        No ads. No investors. Built by riders, for riders.
       </p>
       <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>
         A One Love Outdoors 501(c)(3) project

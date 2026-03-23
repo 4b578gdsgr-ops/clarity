@@ -8,7 +8,7 @@ import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPE
 const CTA = {
   fix: {
     primary:   { label: 'Find a local shop →', href: '/find-a-shop' },
-    secondary: { label: 'Learn about membership', href: '/membership' },
+    secondary: { label: 'Learn about membership', href: 'https://oneloveoutdoors.org/onelove-members-only' },
     note: 'Members get priority service and discounted labor.',
   },
   upgrade: {
@@ -285,7 +285,7 @@ export default function RepairOrReplacePage() {
                   {cta.primary.label}
                 </a>
                 {cta.secondary && (
-                  <a href={cta.secondary.href}
+                  <a href={cta.secondary.href} target="_blank" rel="noopener noreferrer"
                     className="block text-center py-2.5 rounded-xl text-sm font-medium"
                     style={{ background: '#f6fbf8', color: '#2d8653', border: '1px solid #d1ead9' }}>
                     {cta.secondary.label}

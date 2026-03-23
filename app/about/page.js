@@ -41,7 +41,7 @@ export default function AboutPage() {
 
           <P>Then it was gone.</P>
 
-          <P>Not dramatically. There wasn't one villain or one bad day. There was a pandemic, a lease renewal, some genuinely bad timing. But there was also something that had been building for years before any of that — something we'd been watching but hadn't quite named. The industry had been quietly consolidating. Brands we believed in were getting absorbed into holding companies we'd never heard of. Online retailers with warehouse economics were pricing us out of categories we'd spent years earning customer trust in. Private equity was buying up distributors. The companies that used to sponsor local rides started sponsoring influencers instead.</P>
+          <P>Not dramatically. There wasn't one villain or one bad day. There was a pandemic, a lease renewal, some genuinely bad timing. But there was also something that had been building for years before any of that — something we'd been watching but hadn't quite named. The economics of running a small local shop had been getting harder. Consolidation was happening across the industry. The companies that used to sponsor local rides started sponsoring influencers instead.</P>
 
           <P>The economics of community kept losing to the economics of scale.</P>
 

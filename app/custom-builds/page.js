@@ -5,16 +5,16 @@ import CustomBuildForm from '../components/CustomBuildForm';
 
 const WHY_CUSTOM = [
   {
-    title: 'Independent builders, not factories',
-    body: `The big companies flooded the market after COVID. Crashed pricing. Gutted dealer margins. Custom builds are the opposite — frames from small independent builders, not publicly traded companies, not PE-owned brands. Your money goes to real people making decisions about bikes.`,
+    title: 'Every part chosen with intention',
+    body: `Custom builds mean every part is chosen with intention. Independent frame builders working in small batches. Components selected for how you ride, not what came in the box. Whether it's a titanium frame from a two-person shop or a build-up around a frame you already love — the difference is in the details.`,
   },
   {
-    title: 'Built for you, not a focus group',
-    body: `A frame that will outlive every trend. Components chosen because they're right, not because some brand manager needed to hit a sales target. Off-the-shelf bikes are built for an average body. This one is built for yours.`,
+    title: 'Built for you, not an average body',
+    body: `A frame that will outlive every trend. Components chosen because they're right for how you actually ride. Off-the-shelf bikes are built for a range. This one is built for you specifically.`,
   },
   {
-    title: 'Your money stays local',
-    body: `Independent frame builders and component makers like Hope, Chris King, and Wolf Tooth are owned by the people who run them — not private equity, not shareholders. When you buy a custom build, a meaningful share of that money goes to small operations making real decisions about real products.`,
+    title: 'Your money stays in the craft',
+    body: `Independent frame builders and component makers like Hope, Chris King, and Wolf Tooth are owned by the people who run them — people who care deeply about what they make. When you buy a custom build, a meaningful share of that money goes to small operations making real decisions about real products.`,
   },
   {
     title: 'This is what bikes were before they became content',
@@ -75,7 +75,7 @@ export default function CustomBuildsPage() {
             Who we work with
           </div>
           <p className="text-sm leading-relaxed mb-3" style={{ color: '#4a5568' }}>
-            We work with independent frame builders — small operations making titanium, steel, and carbon frames in small batches. Some are American-made, some aren't. What they have in common: they're not publicly traded, they're not owned by private equity, and someone who actually cares about bikes is making the decisions.
+            We work with independent frame builders — small operations making titanium, steel, and carbon frames in small batches. Some are American-made, some aren't. What they have in common: someone who actually cares about bikes is making the decisions, and the craft shows in the work.
           </p>
           <p className="text-xs font-medium" style={{ color: '#2d8653' }}>
             Ask us who we're working with right now — the list changes as we find builders worth believing in.

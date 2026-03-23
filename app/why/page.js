@@ -11,7 +11,7 @@ const SECTIONS = [
   {
     number: '02',
     heading: `Then the math changed.`,
-    body: `After COVID, the biggest players in the bike industry made a bet: flood the market, grab market share, figure out the damage later. It worked for their quarterly earnings. It destroyed everything else. Shops closed. Mechanics left the trade. Brands that used to stand for something became logos on a spreadsheet. The gimmicky fad replaced the refined thing. And the community that built this whole industry? Collateral damage.`,
+    body: `The economics changed. Consolidation happened fast — in cycling, in outdoor gear, everywhere. Shops closed. Mechanics left the trade. The things that made local shops worth going to — the knowledge, the community, the Saturday morning rides — those got harder to sustain. We watched it happen from behind our own counter.`,
   },
   {
     number: '03',
@@ -105,7 +105,7 @@ export default function WhyPage() {
               style={{ background: '#f6fbf8', color: '#2d8653', border: '1px solid #d1ead9' }}>
               Custom builds →
             </a>
-            <a href="/membership"
+            <a href="https://oneloveoutdoors.org/onelove-members-only" target="_blank" rel="noopener noreferrer"
               className="block text-center py-2.5 rounded-xl text-sm font-medium"
               style={{ background: '#faf9ff', color: '#9333ea', border: '1px solid #e0d9f7' }}>
               Membership →
