@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../lib/bikeRepairEngine';
 import { LOCAL_SHOPS } from '../../lib/localShops';
 
-const NEW_BIKE_BUDGETS = ['Under $1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
+const NEW_BIKE_BUDGETS = ['Under $500', '$500–$1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
 
 // ─── CTA config per verdict ───────────────────────────────────────────────────
 
@@ -326,14 +326,68 @@ export default function RepairOrReplacePage() {
                   </div>
                 </div>
 
-                {/* Under $5k — local shops */}
-                {newBikeBudget && newBikeBudget !== '$5,000+' && (
+                {/* Under $500 — BiCi Co. */}
+                {newBikeBudget === 'Under $500' && (
                   <div className="rounded-xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
-                    <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#9ca3af' }}>
-                      Shops near you
+                    <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#2d8653' }}>
+                      BiCi Co. — Hartford's community bike shop
                     </div>
-                    <p className="text-xs mb-3" style={{ color: '#636e72' }}>
-                      Supporting your local shop matters. These are good people doing good work.
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: '#4b5563' }}>
+                      They sell quality upcycled bikes at affordable prices and every purchase supports their community programs.
+                    </p>
+                    <div className="flex flex-col gap-1.5 mb-3">
+                      <div className="px-3 py-2 rounded-lg text-xs" style={{ background: '#faf9f6', border: '1px solid #e5e0d8', color: '#636e72' }}>
+                        Hartford — 97 Park St
+                      </div>
+                      <div className="px-3 py-2 rounded-lg text-xs" style={{ background: '#faf9f6', border: '1px solid #e5e0d8', color: '#636e72' }}>
+                        West Hartford — 616 New Park Ave
+                      </div>
+                    </div>
+                    <a href="https://bicico.org" target="_blank" rel="noopener noreferrer"
+                      className="block text-center py-2.5 rounded-xl text-sm font-medium mb-3"
+                      style={{ background: '#f6fbf8', color: '#2d8653', border: '1px solid #d1ead9' }}>
+                      bicico.org →
+                    </a>
+                    <p className="text-xs leading-relaxed" style={{ color: '#9ca3af', margin: 0 }}>
+                      We can also help you figure out if a used bike you're looking at is worth buying — just reach out.
+                    </p>
+                  </div>
+                )}
+
+                {/* $500–$1,500 — BiCi Co. + local shops */}
+                {newBikeBudget === '$500–$1,500' && (
+                  <div className="rounded-xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: '#4b5563' }}>
+                      BiCi Co. has some great finds in this range, or check out these local shops for new bikes:
+                    </p>
+                    <div className="rounded-lg px-3 py-2.5 mb-3" style={{ background: '#f6fbf8', border: '1px solid #d1ead9' }}>
+                      <div className="text-xs font-bold mb-0.5" style={{ color: '#2d8653' }}>BiCi Co.</div>
+                      <div className="text-xs mb-1.5" style={{ color: '#636e72' }}>Hartford · West Hartford</div>
+                      <a href="https://bicico.org" target="_blank" rel="noopener noreferrer"
+                        className="text-xs font-medium" style={{ color: '#2d8653', textDecoration: 'none' }}>
+                        bicico.org →
+                      </a>
+                    </div>
+                    <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#9ca3af' }}>
+                      Local shops
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {LOCAL_SHOPS.map(shop => (
+                        <div key={shop.name} className="flex justify-between items-center px-3 py-2 rounded-lg"
+                          style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
+                          <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          {shop.town && <span className="text-xs" style={{ color: '#9ca3af' }}>{shop.town}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* $1,500–$3,000 — local shops */}
+                {newBikeBudget === '$1,500–$3,000' && (
+                  <div className="rounded-xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: '#4b5563' }}>
+                      These shops can set you up with something solid in this range.
                     </p>
                     <div className="flex flex-col gap-1.5">
                       {LOCAL_SHOPS.map(shop => (
@@ -344,20 +398,33 @@ export default function RepairOrReplacePage() {
                         </div>
                       ))}
                     </div>
-                    <div className="mt-4 pt-3" style={{ borderTop: '1px solid #e5e0d8' }}>
-                      <p className="text-xs mb-2" style={{ color: '#636e72' }}>
-                        Want help figuring out what to look for? Book a free consultation and we'll point you in the right direction.
-                      </p>
-                      <a href="/schedule-service"
-                        className="block text-center py-2.5 rounded-xl text-sm font-medium"
-                        style={{ background: '#f6fbf8', color: '#2d8653', border: '1px solid #d1ead9' }}>
-                        Book a free consultation →
-                      </a>
-                    </div>
                   </div>
                 )}
 
-                {/* $5k+ — custom builds */}
+                {/* $3,000–$5,000 — local shops + soft custom mention */}
+                {newBikeBudget === '$3,000–$5,000' && (
+                  <div className="rounded-xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e0d8' }}>
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: '#4b5563' }}>
+                      Your local shop has great options here. If you want something more tailored, we do custom builds too.
+                    </p>
+                    <div className="flex flex-col gap-1.5 mb-4">
+                      {LOCAL_SHOPS.map(shop => (
+                        <div key={shop.name} className="flex justify-between items-center px-3 py-2 rounded-lg"
+                          style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
+                          <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          {shop.town && <span className="text-xs" style={{ color: '#9ca3af' }}>{shop.town}</span>}
+                        </div>
+                      ))}
+                    </div>
+                    <a href="/custom-builds"
+                      className="block text-center py-2.5 rounded-xl text-sm font-medium"
+                      style={{ background: '#f6fbf8', color: '#2d8653', border: '1px solid #d1ead9' }}>
+                      Learn about custom builds →
+                    </a>
+                  </div>
+                )}
+
+                {/* $5,000+ — custom builds */}
                 {newBikeBudget === '$5,000+' && (
                   <div className="rounded-xl p-4" style={{ background: '#f6fbf8', border: '1px solid #d1ead9' }}>
                     <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#2d8653' }}>

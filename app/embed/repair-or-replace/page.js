@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { diagnose, BRANDS_FLAT, AGES, ISSUES, RIDING, FRAME_MATERIALS, SUSP_TYPES } from '../../../lib/bikeRepairEngine';
 import { LOCAL_SHOPS } from '../../../lib/localShops';
 
-const NEW_BIKE_BUDGETS = ['Under $1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
+const NEW_BIKE_BUDGETS = ['Under $500', '$500–$1,500', '$1,500–$3,000', '$3,000–$5,000', '$5,000+'];
 
 const SERVICE_URL   = 'https://oneloveoutdoors.org/schedule-service-app';
 const CONTACT_EMAIL = 'mailto:service@oneloveoutdoors.org';
@@ -314,14 +314,48 @@ const [result, setResult]             = useState(null);
                 </div>
               </div>
 
-              {/* Under $5k — local shops */}
-              {newBikeBudget && newBikeBudget !== '$5,000+' && (
+              {/* Under $500 — BiCi Co. */}
+              {newBikeBudget === 'Under $500' && (
                 <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-text-hint)', marginBottom: 6, marginTop: 0 }}>
-                    Shops near you
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-accent)', marginBottom: 6, marginTop: 0 }}>
+                    BiCi Co. — Hartford's community bike shop
                   </p>
-                  <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 10, marginTop: 0 }}>
-                    Supporting your local shop matters. These are good people doing good work.
+                  <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, marginBottom: 10, marginTop: 0 }}>
+                    They sell quality upcycled bikes at affordable prices and every purchase supports their community programs.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                    {['Hartford — 97 Park St', 'West Hartford — 616 New Park Ave'].map(loc => (
+                      <div key={loc} style={{ padding: '8px 10px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)', fontSize: 12, color: 'var(--ol-text-muted)' }}>
+                        {loc}
+                      </div>
+                    ))}
+                  </div>
+                  <a href="https://bicico.org" target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'block', width: '100%', padding: '11px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box', marginBottom: 10 }}>
+                    bicico.org →
+                  </a>
+                  <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', lineHeight: 1.5, margin: 0 }}>
+                    We can also help you figure out if a used bike you're looking at is worth buying — just reach out.
+                  </p>
+                </div>
+              )}
+
+              {/* $500–$1,500 — BiCi Co. + local shops */}
+              {newBikeBudget === '$500–$1,500' && (
+                <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
+                  <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, marginBottom: 10, marginTop: 0 }}>
+                    BiCi Co. has some great finds in this range, or check out these local shops for new bikes:
+                  </p>
+                  <div style={{ padding: '10px 12px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', marginBottom: 10 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)', marginBottom: 2, marginTop: 0 }}>BiCi Co.</p>
+                    <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginBottom: 6, marginTop: 0 }}>Hartford · West Hartford</p>
+                    <a href="https://bicico.org" target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 12, fontWeight: 600, color: 'var(--ol-accent)', textDecoration: 'none' }}>
+                      bicico.org →
+                    </a>
+                  </div>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-text-hint)', marginBottom: 8, marginTop: 0 }}>
+                    Local shops
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {LOCAL_SHOPS.map(shop => (
@@ -331,19 +365,48 @@ const [result, setResult]             = useState(null);
                       </div>
                     ))}
                   </div>
-                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--ol-border)' }}>
-                    <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 8, marginTop: 0 }}>
-                      Want help figuring out what to look for? Book a free consultation and we'll point you in the right direction.
-                    </p>
-                    <a href="https://oneloveoutdoors.org/schedule-service-app" target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'block', width: '100%', padding: '11px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>
-                      Book a free consultation →
-                    </a>
+                </div>
+              )}
+
+              {/* $1,500–$3,000 — local shops */}
+              {newBikeBudget === '$1,500–$3,000' && (
+                <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
+                  <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, marginBottom: 10, marginTop: 0 }}>
+                    These shops can set you up with something solid in this range.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {LOCAL_SHOPS.map(shop => (
+                      <div key={shop.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        {shop.town && <span style={{ fontSize: 11, color: 'var(--ol-text-hint)' }}>{shop.town}</span>}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* $5k+ — custom builds */}
+              {/* $3,000–$5,000 — local shops + soft custom mention */}
+              {newBikeBudget === '$3,000–$5,000' && (
+                <div style={{ background: 'var(--ol-bg-callout)', border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
+                  <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, marginBottom: 10, marginTop: 0 }}>
+                    Your local shop has great options here. If you want something more tailored, we do custom builds too.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                    {LOCAL_SHOPS.map(shop => (
+                      <div key={shop.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        {shop.town && <span style={{ fontSize: 11, color: 'var(--ol-text-hint)' }}>{shop.town}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <a href="https://oneloveoutdoors.org/schedule-service-app" target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'block', width: '100%', padding: '11px 0', borderRadius: 'var(--ol-radius-md)', fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>
+                    Learn about custom builds →
+                  </a>
+                </div>
+              )}
+
+              {/* $5,000+ — custom builds */}
               {newBikeBudget === '$5,000+' && (
                 <div style={{ background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', borderRadius: 'var(--ol-radius-lg)', padding: '14px 16px' }}>
                   <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ol-accent)', marginBottom: 6, marginTop: 0 }}>
