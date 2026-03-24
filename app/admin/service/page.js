@@ -42,8 +42,6 @@ function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
   const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled Monday') +
     (time ? ' around ' + fmtTime(time) : '');
   const returnWhen = returnDate ? fmtDate(returnDate) : 'Friday';
-  const autoReturn = pickupToReturn(pickupDate);
-  const isDelayed = returnDate && autoReturn && returnDate !== autoReturn;
   const issues = booking.issues && booking.issues.length > 0
     ? booking.issues.join(', ').toLowerCase()
     : 'your bike';
@@ -53,9 +51,6 @@ function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
     case 'picked_up':
       return 'Hi ' + name + ', we\'ve got your bike. Plan on having it back by ' + returnWhen + '. We\'ll keep you posted. — One Love';
     case 'in_progress':
-      if (isDelayed) {
-        return 'Hi ' + name + ', parts are on order — updated return is ' + returnWhen + '. We\'ll keep you posted. — One Love';
-      }
       return 'Hi ' + name + ', we\'re working on ' + issues + '. Your bike will be ready for delivery ' + returnWhen + '. — One Love';
     case 'done':
       return 'Hi ' + name + ', your bike is ready! We\'ll deliver it on ' + returnWhen + '. — One Love';
@@ -433,9 +428,6 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             <span>
               <strong>Est. return: </strong>
               {fmtDate(booking.return_date || pickupToReturn(booking.confirmed_date))}
-              {booking.return_date && booking.confirmed_date && booking.return_date !== pickupToReturn(booking.confirmed_date) && (
-                <span style={{ marginLeft: 6, color: '#f59e0b', fontSize: 11, fontWeight: 700 }}>DELAYED</span>
-              )}
             </span>
           )}
         </div>
@@ -606,9 +598,6 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           <div>
             <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>
               Est. return
-              {returnDate && returnDate !== pickupToReturn(confirmDate) && (
-                <span style={{ marginLeft: 6, color: '#f59e0b', fontWeight: 700 }}>— delayed</span>
-              )}
             </label>
             <input
               type="date"

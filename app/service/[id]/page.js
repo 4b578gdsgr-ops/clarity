@@ -1,6 +1,19 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
+const STATUS_HEADING = {
+  new:             "We'll be in touch soon.",
+  confirmed:       "We'll be in touch soon.",
+  picked_up:       "Your bike is in good hands.",
+  in_progress:     "Your bike is in good hands.",
+  ready:           "Your bike is ready.",
+  out_for_delivery:"Your bike is on its way back.",
+  complete:        "All set. Ride on.",
+  done:            "All set. Ride on.",
+  delivered:       "All set. Ride on.",
+  booked:          "We'll be in touch soon.",
+};
+
 const STATUS_LABEL = {
   new:             'Request received',
   confirmed:       'Confirmed',
@@ -150,7 +163,7 @@ export default function BookingStatusPage({ params }) {
 
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '24px 16px' }}>
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, color: '#0f1a14', marginBottom: 4 }}>
-          {'Your service booking'}
+          {STATUS_HEADING[booking.status] || "We'll be in touch soon."}
         </h1>
         <p style={{ color: '#9ca3af', fontSize: 14, marginBottom: 24 }}>
           {'Check back here for updates. You can message us below.'}

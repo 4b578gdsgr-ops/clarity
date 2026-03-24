@@ -1,6 +1,19 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
+const STATUS_HEADING = {
+  new:             "We'll be in touch soon.",
+  confirmed:       "We'll be in touch soon.",
+  picked_up:       "Your bike is in good hands.",
+  in_progress:     "Your bike is in good hands.",
+  ready:           "Your bike is ready.",
+  out_for_delivery:"Your bike is on its way back.",
+  complete:        "All set. Ride on.",
+  done:            "All set. Ride on.",
+  delivered:       "All set. Ride on.",
+  booked:          "We'll be in touch soon.",
+};
+
 const STATUS_LABEL = {
   new:             'Request received',
   confirmed:       'Confirmed',
@@ -163,7 +176,7 @@ export default function EmbedBookingStatusPage({ params }) {
   return (
     <div style={containerStyle}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a202c', marginBottom: 4, marginTop: 0 }}>
-        {'Your service booking'}
+        {STATUS_HEADING[booking.status] || "We'll be in touch soon."}
       </h2>
       <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 20 }}>
         {'Check back here for updates. You can message us below.'}
