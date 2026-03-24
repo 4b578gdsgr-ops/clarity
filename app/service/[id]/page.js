@@ -265,7 +265,7 @@ export default function BookingStatusPage({ params }) {
         {/* Message thread */}
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid #f3f4f6', background: '#fafaf7' }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Messages</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Got questions? We're here.</span>
           </div>
 
           <div style={{ padding: 16, minHeight: 120, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>

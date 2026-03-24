@@ -277,7 +277,7 @@ export default function EmbedBookingStatusPage({ params }) {
       {/* Message thread */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
         <div style={{ padding: '10px 16px', borderBottom: '1px solid #f3f4f6', background: '#fafaf7' }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Messages</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Got questions? We're here.</span>
         </div>
 
         <div style={{ padding: 16, minHeight: 100, maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
