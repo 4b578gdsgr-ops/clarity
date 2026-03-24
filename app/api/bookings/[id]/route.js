@@ -20,6 +20,7 @@ export async function GET(request, { params }) {
 
   if (error) return Response.json({ error: error.message }, { status: error.code === 'PGRST116' ? 404 : 500 });
 
+  console.log('[GET /api/bookings/[id]] is_member:', data?.is_member, 'member_verified:', data?.member_verified);
   return Response.json({ booking: data });
 }
 

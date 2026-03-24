@@ -85,6 +85,7 @@ export default function BookingStatusPage({ params }) {
       if (!bRes.ok) { setNotFound(true); setLoading(false); return; }
       const bData = await bRes.json();
       const mData = await mRes.json();
+      console.log('[service/[id]] booking API response:', JSON.stringify(bData));
       setBooking(bData.booking || bData);
       setMessages(mData.messages || []);
     } catch {
@@ -190,6 +191,14 @@ export default function BookingStatusPage({ params }) {
               }} />
             ))}
           </div>
+
+          {booking.is_member && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '3px 10px' }}>
+              <span style={{ fontSize: 12, color: '#166534', fontWeight: 600 }}>
+                {booking.member_verified ? 'One Love Member ✓' : 'One Love Member — free pickup & delivery'}
+              </span>
+            </div>
+          )}
 
           {booking.confirmed_date && (
             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 8 }}>

@@ -87,6 +87,7 @@ export default function EmbedBookingStatusPage({ params }) {
       if (!bRes.ok) { setNotFound(true); setLoading(false); return; }
       const bData = await bRes.json();
       const mData = await mRes.json();
+      console.log('[embed/service] booking API response:', JSON.stringify(bData));
       setBooking(bData.booking || bData);
       setMessages(mData.messages || []);
     } catch {
