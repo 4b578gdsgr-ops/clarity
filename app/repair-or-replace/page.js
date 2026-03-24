@@ -375,7 +375,10 @@ export default function RepairOrReplacePage() {
                       {LOCAL_SHOPS.map(shop => (
                         <div key={shop.name} className="flex justify-between items-center px-3 py-2 rounded-lg"
                           style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
-                          <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          {shop.url
+                            ? <a href={shop.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium" style={{ color: '#2d8653', textDecoration: 'none' }}>{shop.name}</a>
+                            : <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          }
                           {shop.town && <span className="text-xs" style={{ color: '#9ca3af' }}>{shop.town}</span>}
                         </div>
                       ))}
@@ -393,7 +396,10 @@ export default function RepairOrReplacePage() {
                       {LOCAL_SHOPS.map(shop => (
                         <div key={shop.name} className="flex justify-between items-center px-3 py-2 rounded-lg"
                           style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
-                          <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          {shop.url
+                            ? <a href={shop.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium" style={{ color: '#2d8653', textDecoration: 'none' }}>{shop.name}</a>
+                            : <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          }
                           {shop.town && <span className="text-xs" style={{ color: '#9ca3af' }}>{shop.town}</span>}
                         </div>
                       ))}
@@ -411,7 +417,10 @@ export default function RepairOrReplacePage() {
                       {LOCAL_SHOPS.map(shop => (
                         <div key={shop.name} className="flex justify-between items-center px-3 py-2 rounded-lg"
                           style={{ background: '#faf9f6', border: '1px solid #e5e0d8' }}>
-                          <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          {shop.url
+                            ? <a href={shop.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium" style={{ color: '#2d8653', textDecoration: 'none' }}>{shop.name}</a>
+                            : <span className="text-sm font-medium" style={{ color: '#2d3436' }}>{shop.name}</span>
+                          }
                           {shop.town && <span className="text-xs" style={{ color: '#9ca3af' }}>{shop.town}</span>}
                         </div>
                       ))}

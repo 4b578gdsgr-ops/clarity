@@ -360,7 +360,10 @@ const [result, setResult]             = useState(null);
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {LOCAL_SHOPS.map(shop => (
                       <div key={shop.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)' }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        {shop.url
+                          ? <a href={shop.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', textDecoration: 'none' }}>{shop.name}</a>
+                          : <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        }
                         {shop.town && <span style={{ fontSize: 11, color: 'var(--ol-text-hint)' }}>{shop.town}</span>}
                       </div>
                     ))}
@@ -377,7 +380,10 @@ const [result, setResult]             = useState(null);
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {LOCAL_SHOPS.map(shop => (
                       <div key={shop.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)' }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        {shop.url
+                          ? <a href={shop.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', textDecoration: 'none' }}>{shop.name}</a>
+                          : <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        }
                         {shop.town && <span style={{ fontSize: 11, color: 'var(--ol-text-hint)' }}>{shop.town}</span>}
                       </div>
                     ))}
@@ -394,7 +400,10 @@ const [result, setResult]             = useState(null);
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
                     {LOCAL_SHOPS.map(shop => (
                       <div key={shop.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--ol-radius-md)', background: 'var(--ol-bg-input)', border: '1px solid var(--ol-border)' }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        {shop.url
+                          ? <a href={shop.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-accent)', textDecoration: 'none' }}>{shop.name}</a>
+                          : <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ol-text)' }}>{shop.name}</span>
+                        }
                         {shop.town && <span style={{ fontSize: 11, color: 'var(--ol-text-hint)' }}>{shop.town}</span>}
                       </div>
                     ))}
