@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../lib/serviceArea';
 import { validateBooking, isFormValid } from '../../lib/bookingValidation';
@@ -153,8 +153,9 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
 // ─── Step 2: Form ─────────────────────────────────────────────────────────────
 
-function FormStep({ address, onBack, onDone }) {
+function FormStep({ address, onBack, onDone, initialMember = false }) {
   const formRef = useRef(null);
+  const [isMember, setIsMember] = useState(initialMember);
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
     contact_preference: '',
@@ -202,7 +203,7 @@ function FormStep({ address, onBack, onDone }) {
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, photos: photoUrls }),
+        body: JSON.stringify({ ...form, is_member: isMember, photos: photoUrls }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitErr(data.error || 'Something went wrong.'); return; }
@@ -380,6 +381,27 @@ function FormStep({ address, onBack, onDone }) {
           />
         </div>
 
+        <div style={{ marginBottom: 16, padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={isMember}
+              onChange={e => setIsMember(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: '#1a3328', cursor: 'pointer', flexShrink: 0 }}
+            />
+            <span style={{ fontSize: 14, color: '#166534', fontWeight: 600 }}>
+              {isMember
+                ? 'Free pickup & delivery (member) ✓'
+                : "I'm a One Love member — pickup & delivery is free"}
+            </span>
+          </label>
+          {!isMember && !initialMember && (
+            <p style={{ fontSize: 12, color: '#15803d', margin: '6px 0 0 26px' }}>
+              Not a member? <a href="https://oneloveoutdoors.org/onelove-members-only" target="_blank" rel="noopener noreferrer" style={{ color: '#1a3328', fontWeight: 600 }}>Join for $25/month</a> — free pickups, priority service.
+            </p>
+          )}
+        </div>
+
         <button
           type="submit"
           disabled={submitting || !canSubmit}
@@ -445,6 +467,12 @@ export default function ScheduleService() {
   const [bookingId, setBookingId] = useState(null);
   const [contactPreference, setContactPreference] = useState('');
   const [bookingIsAssembly, setBookingIsAssembly] = useState(false);
+  const [initialMember, setInitialMember] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('member') === 'true') setInitialMember(true);
+  }, []);
 
   function handlePin(lat, lng) {
     if (lat === null) { setPin(null); setOutside(false); return; }
@@ -507,6 +535,7 @@ export default function ScheduleService() {
       {step === 'form' && (
         <FormStep
           address={address}
+          initialMember={initialMember}
           onBack={() => setStep('location')}
           onDone={(id, pref, assembly) => { setBookingId(id); setContactPreference(pref); setBookingIsAssembly(!!assembly); setStep('done'); }}
         />

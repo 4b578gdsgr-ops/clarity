@@ -32,7 +32,7 @@ export async function PATCH(request, { params }) {
 
   const allowed = ['status', 'notes', 'time_slot', 'preferred_day',
                    'confirmed_date', 'confirmed_time', 'return_date', 'delivery_time', 'zone', 'preferred_time',
-                   'invoice_amount', 'payment_link', 'address'];
+                   'invoice_amount', 'payment_link', 'address', 'member_verified'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];

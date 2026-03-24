@@ -61,6 +61,15 @@ export default function EmbedService() {
   const [outside, setOutside] = useState(false);
   const [pricingTier, setPricingTier] = useState(null); // { fee, zip } | null
   const [isMember, setIsMember] = useState(false);
+  const [memberPrefilled, setMemberPrefilled] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('member') === 'true') {
+      setIsMember(true);
+      setMemberPrefilled(true);
+    }
+  }, []);
   const [addrQuery, setAddrQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [form, setForm] = useState({
@@ -156,6 +165,7 @@ export default function EmbedService() {
     setOutside(false);
     setPricingTier(null);
     setIsMember(false);
+    setMemberPrefilled(false);
     setAddrQuery('');
     setErrors(er => ({ ...er, address: '' }));
   }
@@ -282,7 +292,7 @@ export default function EmbedService() {
             </button>
           </div>
 
-          {!isMember && (
+          {!isMember && !memberPrefilled && (
             <div style={{ marginTop: 28, padding: '14px 16px', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', borderRadius: 'var(--ol-radius-lg)', textAlign: 'left' }}>
               <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, margin: '0 0 10px' }}>
                 Want free pickup next time? Join One Love Membership — $25/month, free pickup & delivery, priority service.
@@ -377,7 +387,7 @@ export default function EmbedService() {
                     ? 'Free pickup & delivery (member) ✓'
                     : `Pickup & delivery: $${pricingTier ? pricingTier.fee : 25}`}
                 </p>
-                {!isMember && (
+                {!isMember && !memberPrefilled && (
                   <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginBottom: 6 }}>
                     Members get free pickup & delivery.{' '}
                     <a

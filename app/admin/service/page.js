@@ -273,6 +273,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [invoiceAmount, setInvoiceAmount] = useState(booking.invoice_amount != null ? String(booking.invoice_amount) : '');
   const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
   const [address, setAddress] = useState(booking.address || '');
+  const [memberVerified, setMemberVerified] = useState(!!booking.member_verified);
 
   // Silent save — updates a field without triggering a full list refresh.
   // Use for field-level edits (date, time, notes) so native pickers aren't interrupted.
@@ -361,6 +362,33 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 textTransform: 'uppercase', letterSpacing: '0.06em',
               }}>
                 Quote needed
+              </span>
+            )}
+            {booking.is_member && !memberVerified && (
+              <button
+                onClick={async () => { await save({ member_verified: true }); setMemberVerified(true); }}
+                title="Click to confirm this person is actually a member"
+                style={{
+                  marginLeft: 8, cursor: 'pointer',
+                  background: '#fef9c3', color: '#854d0e',
+                  border: '1px solid #fde047',
+                  borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Member — Verify ✓
+              </button>
+            )}
+            {booking.is_member && memberVerified && (
+              <span style={{
+                marginLeft: 8,
+                background: '#f0fdf4', color: '#166534',
+                border: '1px solid #bbf7d0',
+                borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Member ✓
               </span>
             )}
           </div>

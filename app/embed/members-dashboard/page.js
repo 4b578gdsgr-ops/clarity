@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
-const SERVICE_URL    = 'https://oneloveoutdoors.org/schedule-service-app';
+const SERVICE_URL    = 'https://oneloveoutdoors.org/schedule-service-app?member=true';
 const DIAGNOSTIC_URL = 'https://oneloveoutdoors.org/repair-or-replace';
 const STORAGE_KEY    = 'ol_member_thread';
 
@@ -134,7 +134,7 @@ export default function MembersDashboard() {
           Book service — free pickup/delivery →
         </a>
         <p style={{ fontSize: 12, color: 'var(--ol-accent)', marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
-          Remember to check <strong>"I'm a member"</strong> when booking.
+          Your member status is pre-filled automatically.
         </p>
       </div>
 
