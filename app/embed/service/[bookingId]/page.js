@@ -1,18 +1,40 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
-const STATUS_HEADING = {
-  new:             "We'll be in touch soon.",
-  confirmed:       "We'll be in touch soon.",
-  picked_up:       "Your bike is in good hands.",
-  in_progress:     "Your bike is in good hands.",
-  ready:           "Your bike is ready.",
-  out_for_delivery:"Your bike is on its way back.",
-  complete:        "All set. Ride on.",
-  done:            "All set. Ride on.",
-  delivered:       "All set. Ride on.",
-  booked:          "We'll be in touch soon.",
-};
+function getStatusHeading(booking) {
+  const { status, confirmed_date, confirmed_time, return_date } = booking;
+  switch (status) {
+    case 'new':
+    case 'booked':
+      return "We got you. We'll reach out shortly to set up a time.";
+    case 'confirmed': {
+      const day  = confirmed_date ? fmtDate(confirmed_date) : '';
+      const time = confirmed_time ? fmtTime(confirmed_time) : '';
+      const when = day && time ? `${day} around ${time}` : day || '';
+      return when
+        ? `All set for ${when}. Nothing to do now but enjoy the ride.`
+        : "All set. Nothing to do now but enjoy the ride.";
+    }
+    case 'picked_up':
+      return "Your bike is with us. We'll keep you posted.";
+    case 'in_progress':
+      return "Working on it. Good things take a little time.";
+    case 'ready': {
+      const ret = return_date ? fmtDate(return_date) : '';
+      return ret
+        ? `Your bike is dialed and ready to roll. We'll have it back to you ${ret}.`
+        : "Your bike is dialed and ready to roll.";
+    }
+    case 'out_for_delivery':
+      return "On our way to you now.";
+    case 'complete':
+    case 'done':
+    case 'delivered':
+      return "Delivered. You're golden.";
+    default:
+      return "We got you. We'll reach out shortly to set up a time.";
+  }
+}
 
 const STATUS_LABEL = {
   new:             'Request received',
@@ -177,7 +199,7 @@ export default function EmbedBookingStatusPage({ params }) {
   return (
     <div style={containerStyle}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a202c', marginBottom: 4, marginTop: 0 }}>
-        {STATUS_HEADING[booking.status] || "We'll be in touch soon."}
+        {getStatusHeading(booking)}
       </h2>
       <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 20 }}>
         {'Check back here for updates. You can message us below.'}
