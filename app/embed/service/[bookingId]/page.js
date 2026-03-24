@@ -12,8 +12,8 @@ function getStatusHeading(booking) {
       const time = confirmed_time ? fmtTime(confirmed_time) : '';
       const when = day && time ? `${day} around ${time}` : day || '';
       return when
-        ? `All set for ${when}. Nothing to do now but enjoy the ride.`
-        : "All set. Nothing to do now but enjoy the ride.";
+        ? `All set for ${when}. We'll take it from here.`
+        : "All set. We'll take it from here.";
     }
     case 'picked_up':
       return "Your bike is with us. We'll keep you posted.";
