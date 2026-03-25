@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../../lib/supabase';
-import { sendServiceEmail, sendNewBookingNotification } from '../../../lib/email';
+import { sendNewBookingNotification } from '../../../lib/email';
+import { notifyCustomer } from '../../../lib/notify';
 
 // GET /api/bookings?status=new
 export async function GET(request) {
@@ -65,13 +66,13 @@ export async function POST(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Send confirmation to customer
-  console.log('[bookings] about to send customer confirmation for booking id:', data.id);
+  // Notify customer (SMS or email based on contact_preference)
+  console.log('[bookings] about to notify customer — contact_preference:', data.contact_preference);
   try {
-    await sendServiceEmail('new', data);
-    console.log('[bookings] customer email sent');
+    await notifyCustomer('new', data);
+    console.log('[bookings] customer notification sent');
   } catch (err) {
-    console.error('[bookings] customer email FAILED:', err?.message || err);
+    console.error('[bookings] customer notification FAILED:', err?.message || err);
   }
 
   // Send admin notification

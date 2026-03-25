@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../../lib/supabase';
-import { sendMessageEmail, sendAdminMessageNotification } from '../../../lib/email';
+import { sendAdminMessageNotification } from '../../../lib/email';
+import { notifyCustomerMessage } from '../../../lib/notify';
 
 // GET /api/messages?booking_id=xxx
 export async function GET(request) {
@@ -79,17 +80,17 @@ export async function POST(request) {
 
   // Fire-and-forget notification emails
   if (sender === 'admin') {
-    // Email the customer
+    // Notify the customer (SMS or email based on contact_preference)
     const { data: booking, error: bErr } = await supabaseAdmin
       .from('service_bookings')
-      .select('id, name, email')
+      .select('id, name, email, phone, contact_preference')
       .eq('id', booking_id)
       .single();
     if (bErr) {
-      console.error('[messages] POST: failed to fetch booking for email:', bErr.message);
-    } else if (booking?.email) {
-      sendMessageEmail(booking, message.trim()).catch(err =>
-        console.error('[messages] POST customer email failed:', err?.message || err)
+      console.error('[messages] POST: failed to fetch booking for notification:', bErr.message);
+    } else if (booking) {
+      notifyCustomerMessage(booking, message.trim()).catch(err =>
+        console.error('[messages] POST customer notification failed:', err?.message || err)
       );
     }
   } else if (sender === 'customer') {

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
-import { sendServiceEmail } from '../../../../lib/email';
+import { notifyCustomer } from '../../../../lib/notify';
 
 const VALID_STATUSES = [
   'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled',
@@ -56,10 +56,12 @@ export async function PATCH(request, { params }) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Send email when status advances to a customer-facing milestone
-  const EMAIL_TRIGGERS = new Set(['confirmed', 'picked_up', 'ready', 'out_for_delivery', 'complete']);
-  if (update.status && EMAIL_TRIGGERS.has(update.status)) {
-    sendServiceEmail(update.status, data).catch(() => {});
+  // Notify customer (SMS or email) when status advances to a customer-facing milestone
+  const NOTIFY_TRIGGERS = new Set(['confirmed', 'picked_up', 'ready', 'out_for_delivery', 'complete']);
+  if (update.status && NOTIFY_TRIGGERS.has(update.status)) {
+    notifyCustomer(update.status, data).catch(err =>
+      console.error('[bookings/[id]] notification failed for', update.status, ':', err?.message || err)
+    );
   }
 
   return Response.json({ booking: data });
