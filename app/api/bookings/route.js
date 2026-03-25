@@ -65,10 +65,23 @@ export async function POST(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Send confirmation to customer + notification to admin (fire-and-forget)
-  console.log('[bookings] triggering emails for booking id:', data.id);
-  sendServiceEmail('new', data).catch(err => console.error('[bookings] sendServiceEmail threw:', err?.message || err));
-  sendNewBookingNotification(data).catch(err => console.error('[bookings] sendNewBookingNotification threw:', err?.message || err));;
+  // Send confirmation to customer
+  console.log('[bookings] about to send customer confirmation for booking id:', data.id);
+  try {
+    await sendServiceEmail('new', data);
+    console.log('[bookings] customer email sent');
+  } catch (err) {
+    console.error('[bookings] customer email FAILED:', err?.message || err);
+  }
+
+  // Send admin notification
+  console.log('[bookings] about to send admin notification');
+  try {
+    await sendNewBookingNotification(data);
+    console.log('[bookings] admin email sent');
+  } catch (err) {
+    console.error('[bookings] admin email FAILED:', err?.message || err);
+  }
 
   // Fire-and-forget webhook
   const webhookUrl = process.env.BOOKING_WEBHOOK_URL;

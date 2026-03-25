@@ -218,7 +218,7 @@ function MessageThread({ bookingId, onMarkRead }) {
             }}>
               {m.message}
               <div style={{ fontSize: 10, opacity: 0.55, marginTop: 3, textAlign: 'right' }}>
-                {new Date(m.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                {new Date(m.created_at).toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })}
               </div>
             </div>
           </div>
@@ -1349,6 +1349,7 @@ export default function AdminServicePage() {
   const [activeTab, setActiveTab] = useState('requests');
   const [unreadCounts, setUnreadCounts] = useState({ total: 0, counts: {} });
   const [memberUnread, setMemberUnread] = useState(0);
+  const [icalCopied, setIcalCopied] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -1428,12 +1429,26 @@ export default function AdminServicePage() {
             </button>
           ))}
         </div>
-        <button
-          onClick={load}
-          style={{ background: 'none', border: '1px solid #4ade80', color: '#4ade80', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}
-        >
-          Refresh
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch('/api/admin/ical-url');
+                const { url } = await res.json();
+                if (url) { await navigator.clipboard.writeText(url); setIcalCopied(true); setTimeout(() => setIcalCopied(false), 2500); }
+              } catch {}
+            }}
+            style={{ background: 'none', border: '1px solid #6b7280', color: icalCopied ? '#4ade80' : '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}
+          >
+            {icalCopied ? 'Copied!' : 'Copy iCal URL'}
+          </button>
+          <button
+            onClick={load}
+            style={{ background: 'none', border: '1px solid #4ade80', color: '#4ade80', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {unreadCounts.total > 0 && (
