@@ -71,7 +71,7 @@ export async function GET(request) {
   const { data: bookings, error } = await supabaseAdmin
     .from('service_bookings')
     .select('*')
-    .in('status', ['confirmed', 'picked_up', 'out_for_delivery'])
+    .in('status', ['confirmed', 'in_progress', 'picked_up', 'out_for_delivery'])
     .not('confirmed_date', 'is', null)
     .order('confirmed_date', { ascending: true })
     .order('confirmed_time', { ascending: true });

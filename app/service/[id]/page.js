@@ -15,10 +15,9 @@ function getStatusHeading(booking) {
         ? `All set for ${when}. We'll take it from here.`
         : "All set. We'll take it from here.";
     }
-    case 'picked_up':
-      return "Your bike is with us. We'll keep you posted.";
+    case 'picked_up': // legacy
     case 'in_progress':
-      return "Working on it. Good things take a little time.";
+      return "Your bike is with us. Working on it.";
     case 'ready': {
       const ret = return_date ? fmtDate(return_date) : '';
       return ret
@@ -51,12 +50,12 @@ const STATUS_LABEL = {
   delivered:       'Delivered',
 };
 
-const STATUS_STEPS = ['new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete'];
+const STATUS_STEPS = ['new', 'confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete'];
 
 const STATUS_COLOR = {
   new:             '#f59e0b',
   confirmed:       '#3b82f6',
-  picked_up:       '#8b5cf6',
+  picked_up:       '#f97316', // legacy — maps to in_progress color
   in_progress:     '#f97316',
   ready:           '#0ea5e9',
   out_for_delivery:'#2d8653',
@@ -172,7 +171,8 @@ export default function BookingStatusPage({ params }) {
     );
   }
 
-  const currentStep = STATUS_STEPS.indexOf(booking.status);
+  const displayStatus = booking.status === 'picked_up' ? 'in_progress' : booking.status;
+  const currentStep = STATUS_STEPS.indexOf(displayStatus);
   const color = STATUS_COLOR[booking.status] || '#9ca3af';
 
   return (

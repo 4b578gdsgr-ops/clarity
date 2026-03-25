@@ -57,7 +57,7 @@ export async function PATCH(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   // Notify customer (SMS or email) when status advances to a customer-facing milestone
-  const NOTIFY_TRIGGERS = new Set(['confirmed', 'picked_up', 'ready', 'out_for_delivery', 'complete']);
+  const NOTIFY_TRIGGERS = new Set(['confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete']);
   if (update.status && NOTIFY_TRIGGERS.has(update.status)) {
     notifyCustomer(update.status, data).catch(err =>
       console.error('[bookings/[id]] notification failed for', update.status, ':', err?.message || err)

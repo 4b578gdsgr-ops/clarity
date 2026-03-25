@@ -8,8 +8,7 @@ const RouteMap = dynamic(() => import('../../components/RouteMap'), { ssr: false
 
 const NEXT_ACTION = {
   new:             { label: 'Confirm',          next: 'confirmed'       },
-  confirmed:       { label: 'Picked up',        next: 'picked_up'       },
-  picked_up:       { label: 'In Progress',      next: 'in_progress'     },
+  confirmed:       { label: 'In Progress',      next: 'in_progress'     },
   in_progress:     { label: 'Ready',            next: 'ready'           },
   ready:           { label: 'Out for Delivery', next: 'out_for_delivery' },
   out_for_delivery:{ label: 'Complete',         next: 'complete'        },
@@ -48,10 +47,8 @@ function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
   switch (newStatus) {
     case 'confirmed':
       return 'Hi ' + name + ', your pickup is confirmed for ' + pickupWhen + '. Plan on having it back by ' + returnWhen + '. We\'ll reach out when we\'re on the way. — One Love';
-    case 'picked_up':
-      return 'Hi ' + name + ', we\'ve got your bike. Plan on having it back by ' + returnWhen + '. We\'ll keep you posted. — One Love';
     case 'in_progress':
-      return 'Hi ' + name + ', we\'re working on ' + issues + '. Your bike will be ready for delivery ' + returnWhen + '. — One Love';
+      return 'Hi ' + name + ', we\'ve got your bike and we\'re working on it. Plan on having it back by ' + returnWhen + '. We\'ll keep you posted. — One Love';
     case 'done':
       return 'Hi ' + name + ', your bike is ready! We\'ll deliver it on ' + returnWhen + '. — One Love';
     case 'ready':
@@ -984,7 +981,6 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead })
   const FILTERS = [
     { key: 'new',             label: 'New'             },
     { key: 'confirmed',       label: 'Confirmed'       },
-    { key: 'picked_up',       label: 'Picked Up'       },
     { key: 'in_progress',     label: 'In Progress'     },
     { key: 'ready',           label: 'Ready'           },
     { key: 'out_for_delivery',label: 'Out for Delivery'},
@@ -997,13 +993,20 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead })
     counts[b.status] = (counts[b.status] || 0) + 1;
   }
 
-  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  // picked_up is legacy — show under in_progress tab
+  const filtered = filter === 'all'
+    ? bookings
+    : filter === 'in_progress'
+      ? bookings.filter(b => b.status === 'in_progress' || b.status === 'picked_up')
+      : bookings.filter(b => b.status === filter);
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {FILTERS.map(f => {
-          const count = f.key === 'all' ? bookings.length : (counts[f.key] || 0);
+          const count = f.key === 'all' ? bookings.length
+            : f.key === 'in_progress' ? (counts['in_progress'] || 0) + (counts['picked_up'] || 0)
+            : (counts[f.key] || 0);
           const active = filter === f.key;
           return (
             <button
