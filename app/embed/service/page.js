@@ -268,10 +268,13 @@ export default function EmbedService() {
           <h3 style={{ fontSize: 22, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 8, fontFamily: 'var(--ol-font-heading)' }}>
             Got it.
           </h3>
-          <p style={{ color: 'var(--ol-text-muted)', fontSize: 15, marginBottom: 12, lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--ol-text-muted)', fontSize: 15, marginBottom: 10, lineHeight: 1.6 }}>
             {isAssembly
               ? "Got it. We'll review the details and send you a quote before scheduling pickup."
               : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
+          </p>
+          <p style={{ color: 'var(--ol-text-hint)', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>
+            {'Check your email (and spam folder) for a confirmation from service@oneloveoutdoors.org. Adding us to your contacts helps make sure you get our updates.'}
           </p>
           <p style={{ color: 'var(--ol-text-hint)', fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>
             {"We pick up and deliver on Mondays and Fridays. Most jobs are back to you within a week. If parts need to be ordered, we'll let you know."}

@@ -433,10 +433,13 @@ function DoneStep({ bookingId, contactPreference, isAssembly, onReset }) {
       <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, color: '#0f1a14', marginBottom: 16 }}>
         Got it.
       </h2>
-      <p style={{ color: '#4b5563', fontSize: 17, lineHeight: 1.6, marginBottom: 28 }}>
+      <p style={{ color: '#4b5563', fontSize: 17, lineHeight: 1.6, marginBottom: 12 }}>
         {isAssembly
           ? "Got it. We'll review the details and send you a quote before scheduling pickup."
           : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
+      </p>
+      <p style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, marginBottom: 28 }}>
+        {'Check your email (and spam folder) for a confirmation from service@oneloveoutdoors.org. Adding us to your contacts helps make sure you get our updates.'}
       </p>
       {bookingId && (
         <a
