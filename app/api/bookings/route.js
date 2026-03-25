@@ -75,13 +75,13 @@ export async function POST(request) {
     console.error('[bookings] customer notification FAILED:', err?.message || err);
   }
 
-  // Send admin notification
-  console.log('[bookings] about to send admin notification');
+  // Admin notification — always Resend direct, never through notify routing
+  console.log('[bookings] SENDING ADMIN EMAIL NOW');
   try {
-    await sendNewBookingNotification(data);
-    console.log('[bookings] admin email sent');
+    const adminResult = await sendNewBookingNotification(data);
+    console.log('[bookings] ADMIN EMAIL RESULT:', JSON.stringify(adminResult));
   } catch (err) {
-    console.error('[bookings] admin email FAILED:', err?.message || err);
+    console.error('[bookings] ADMIN EMAIL FAILED — message:', err?.message, '| stack:', err?.stack);
   }
 
   // Fire-and-forget webhook
