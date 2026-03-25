@@ -1349,6 +1349,8 @@ export default function AdminServicePage() {
   const [activeTab, setActiveTab] = useState('requests');
   const [unreadCounts, setUnreadCounts] = useState({ total: 0, counts: {} });
   const [memberUnread, setMemberUnread] = useState(0);
+  const [icalOpen, setIcalOpen] = useState(false);
+  const [icalUrl, setIcalUrl] = useState('');
   const [icalCopied, setIcalCopied] = useState(false);
 
   async function load() {
@@ -1432,15 +1434,18 @@ export default function AdminServicePage() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={async () => {
-              try {
-                const res = await fetch('/api/admin/ical-url');
-                const { url } = await res.json();
-                if (url) { await navigator.clipboard.writeText(url); setIcalCopied(true); setTimeout(() => setIcalCopied(false), 2500); }
-              } catch {}
+              if (!icalUrl) {
+                try {
+                  const res = await fetch('/api/admin/ical-url');
+                  const { url } = await res.json();
+                  if (url) setIcalUrl(url);
+                } catch {}
+              }
+              setIcalOpen(o => !o);
             }}
-            style={{ background: 'none', border: '1px solid #6b7280', color: icalCopied ? '#4ade80' : '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}
+            style={{ background: 'none', border: '1px solid #6b7280', color: '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}
           >
-            {icalCopied ? 'Copied!' : 'Copy iCal URL'}
+            📅 Subscribe to calendar
           </button>
           <button
             onClick={load}
@@ -1450,6 +1455,36 @@ export default function AdminServicePage() {
           </button>
         </div>
       </div>
+
+      {icalOpen && (
+        <div style={{ background: '#1a2b22', borderBottom: '1px solid #2d4a38', padding: '16px 20px' }}>
+          <div style={{ maxWidth: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <input
+                readOnly
+                value={icalUrl || 'Loading...'}
+                style={{ flex: 1, padding: '7px 12px', borderRadius: 7, border: '1px solid #2d4a38', background: '#0f1a14', color: '#d1fae5', fontSize: 13, fontFamily: 'monospace' }}
+              />
+              <button
+                onClick={async () => {
+                  if (!icalUrl) return;
+                  await navigator.clipboard.writeText(icalUrl);
+                  setIcalCopied(true);
+                  setTimeout(() => setIcalCopied(false), 2500);
+                }}
+                style={{ padding: '7px 16px', background: icalCopied ? '#16a34a' : '#2d4a38', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                {icalCopied ? 'Copied!' : 'Copy URL'}
+              </button>
+            </div>
+            <p style={{ color: '#6b9e7e', fontSize: 12, margin: 0, lineHeight: 1.6 }}>
+              {'Apple Calendar: File → New Calendar Subscription → paste URL. '}
+              {'Google Calendar: Other calendars → From URL → paste URL. '}
+              {'Confirmed bookings will appear on your calendar automatically.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {unreadCounts.total > 0 && (
         <div

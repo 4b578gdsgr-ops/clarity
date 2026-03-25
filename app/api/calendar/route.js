@@ -71,7 +71,7 @@ export async function GET(request) {
   const { data: bookings, error } = await supabaseAdmin
     .from('service_bookings')
     .select('*')
-    .in('status', ['confirmed', 'picked_up'])
+    .in('status', ['confirmed', 'picked_up', 'out_for_delivery'])
     .not('confirmed_date', 'is', null)
     .order('confirmed_date', { ascending: true })
     .order('confirmed_time', { ascending: true });
@@ -94,23 +94,21 @@ export async function GET(request) {
     const dtstart = dtFormat(b.confirmed_date, startH, startMin);
     const dtend   = dtFormat(b.confirmed_date, endH, endMin);
 
-    const title = b.bike_brand
-      ? `${b.name} — ${b.bike_brand} service`
-      : `${b.name} — bike service`;
+    const issuePart = b.issues?.length ? b.issues.join(', ') : '';
+    const titleParts = [b.name, [b.bike_brand, issuePart].filter(Boolean).join(' ')].filter(Boolean);
+    const title = titleParts.join(' — ');
 
     const descLines = [];
-    if (b.issues?.length) descLines.push(`Issues: ${b.issues.join(', ')}`);
-    if (b.bike_brand)     descLines.push(`Bike: ${b.bike_brand}`);
-    if (b.confirmed_time) descLines.push(`Time: ${b.confirmed_time}`);
-    if (b.address)        descLines.push(`Address: ${b.address}`);
     if (b.phone)          descLines.push(`Phone: ${b.phone}`);
     if (b.email)          descLines.push(`Email: ${b.email}`);
-    descLines.push(`Status: ${b.status}`);
+    if (b.issues?.length) descLines.push(`Issues: ${b.issues.join(', ')}`);
     if (b.notes)          descLines.push(`Notes: ${b.notes}`);
+    if (b.bike_brand)     descLines.push(`Bike: ${b.bike_brand}`);
+    descLines.push(`Status: ${b.status}`);
 
     const description = descLines.map(escape).join('\\n');
 
-    return [
+    const lines = [
       'BEGIN:VEVENT',
       `UID:booking-${b.id}@loveovermoney`,
       `DTSTAMP:${stamp}`,
@@ -118,9 +116,10 @@ export async function GET(request) {
       `DTEND;TZID=America/New_York:${dtend}`,
       fold(`SUMMARY:${escape(title)}`),
       fold(`DESCRIPTION:${description}`),
-      'STATUS:CONFIRMED',
-      'END:VEVENT',
-    ].join('\r\n');
+    ];
+    if (b.address) lines.push(fold(`LOCATION:${escape(b.address)}`));
+    lines.push('STATUS:CONFIRMED', 'END:VEVENT');
+    return lines.join('\r\n');
   });
 
   const cal = [
