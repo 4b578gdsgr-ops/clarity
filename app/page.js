@@ -313,7 +313,7 @@ export default function HomePage() {
         {/* ── HERO ── */}
         <div className="mb-6">
           <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, color: '#1a3328', marginBottom: 6, lineHeight: 1.2 }}>
-            We come to you.
+            Book the service. Take the ride.
           </h1>
           <p style={{ color: '#636e72', fontSize: 15, lineHeight: 1.6 }}>
             Pickup Monday. Back by Friday. We handle the rest.

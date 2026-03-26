@@ -319,7 +319,7 @@ export default function EmbedService() {
   return (
     <div style={container}>
       <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 4, marginTop: 0, fontFamily: 'var(--ol-font-heading)' }}>
-        We come to you.
+        Book the service. Take the ride.
       </h2>
       <p style={{ fontSize: 14, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 4 }}>
         Pickup Monday. Back by Friday.<sup style={{ fontSize: 10 }}>*</sup>
