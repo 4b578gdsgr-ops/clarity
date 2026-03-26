@@ -184,6 +184,7 @@ export default function EmbedService() {
   }
 
   const formRef = useRef(null);
+  const mapRef = useRef(null);
   const isAssembly = form.issues.includes('New bike assembly');
   const canSubmit = pin && !outside && isFormValid({ ...form, address });
   const estimateText = getEstimateText(form.issues);
@@ -192,8 +193,8 @@ export default function EmbedService() {
     e.preventDefault();
     // Validate address separately
     if (!pin || outside) {
-      setErrors(er => ({ ...er, address: pin ? 'Address is outside our service area.' : 'Drop a pin or search your address.' }));
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setErrors(er => ({ ...er, address: pin ? 'Address is outside our service area.' : 'Please set your pickup location first.' }));
+      mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     const errs = validateBooking({ ...form, address });
@@ -335,7 +336,16 @@ export default function EmbedService() {
         )}
 
         {/* ── Map (this IS the address) ── */}
-        <div style={{ marginBottom: 16 }}>
+        <div ref={mapRef} style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 10 }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--ol-text)', margin: '0 0 3px' }}>
+              Where should we pick up?
+              {pin && !outside && <span style={{ color: '#16a34a', marginLeft: 6 }}>✓</span>}
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', margin: 0 }}>
+              Search your address or tap the map to drop a pin
+            </p>
+          </div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <input
               type="text"
@@ -343,7 +353,11 @@ export default function EmbedService() {
               onChange={e => setAddrQuery(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); searchAddr(e); } }}
               placeholder="Search your address..."
-              style={{ ...inp, flex: 1 }}
+              style={{
+                ...inp, flex: 1,
+                border: pin && !outside ? '2px solid #16a34a' : '2px solid #d1d5db',
+                background: pin && !outside ? '#f0fdf4' : 'var(--ol-bg-input)',
+              }}
             />
             <button
               type="button"
@@ -590,7 +604,13 @@ export default function EmbedService() {
           {submitting ? 'Booking...' : 'Book Service'}
         </button>
 
-        <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 8 }}>
+        {!pin && (
+          <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 6 }}>
+            Set your pickup location above to continue
+          </p>
+        )}
+
+        <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: pin ? 8 : 4 }}>
           {'We\'ll confirm a time within 24 hours.'}
         </p>
       </form>
