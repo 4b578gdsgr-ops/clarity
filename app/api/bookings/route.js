@@ -1,5 +1,4 @@
 import { supabaseAdmin } from '../../../lib/supabase';
-import { sendNewBookingNotification } from '../../../lib/email';
 import { notifyCustomer } from '../../../lib/notify';
 
 // GET /api/bookings?status=new
@@ -75,13 +74,20 @@ export async function POST(request) {
     console.error('[bookings] customer notification FAILED:', err?.message || err);
   }
 
-  // Admin notification — always Resend direct, never through notify routing
+  // Admin notification — inlined directly, no helper functions
   console.log('[bookings] SENDING ADMIN EMAIL NOW');
   try {
-    const adminResult = await sendNewBookingNotification(data);
-    console.log('[bookings] ADMIN EMAIL RESULT:', JSON.stringify(adminResult));
+    const { Resend } = require('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const result = await resend.emails.send({
+      from: 'One Love Outdoors <service@oneloveoutdoors.org>',
+      to: ['service@oneloveoutdoors.org'],
+      subject: 'New booking — ' + (data.name || 'Unknown') + ' (' + (data.bike_brand || 'No brand') + ')',
+      text: 'New service request:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nAddress: ' + data.address + '\nBike: ' + (data.bike_brand || 'Not specified') + '\nIssues: ' + (data.issues || []).join(', ') + '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: https://clarity-pi-ten.vercel.app/admin/service',
+    });
+    console.log('[bookings] ADMIN EMAIL SENT:', JSON.stringify(result));
   } catch (err) {
-    console.error('[bookings] ADMIN EMAIL FAILED — message:', err?.message, '| stack:', err?.stack);
+    console.error('[bookings] ADMIN EMAIL FAILED:', JSON.stringify(err));
   }
 
   // Fire-and-forget webhook
