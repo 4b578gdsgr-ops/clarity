@@ -275,6 +275,40 @@ export default function EmbedBookingStatusPage({ params }) {
         </div>
       </div>
 
+      {/* Payment section */}
+      {['complete', 'done', 'delivered'].includes(booking.status) && booking.invoice_amount != null && (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
+            {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
+          </p>
+
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '14px 16px', marginBottom: booking.payment_link ? 10 : 0 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: '0 0 4px' }}>
+              Pay at delivery — cash or card. Save 3%.
+            </p>
+            <p style={{ fontSize: 12, color: '#4b7c5e', margin: 0 }}>
+              We pass the processing savings on to you.
+            </p>
+          </div>
+
+          {booking.payment_link && (
+            <div>
+              <a
+                href={booking.payment_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'block', textAlign: 'center', padding: '10px 0', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, color: '#374151', textDecoration: 'none', background: '#fafaf7' }}
+              >
+                Pay online →
+              </a>
+              <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 4, marginBottom: 0 }}>
+                Standard processing fees apply.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Message thread */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
         <div style={{ padding: '10px 16px', borderBottom: '1px solid #f3f4f6', background: '#fafaf7' }}>
