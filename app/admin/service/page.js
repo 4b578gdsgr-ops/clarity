@@ -290,7 +290,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       return 'Hi ' + name + ', your bike is with us. Track updates here: ' + link + ' — One Love Outdoors';
     }
     // new, confirmed, out_for_delivery, complete (no payment link), default
-    return 'Hi ' + name + ', your service request is confirmed. Track your booking here: ' + link + ' — One Love Outdoors';
+    return 'Hi ' + name + ', your bicycle service is confirmed. Track your booking here: ' + link + ' — One Love Outdoors';
   }
 
   function copyTracking() {

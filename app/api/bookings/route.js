@@ -98,7 +98,7 @@ export async function POST(request) {
       from: 'One Love Outdoors <service@oneloveoutdoors.org>',
       to: ['service@oneloveoutdoors.org'],
       subject: 'New booking — ' + (data.name || 'Unknown') + ' (' + (data.bike_brand || 'No brand') + ')',
-      text: 'New service request:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nAddress: ' + data.address + '\nBike: ' + (data.bike_brand || 'Not specified') + '\nIssues: ' + (data.issues || []).join(', ') + '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: https://clarity-pi-ten.vercel.app/admin/service',
+      text: 'New bicycle service:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nAddress: ' + data.address + '\nBike: ' + (data.bike_brand || 'Not specified') + '\nIssues: ' + (data.issues || []).join(', ') + '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: https://clarity-pi-ten.vercel.app/admin/service',
     });
     console.log('[bookings] ADMIN EMAIL SENT:', JSON.stringify(result));
   } catch (err) {
