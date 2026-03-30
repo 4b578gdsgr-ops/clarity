@@ -86,6 +86,91 @@ function fmtTime(timeStr) {
   return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
 }
 
+const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
+
+function UpdateInfoSection({ booking, bookingId, onUpdated }) {
+  const locked = !EDITABLE_STATUSES.has(booking.status);
+  const [name, setName] = useState(booking.name || '');
+  const [phone, setPhone] = useState(booking.phone || '');
+  const [email, setEmail] = useState(booking.email || '');
+  const [address, setAddress] = useState(booking.address || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function handleSave(e) {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) { setErr('Name and phone are required.'); return; }
+    setSaving(true);
+    setErr('');
+    try {
+      const res = await fetch('/api/bookings/' + bookingId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim() || null,
+          address: address.trim() || null,
+        }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || 'Save failed.'); return; }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      onUpdated();
+    } catch { setErr('Network error — try again.'); }
+    finally { setSaving(false); }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '8px 11px', border: '1px solid #d1d5db',
+    borderRadius: 7, fontSize: 14, outline: 'none', boxSizing: 'border-box',
+    fontFamily: 'inherit', color: locked ? '#9ca3af' : '#111827',
+    background: locked ? '#f9fafb' : '#fff',
+  };
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 14px' }}>
+        {locked ? 'Your info is locked once we have your bike.' : 'Missing something? Update your info here.'}
+      </p>
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</label>
+            <input value={name} onChange={e => setName(e.target.value)} disabled={locked} style={inputStyle} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Phone</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} disabled={locked} type="tel" style={inputStyle} />
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Email</label>
+          <input value={email} onChange={e => setEmail(e.target.value)} disabled={locked} type="email" placeholder={locked ? '' : 'Add one to get email updates'} style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Address</label>
+          <input value={address} onChange={e => setAddress(e.target.value)} disabled={locked} style={inputStyle} />
+        </div>
+        {err && <p style={{ margin: 0, fontSize: 13, color: '#dc2626' }}>{err}</p>}
+        {!locked && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{ padding: '8px 22px', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 7, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer' }}
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            {saved && <span style={{ fontSize: 13, color: '#16a34a', fontWeight: 600 }}>Updated</span>}
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}
+
 export default function BookingStatusPage({ params }) {
   const { id } = params;
   const [booking, setBooking] = useState(null);
@@ -262,6 +347,8 @@ export default function BookingStatusPage({ params }) {
             )}
           </div>
         </div>
+
+        <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
 
         {/* Payment section */}
         {['complete', 'done', 'delivered'].includes(booking.status) && booking.invoice_amount != null && (
