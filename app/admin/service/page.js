@@ -1342,6 +1342,270 @@ function SendEmailView() {
   );
 }
 
+// ─── New Booking Modal ────────────────────────────────────────────────────────
+
+const BIKE_BRANDS = [
+  'Trek', 'Specialized', 'Giant', 'Cannondale', 'Santa Cruz', 'Yeti',
+  'Pivot', 'Ibis', 'Marin', 'Kona', 'Canyon', 'Scott', 'GT',
+  'Surly', 'Salsa', 'Co-op Cycles', 'Other',
+];
+
+const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
+
+const ALL_STATUSES = [
+  { value: 'new',             label: 'New'             },
+  { value: 'confirmed',       label: 'Confirmed'       },
+  { value: 'in_progress',     label: 'In Progress'     },
+  { value: 'ready',           label: 'Ready'           },
+  { value: 'out_for_delivery',label: 'Out for Delivery' },
+  { value: 'complete',        label: 'Complete'        },
+];
+
+function NewBookingModal({ onClose, onCreated }) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [bikeBrand, setBikeBrand] = useState('');
+  const [issues, setIssues] = useState([]);
+  const [notes, setNotes] = useState('');
+  const [contactPref, setContactPref] = useState('text');
+  const [isMember, setIsMember] = useState(false);
+  const [status, setStatus] = useState('new');
+  const [pickupDate, setPickupDate] = useState('');
+  const [pickupTime, setPickupTime] = useState('');
+  const [returnDate, setReturnDate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitErr, setSubmitErr] = useState('');
+
+  function toggleIssue(issue) {
+    setIssues(prev => prev.includes(issue) ? prev.filter(i => i !== issue) : [...prev, issue]);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) {
+      setSubmitErr('Name and phone are required.');
+      return;
+    }
+    setSubmitting(true);
+    setSubmitErr('');
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim() || null,
+          address: address.trim() || null,
+          bike_brand: bikeBrand || null,
+          issues,
+          notes: notes.trim() || null,
+          contact_preference: contactPref,
+          is_member: isMember,
+          status,
+          confirmed_date: pickupDate || null,
+          confirmed_time: pickupTime || null,
+          return_date: returnDate || null,
+          admin_created: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSubmitErr(data.error || 'Failed to create booking.');
+        return;
+      }
+      onCreated();
+    } catch {
+      setSubmitErr('Network error — try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '8px 11px', border: '1px solid #d1d5db',
+    borderRadius: 7, fontSize: 14, outline: 'none', boxSizing: 'border-box',
+    fontFamily: 'inherit', color: '#111827',
+  };
+  const labelStyle = {
+    display: 'block', fontSize: 11, fontWeight: 700, color: '#9ca3af',
+    marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em',
+  };
+
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+        zIndex: 1000, display: 'flex', alignItems: 'flex-start',
+        justifyContent: 'center', overflowY: 'auto', padding: '24px 16px',
+      }}
+    >
+      <div style={{
+        background: '#fff', borderRadius: 14, width: '100%', maxWidth: 560,
+        padding: 28, position: 'relative',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f1a14' }}>New Booking</h2>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', fontSize: 22, color: '#9ca3af', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+          >
+            x
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Name + Phone */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Name *</label>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Phone *</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(860) 555-0000" type="tel" style={inputStyle} />
+            </div>
+          </div>
+
+          {/* Email */}
+          <div>
+            <label style={labelStyle}>Email (optional)</label>
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="they may not have one" type="email" style={inputStyle} />
+          </div>
+
+          {/* Address */}
+          <div>
+            <label style={labelStyle}>Address *</label>
+            <input value={address} onChange={e => setAddress(e.target.value)} placeholder="123 Main St, Hartford, CT" style={inputStyle} />
+          </div>
+
+          {/* Bike brand */}
+          <div>
+            <label style={labelStyle}>Bike brand (optional)</label>
+            <select value={bikeBrand} onChange={e => setBikeBrand(e.target.value)} style={{ ...inputStyle, background: '#fff', cursor: 'pointer' }}>
+              <option value="">— select brand —</option>
+              {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
+
+          {/* Issues */}
+          <div>
+            <label style={labelStyle}>Issues</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {ISSUE_OPTIONS.map(opt => (
+                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 14, color: '#374151', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={issues.includes(opt)}
+                    onChange={() => toggleIssue(opt)}
+                    style={{ accentColor: '#1a3328', cursor: 'pointer' }}
+                  />
+                  {opt}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label style={labelStyle}>Notes</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Anything to note from the call..."
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
+            />
+          </div>
+
+          {/* Contact preference */}
+          <div>
+            <label style={labelStyle}>Contact preference</label>
+            <div style={{ display: 'flex', gap: 16 }}>
+              {[['text', 'Text'], ['email', 'Email'], ['phone', 'Phone only']].map(([val, lbl]) => (
+                <label key={val} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 14, color: '#374151' }}>
+                  <input type="radio" name="contactPref" value={val} checked={contactPref === val} onChange={() => setContactPref(val)} style={{ accentColor: '#1a3328', cursor: 'pointer' }} />
+                  {lbl}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Member + Status */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'end' }}>
+            <div>
+              <label style={labelStyle}>Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...inputStyle, background: '#fff', cursor: 'pointer' }}>
+                {ALL_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: '#374151', paddingBottom: 9 }}>
+                <input type="checkbox" checked={isMember} onChange={e => setIsMember(e.target.checked)} style={{ accentColor: '#1a3328', width: 16, height: 16, cursor: 'pointer' }} />
+                Member
+              </label>
+            </div>
+          </div>
+
+          {/* Pickup date + time */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Pickup date (optional)</label>
+              <input
+                type="date"
+                value={pickupDate}
+                onChange={e => {
+                  setPickupDate(e.target.value);
+                  if (e.target.value && !returnDate) setReturnDate(pickupToReturn(e.target.value));
+                }}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Pickup time (optional)</label>
+              <input type="time" value={pickupTime} onChange={e => setPickupTime(e.target.value)} style={inputStyle} />
+            </div>
+          </div>
+
+          {/* Return date */}
+          <div>
+            <label style={labelStyle}>Est. return date (optional)</label>
+            <input type="date" value={returnDate} onChange={e => setReturnDate(e.target.value)} style={inputStyle} />
+          </div>
+
+          {submitErr && (
+            <p style={{ margin: 0, padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 7, fontSize: 13, color: '#dc2626' }}>
+              {submitErr}
+            </p>
+          )}
+
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ padding: '10px 20px', background: '#f3f4f6', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer', color: '#374151' }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{ padding: '10px 24px', background: submitting ? '#9ca3af' : '#1a3328', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, color: '#fff', cursor: submitting ? 'default' : 'pointer' }}
+            >
+              {submitting ? 'Saving...' : 'Create Booking'}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AdminServicePage() {
@@ -1355,6 +1619,7 @@ export default function AdminServicePage() {
   const [icalOpen, setIcalOpen] = useState(false);
   const [icalUrl, setIcalUrl] = useState('');
   const [icalCopied, setIcalCopied] = useState(false);
+  const [newBookingOpen, setNewBookingOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -1436,6 +1701,12 @@ export default function AdminServicePage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
+            onClick={() => setNewBookingOpen(true)}
+            style={{ background: '#4ade80', border: 'none', color: '#0f1a14', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            + New Booking
+          </button>
+          <button
             onClick={async () => {
               if (!icalUrl) {
                 try {
@@ -1516,6 +1787,13 @@ export default function AdminServicePage() {
         )}
         {activeTab === 'email' && <SendEmailView />}
       </div>
+
+      {newBookingOpen && (
+        <NewBookingModal
+          onClose={() => setNewBookingOpen(false)}
+          onCreated={() => { setNewBookingOpen(false); load(); }}
+        />
+      )}
     </main>
   );
 }

@@ -33,7 +33,8 @@ export async function POST(request) {
   const { name, phone, email, lat, lng, address,
           bike_brand, issues, bike_details, notes,
           preferred_day, time_slot, contact_preference, is_member,
-          photos } = body;
+          photos, status, confirmed_date, confirmed_time, return_date,
+          admin_created } = body;
   console.log('[bookings] new booking from:', name, '| email present:', !!email);
 
   if (!name || !phone) {
@@ -58,20 +59,34 @@ export async function POST(request) {
       contact_preference: contact_preference || null,
       is_member: is_member === true,
       photos: Array.isArray(photos) && photos.length > 0 ? photos : null,
-      status: 'new',
+      status: status || 'new',
+      confirmed_date: confirmed_date || null,
+      confirmed_time: confirmed_time || null,
+      return_date: return_date || null,
     }])
     .select()
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Notify customer (SMS or email based on contact_preference)
-  console.log('[bookings] about to notify customer — contact_preference:', data.contact_preference);
-  try {
-    await notifyCustomer('new', data);
-    console.log('[bookings] customer notification sent');
-  } catch (err) {
-    console.error('[bookings] customer notification FAILED:', err?.message || err);
+  // Notify customer — skip if admin-created with phone-only preference, or no contact info
+  const skipNotification = admin_created && (
+    contact_preference === 'phone' ||
+    (contact_preference !== 'text' && !email)
+  );
+  console.log('[bookings] about to notify customer — contact_preference:', data.contact_preference, '| skip:', skipNotification);
+  if (!skipNotification) {
+    try {
+      await notifyCustomer('new', data);
+      console.log('[bookings] customer notification sent');
+    } catch (err) {
+      console.error('[bookings] customer notification FAILED:', err?.message || err);
+    }
+  }
+
+  // Admin notification — skip if this booking was created by admin (they know about it already)
+  if (admin_created) {
+    return Response.json({ booking: data }, { status: 201 });
   }
 
   // Admin notification — inlined directly, no helper functions
