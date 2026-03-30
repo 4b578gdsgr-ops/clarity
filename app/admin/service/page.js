@@ -271,6 +271,39 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
   const [address, setAddress] = useState(booking.address || '');
   const [memberVerified, setMemberVerified] = useState(!!booking.member_verified);
+  const [copiedTracking, setCopiedTracking] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+
+  const trackingUrl = 'https://clarity-pi-ten.vercel.app/embed/service/' + booking.id;
+
+  function buildTextMessage() {
+    const name = booking.name;
+    const link = trackingUrl;
+    const st = booking.status;
+    if (st === 'complete' && (booking.payment_link || paymentLink)) {
+      return 'Hi ' + name + ', your bike is ready for delivery. Pay ahead or at dropoff: ' + link + ' — One Love Outdoors';
+    }
+    if (st === 'ready') {
+      return 'Hi ' + name + ', your bike is ready. Details here: ' + link + ' — One Love Outdoors';
+    }
+    if (st === 'in_progress' || st === 'picked_up') {
+      return 'Hi ' + name + ', your bike is with us. Track updates here: ' + link + ' — One Love Outdoors';
+    }
+    // new, confirmed, out_for_delivery, complete (no payment link), default
+    return 'Hi ' + name + ', your service request is confirmed. Track your booking here: ' + link + ' — One Love Outdoors';
+  }
+
+  function copyTracking() {
+    navigator.clipboard.writeText(trackingUrl).catch(() => {});
+    setCopiedTracking(true);
+    setTimeout(() => setCopiedTracking(false), 2000);
+  }
+
+  function copyTextMessage() {
+    navigator.clipboard.writeText(buildTextMessage()).catch(() => {});
+    setCopiedText(true);
+    setTimeout(() => setCopiedText(false), 2000);
+  }
 
   // Silent save — updates a field without triggering a full list refresh.
   // Use for field-level edits (date, time, notes) so native pickers aren't interrupted.
@@ -696,6 +729,28 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 {unreadCount}
               </span>
             )}
+          </button>
+          <button
+            onClick={copyTracking}
+            style={{
+              padding: '7px 13px', background: copiedTracking ? '#f0fdf4' : '#f3f4f6',
+              border: '1px solid ' + (copiedTracking ? '#bbf7d0' : '#e5e7eb'),
+              borderRadius: 8, fontSize: 13, cursor: 'pointer',
+              color: copiedTracking ? '#166534' : '#374151',
+            }}
+          >
+            {copiedTracking ? 'Link copied!' : 'Copy link'}
+          </button>
+          <button
+            onClick={copyTextMessage}
+            style={{
+              padding: '7px 13px', background: copiedText ? '#f0fdf4' : '#f3f4f6',
+              border: '1px solid ' + (copiedText ? '#bbf7d0' : '#e5e7eb'),
+              borderRadius: 8, fontSize: 13, cursor: 'pointer',
+              color: copiedText ? '#166534' : '#374151',
+            }}
+          >
+            {copiedText ? 'Text copied!' : 'Copy text'}
           </button>
           <a
             href={'/service/' + booking.id}
