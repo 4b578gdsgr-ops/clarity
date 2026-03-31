@@ -937,7 +937,7 @@ function PlanRouteView({ allBookings, onRefresh }) {
             >
               <div style={{
                 width: 28, height: 28,
-                background: stop._stopType === 'delivery' ? '#2d8653' : '#1a3328',
+                background: stop._stopType === 'delivery' ? '#2563eb' : '#16a34a',
                 color: '#fff',
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 13, fontWeight: 700, flexShrink: 0,
@@ -945,16 +945,15 @@ function PlanRouteView({ allBookings, onRefresh }) {
                 {i + 1}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {stop.name}
+                <div style={{ fontWeight: 600, fontSize: 14 }}>
                   <span style={{
-                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-                    background: stop._stopType === 'delivery' ? '#dcfce7' : '#dbeafe',
-                    color: stop._stopType === 'delivery' ? '#166534' : '#1d4ed8',
-                    borderRadius: 4, padding: '1px 5px',
+                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em',
+                    color: stop._stopType === 'delivery' ? '#2563eb' : '#16a34a',
+                    marginRight: 6,
                   }}>
-                    {stop._stopType === 'delivery' ? 'Delivery' : 'Pickup'}
+                    {stop._stopType === 'delivery' ? 'DELIVERY' : 'PICKUP'}
                   </span>
+                  {stop.name}
                 </div>
                 {stop.address && <div style={{ fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stop.address}</div>}
                 {stop.issues && stop.issues.length > 0 && (

@@ -4,10 +4,10 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-function numberedIcon(n) {
+function numberedIcon(n, color) {
   return L.divIcon({
     className: '',
-    html: '<div style="width:28px;height:28px;background:#1a3328;color:#fff;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.35)">' + n + '</div>',
+    html: '<div style="width:28px;height:28px;background:' + color + ';color:#fff;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.35)">' + n + '</div>',
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
@@ -48,8 +48,9 @@ export default function RouteMap({ stops }) {
       )}
       {stops.map((stop, i) => {
         if (!stop.lat || !stop.lng) return null;
+        const pinColor = stop._stopType === 'delivery' ? '#2563eb' : '#16a34a';
         return (
-          <Marker key={stop.id} position={[Number(stop.lat), Number(stop.lng)]} icon={numberedIcon(i + 1)}>
+          <Marker key={stop.id} position={[Number(stop.lat), Number(stop.lng)]} icon={numberedIcon(i + 1, pinColor)}>
             <Popup>
               <strong>{stop.name}</strong>
               {stop.address && <div style={{ fontSize: 13 }}>{stop.address}</div>}
