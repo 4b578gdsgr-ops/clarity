@@ -277,7 +277,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const trackingUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/embed/service/' + booking.id;
 
   function buildTextMessage() {
-    const name = booking.name;
+    const name = booking.name.split(' ')[0];
     const link = trackingUrl;
     const st = booking.status;
     if (st === 'complete' && (booking.payment_link || paymentLink)) {
