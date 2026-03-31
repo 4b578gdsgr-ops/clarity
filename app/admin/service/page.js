@@ -214,8 +214,8 @@ function MessageThread({ bookingId, onMarkRead }) {
               border: m.sender === 'customer' ? '1px solid #e5e7eb' : 'none',
             }}>
               {m.message}
-              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 3, textAlign: 'right' }}>
-                {new Date(m.created_at).toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })}
+              <div style={{ fontSize: 10, opacity: 0.45, marginTop: 3, textAlign: 'right' }}>
+                {new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </div>
             </div>
           </div>

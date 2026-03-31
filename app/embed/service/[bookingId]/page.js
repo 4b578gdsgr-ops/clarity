@@ -417,9 +417,6 @@ export default function EmbedBookingStatusPage({ params }) {
                 fontSize: 14, lineHeight: 1.4,
               }}>
                 {m.message}
-                <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4, textAlign: 'right' }}>
-                  {fmt(m.created_at)}
-                </div>
               </div>
             </div>
           ))}
