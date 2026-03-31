@@ -2,7 +2,7 @@
 
 ## Tech Stack
 - Next.js 14, React 18, Tailwind CSS
-- Deployed on Vercel (clarity-pi-ten.vercel.app)
+- Deployed on Vercel (clarity-pi-ten.vercel.app), custom domain: service.oneloveoutdoors.org
 - Supabase (database + storage)
 - Resend (email notifications from service@oneloveoutdoors.org)
 - Twilio (SMS notifications — toll-free verification pending)
@@ -11,7 +11,7 @@
 - Embedded in Squarespace site at oneloveoutdoors.org via iframes
 
 ## Key URLs
-- Live site: https://clarity-pi-ten.vercel.app
+- Live site: https://service.oneloveoutdoors.org (env: NEXT_PUBLIC_BASE_URL)
 - Squarespace: https://oneloveoutdoors.org
 - Service booking: /schedule-service and /embed/service
 - Admin: /admin/service (password protected via ADMIN_PASSWORD env var)

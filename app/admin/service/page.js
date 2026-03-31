@@ -274,7 +274,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [copiedTracking, setCopiedTracking] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
 
-  const trackingUrl = 'https://clarity-pi-ten.vercel.app/embed/service/' + booking.id;
+  const trackingUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/embed/service/' + booking.id;
 
   function buildTextMessage() {
     const name = booking.name;

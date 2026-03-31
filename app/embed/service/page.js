@@ -53,7 +53,7 @@ function getEstimateText(issues) {
   return "Most jobs like this run $40–150. We'll confirm after seeing the bike.";
 }
 
-const BASE = 'https://clarity-pi-ten.vercel.app';
+const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org';
 
 export default function EmbedService() {
   const [pin, setPin] = useState(null);

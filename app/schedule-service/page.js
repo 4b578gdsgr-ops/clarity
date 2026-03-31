@@ -73,12 +73,19 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-      <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, color: '#0f1a14', marginBottom: 6 }}>
+      <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, color: '#0f1a14', marginBottom: 20 }}>
         Schedule a Service
       </h1>
-      <p style={{ color: '#4b5563', marginBottom: 20, lineHeight: 1.5 }}>
-        Drop a pin where you want us to pick up your bike, or type your address.
-      </p>
+
+      <div style={{ marginBottom: 12 }}>
+        <p style={{ fontSize: 17, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+          {'Where should we pick up?'}
+          {pin && !outside && <span style={{ color: '#16a34a', marginLeft: 6 }}>✓</span>}
+        </p>
+        <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
+          Search your address or tap the map to drop a pin
+        </p>
+      </div>
 
       <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
         <input
@@ -86,7 +93,11 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Street address or intersection"
-          style={{ flex: 1, padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, outline: 'none' }}
+          style={{
+            flex: 1, padding: '10px 14px', borderRadius: 8, fontSize: 15, outline: 'none',
+            border: pin && !outside ? '2px solid #16a34a' : '2px solid #d1d5db',
+            background: pin && !outside ? '#f0fdf4' : '#fff',
+          }}
         />
         <button
           type="submit"

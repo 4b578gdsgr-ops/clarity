@@ -44,7 +44,7 @@ export async function POST(request) {
             `Riding style: ${riding_style || 'not provided'}`,
             `Dream bike: ${dream_bike_description || 'not provided'}`,
             '',
-            'View in admin: https://clarity-pi-ten.vercel.app/admin/service',
+            `View in admin: ${process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org'}/admin/service`,
           ].join('\n'),
         });
         console.log('[custom-build] admin email result:', JSON.stringify(adminResult));

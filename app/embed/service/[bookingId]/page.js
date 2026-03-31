@@ -86,7 +86,7 @@ function fmtTime(timeStr) {
   return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
 }
 
-const BASE = 'https://clarity-pi-ten.vercel.app';
+const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org';
 
 const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
 
