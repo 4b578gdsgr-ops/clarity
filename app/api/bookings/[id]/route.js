@@ -34,7 +34,7 @@ export async function PATCH(request, { params }) {
   const allowed = ['status', 'notes', 'time_slot', 'preferred_day',
                    'confirmed_date', 'confirmed_time', 'return_date', 'delivery_time', 'zone', 'preferred_time',
                    'invoice_amount', 'payment_link', 'address', 'member_verified',
-                   'name', 'phone', 'email'];
+                   'name', 'phone', 'email', 'last_notified_status'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];
@@ -57,12 +57,22 @@ export async function PATCH(request, { params }) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Notify customer (SMS or email) when status advances to a customer-facing milestone
-  const NOTIFY_TRIGGERS = new Set(['confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete']);
+  // Notify customer on confirmed and ready only — everything else is overkill
+  const NOTIFY_TRIGGERS = new Set(['confirmed', 'ready']);
   if (update.status && NOTIFY_TRIGGERS.has(update.status)) {
-    notifyCustomer(update.status, data).catch(err =>
-      console.error('[bookings/[id]] notification failed for', update.status, ':', err?.message || err)
-    );
+    const pref = data.contact_preference;
+    if (pref !== 'text' && pref !== 'phone') {
+      // Email preference: send automatically, then mark as notified
+      notifyCustomer(update.status, data).catch(err =>
+        console.error('[bookings/[id]] notification failed for', update.status, ':', err?.message || err)
+      );
+      await supabaseAdmin
+        .from('service_bookings')
+        .update({ last_notified_status: update.status })
+        .eq('id', id);
+      data.last_notified_status = update.status;
+    }
+    // text/phone: no auto-notification — admin sees NEEDS TEXT badge and copies manually
   }
 
   return Response.json({ booking: data });

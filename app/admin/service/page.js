@@ -299,10 +299,19 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
     setTimeout(() => setCopiedTracking(false), 2000);
   }
 
-  function copyTextMessage() {
+  async function copyTextMessage() {
     navigator.clipboard.writeText(buildTextMessage()).catch(() => {});
     setCopiedText(true);
     setTimeout(() => setCopiedText(false), 2000);
+    // Mark as manually texted so the NEEDS TEXT badge clears
+    if (booking.contact_preference === 'text' || booking.contact_preference === 'phone') {
+      await fetch('/api/bookings/' + booking.id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ last_notified_status: booking.status }),
+      });
+      onRefresh();
+    }
   }
 
   // Silent save — updates a field without triggering a full list refresh.
@@ -374,14 +383,39 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             {booking.contact_preference && (
               <span style={{
                 marginLeft: 8,
-                background: booking.contact_preference === 'text' ? '#dbeafe' : '#ede9fe',
-                color: booking.contact_preference === 'text' ? '#1d4ed8' : '#6d28d9',
-                border: '1px solid ' + (booking.contact_preference === 'text' ? '#bfdbfe' : '#ddd6fe'),
+                background: booking.contact_preference === 'text' ? '#dbeafe' : booking.contact_preference === 'phone' ? '#f3f4f6' : '#ede9fe',
+                color: booking.contact_preference === 'text' ? '#1d4ed8' : booking.contact_preference === 'phone' ? '#374151' : '#6d28d9',
+                border: '1px solid ' + (booking.contact_preference === 'text' ? '#bfdbfe' : booking.contact_preference === 'phone' ? '#d1d5db' : '#ddd6fe'),
                 borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
                 textTransform: 'uppercase', letterSpacing: '0.06em',
               }}>
-                {booking.contact_preference === 'text' ? 'Text' : 'Email'}
+                {booking.contact_preference === 'text' ? 'Text' : booking.contact_preference === 'phone' ? 'Phone' : 'Email'}
               </span>
+            )}
+            {(booking.contact_preference === 'text' || booking.contact_preference === 'phone') &&
+             ['confirmed', 'ready'].includes(booking.status) && (
+              booking.last_notified_status === booking.status ? (
+                <span style={{
+                  marginLeft: 8,
+                  background: '#f3f4f6', color: '#9ca3af',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>
+                  Texted ✓
+                </span>
+              ) : (
+                <span style={{
+                  marginLeft: 8,
+                  background: '#fff7ed', color: '#c2410c',
+                  border: '1px solid #fed7aa',
+                  borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                  animation: 'pulse 2s infinite',
+                }}>
+                  Needs text
+                </span>
+              )
             )}
             {booking.issues && booking.issues.includes('New bike assembly') && (
               <span style={{
@@ -790,6 +824,33 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           </button>
         </div>
       )}
+
+      {/* Notification log */}
+      {(() => {
+        const last = booking.last_notified_status;
+        const pref = booking.contact_preference;
+        const LABEL = { new: 'Booking received', confirmed: 'Confirmed', ready: 'Ready' };
+        const NEEDS_TEXT = new Set(['confirmed', 'ready']);
+
+        if (last) {
+          const label = LABEL[last] || last;
+          const via = (pref === 'text' || pref === 'phone') ? '— texted ✓' : 'via email ✓';
+          return (
+            <div style={{ padding: '6px 18px 10px', fontSize: 12, color: '#9ca3af' }}>
+              {'Notified: ' + label + ' ' + via}
+            </div>
+          );
+        }
+        if ((pref === 'text' || pref === 'phone') && NEEDS_TEXT.has(booking.status)) {
+          const label = LABEL[booking.status] || booking.status;
+          return (
+            <div style={{ padding: '6px 18px 10px', fontSize: 12, color: '#ea580c', fontWeight: 500 }}>
+              {'Notified: ' + label + ' — needs text'}
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {showMsgs && <MessageThread bookingId={booking.id} onMarkRead={onMarkRead} />}
     </div>
