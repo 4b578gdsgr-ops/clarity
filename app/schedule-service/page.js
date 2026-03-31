@@ -351,15 +351,14 @@ function FormStep({ address, onBack, onDone, initialMember = false }) {
 
         {isAssembly && (
           <div style={{ marginBottom: 16 }}>
-            <label style={{ ...lbl, color: errors.bike_details ? '#dc2626' : '#374151' }}>Tell us about the bike *</label>
+            <label style={lbl}>Tell us about the bike (optional)</label>
             <input
               type="text"
               value={form.bike_details}
               onChange={e => setField('bike_details', e.target.value)}
               placeholder="Brand, model, year, where you ordered it from..."
-              style={{ ...inp, borderColor: errors.bike_details ? '#dc2626' : '#d1d5db' }}
+              style={inp}
             />
-            {errors.bike_details && <p data-field-error style={errStyle}>{errors.bike_details}</p>}
           </div>
         )}
 

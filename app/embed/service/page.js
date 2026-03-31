@@ -209,7 +209,7 @@ export default function EmbedService() {
     setSubmitErr('');
     try {
       const photoUrls = photos.filter(p => p.url).map(p => p.url);
-      const res = await fetch(BASE + '/api/bookings', {
+      const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -536,15 +536,14 @@ export default function EmbedService() {
         {/* ── Bike details (assembly only) ── */}
         {isAssembly && (
           <div style={{ marginBottom: 12 }}>
-            <label style={{ ...lbl, color: errors.bike_details ? '#e53e3e' : '#4a5568' }}>Tell us about the bike *</label>
+            <label style={lbl}>Tell us about the bike (optional)</label>
             <input
               type="text"
               value={form.bike_details}
               onChange={e => setField('bike_details', e.target.value)}
               placeholder="Brand, model, year, where you ordered it from..."
-              style={{ ...inp, borderColor: errors.bike_details ? '#e53e3e' : '#e2e8f0' }}
+              style={inp}
             />
-            {errors.bike_details && <span data-field-error style={errStyle}>{errors.bike_details}</span>}
           </div>
         )}
 
