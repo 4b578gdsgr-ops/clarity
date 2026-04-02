@@ -30,6 +30,7 @@ export async function PATCH(request, { params }) {
 
   const { id } = params;
   const body = await request.json();
+  const { skip_notification } = body;
 
   const allowed = ['status', 'notes', 'time_slot', 'preferred_day',
                    'confirmed_date', 'confirmed_time', 'return_date', 'delivery_time', 'zone', 'preferred_time',
@@ -57,9 +58,9 @@ export async function PATCH(request, { params }) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Notify customer on confirmed and ready only — everything else is overkill
+  // Notify customer on confirmed and ready only — skip_notification suppresses this for backward moves
   const NOTIFY_TRIGGERS = new Set(['confirmed', 'ready']);
-  if (update.status && NOTIFY_TRIGGERS.has(update.status)) {
+  if (update.status && NOTIFY_TRIGGERS.has(update.status) && !skip_notification) {
     const pref = data.contact_preference;
     if (pref !== 'text' && pref !== 'phone') {
       // Email preference: send automatically, then mark as notified

@@ -361,6 +361,10 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
     setTimeout(() => setCopied(false), 2500);
   }
 
+  async function moveBack(newStatus) {
+    await patch({ status: newStatus, last_notified_status: null, skip_notification: true });
+  }
+
   async function handleDelete() {
     if (!window.confirm('Delete this booking?')) return;
     setDeleting(true);
@@ -745,6 +749,28 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               {advancing ? '...' : action.label}
             </button>
           )}
+          {(() => {
+            const STEPS = ['new', 'confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete'];
+            const BACK_LABELS = { new: 'New', confirmed: 'Confirmed', in_progress: 'In Progress', ready: 'Ready', out_for_delivery: 'Out for Delivery', complete: 'Complete' };
+            const idx = STEPS.indexOf(booking.status);
+            if (idx <= 0) return null;
+            return (
+              <select
+                value=""
+                onChange={e => { if (e.target.value) moveBack(e.target.value); }}
+                style={{
+                  padding: '7px 10px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                  border: '1px solid #d1d5db', background: '#fff', color: '#6b7280',
+                  outline: 'none',
+                }}
+              >
+                <option value="">← Back</option>
+                {STEPS.slice(0, idx).reverse().map(s => (
+                  <option key={s} value={s}>{BACK_LABELS[s]}</option>
+                ))}
+              </select>
+            );
+          })()}
           <button
             onClick={() => setShowMsgs(!showMsgs)}
             style={{
