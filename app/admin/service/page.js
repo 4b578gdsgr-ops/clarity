@@ -280,17 +280,26 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
     const name = booking.name.split(' ')[0];
     const link = trackingUrl;
     const st = booking.status;
-    if (st === 'complete' && (booking.payment_link || paymentLink)) {
-      return 'Hi ' + name + ', your bike is ready for delivery. Pay ahead or at dropoff: ' + link + ' — One Love Outdoors';
+    switch (st) {
+      case 'confirmed': {
+        const day = confirmDate ? fmtDate(confirmDate) : 'the scheduled day';
+        const time = confirmTime ? ' around ' + fmtTime(confirmTime) : '';
+        return 'Hi ' + name + ', your bicycle service is confirmed for ' + day + time + '. Track updates here: ' + link + ' — One Love';
+      }
+      case 'in_progress':
+      case 'picked_up':
+        return 'Hi ' + name + ', your bike is with us. We\'ll update you when it\'s ready: ' + link + ' — One Love';
+      case 'ready':
+        return 'Hi ' + name + ', your bike is ready. Details and payment here: ' + link + ' — One Love';
+      case 'out_for_delivery':
+        return 'Hi ' + name + ', we\'re on our way with your bike now. — One Love';
+      case 'complete':
+      case 'done':
+      case 'delivered':
+        return 'Hi ' + name + ', delivered. You\'re golden. — One Love';
+      default:
+        return 'Hi ' + name + ', your bicycle service is confirmed. Track your booking here: ' + link + ' — One Love';
     }
-    if (st === 'ready') {
-      return 'Hi ' + name + ', your bike is ready. Details here: ' + link + ' — One Love Outdoors';
-    }
-    if (st === 'in_progress' || st === 'picked_up') {
-      return 'Hi ' + name + ', your bike is with us. Track updates here: ' + link + ' — One Love Outdoors';
-    }
-    // new, confirmed, out_for_delivery, complete (no payment link), default
-    return 'Hi ' + name + ', your bicycle service is confirmed. Track your booking here: ' + link + ' — One Love Outdoors';
   }
 
   function copyTracking() {

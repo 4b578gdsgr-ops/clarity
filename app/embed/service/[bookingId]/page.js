@@ -363,7 +363,7 @@ export default function EmbedBookingStatusPage({ params }) {
       <UpdateInfoSection booking={booking} bookingId={bookingId} onUpdated={loadData} />
 
       {/* Payment section */}
-      {['complete', 'done', 'delivered'].includes(booking.status) && booking.invoice_amount != null && (
+      {['complete', 'done', 'delivered'].includes(booking.status) && (booking.invoice_amount != null || booking.payment_link) && (
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
             {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
