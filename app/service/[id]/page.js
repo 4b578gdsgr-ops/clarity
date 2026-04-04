@@ -192,8 +192,9 @@ export default function BookingStatusPage({ params }) {
       if (!bRes.ok) { setNotFound(true); setLoading(false); return; }
       const bData = await bRes.json();
       const mData = await mRes.json();
-      console.log('[service/[id]] booking API response:', JSON.stringify(bData));
-      setBooking(bData.booking || bData);
+      const b = bData.booking || bData;
+      console.log('[service/[id]] booking status:', b.status, '| invoice_amount:', b.invoice_amount, '| payment_link:', b.payment_link);
+      setBooking(b);
       setMessages(mData.messages || []);
     } catch {
       setNotFound(true);
@@ -351,7 +352,7 @@ export default function BookingStatusPage({ params }) {
         <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
 
         {/* Payment section */}
-        {['complete', 'done', 'delivered'].includes(booking.status) && (booking.invoice_amount != null || booking.payment_link) && (
+        {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (booking.invoice_amount != null || booking.payment_link) && (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
             <p style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
               {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}

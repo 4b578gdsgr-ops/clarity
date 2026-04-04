@@ -292,7 +292,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       case 'ready':
         return 'Hi ' + name + ', your bike is ready. Details and payment here: ' + link + ' — One Love';
       case 'out_for_delivery':
-        return 'Hi ' + name + ', we\'re on our way with your bike now. — One Love';
+        return 'Hi ' + name + ', we\'re on our way with your bike now. Track here: ' + link + ' — One Love';
       case 'complete':
       case 'done':
       case 'delivered':
