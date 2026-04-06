@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polygon, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { SERVICE_AREA_POLYGON } from '../../lib/serviceArea';
+
+const CENTER      = [41.7658, -72.6734];
+const RADIUS_M    = 48280;
 
 const greenDot = L.divIcon({
   className: '',
@@ -34,29 +36,28 @@ function FlyTo({ pin }) {
 export default function ServiceMap({ pin, onMapClick, showBoundary = false }) {
   return (
     <>
-      {/* Suppress any Leaflet tooltips — we have none intentionally, and the
-          OSM/CartoDB data sometimes surfaces a business tooltip on load */}
       <style>{`.leaflet-tooltip { display: none !important; }`}</style>
-    <MapContainer
-      center={[41.88, -72.65]}
-      zoom={10}
-      style={{ width: '100%', height: '100%' }}
-      scrollWheelZoom={false}
-    >
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-      />
-      {showBoundary && (
-        <Polygon
-          positions={SERVICE_AREA_POLYGON}
-          pathOptions={{ color: '#276749', fillColor: '#276749', fillOpacity: 0.08, weight: 2, dashArray: '6 4' }}
+      <MapContainer
+        center={[41.88, -72.65]}
+        zoom={10}
+        style={{ width: '100%', height: '100%' }}
+        scrollWheelZoom={false}
+      >
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
-      )}
-      <ClickHandler onMapClick={onMapClick} />
-      {pin && <FlyTo pin={pin} />}
-      {pin && <Marker position={[pin.lat, pin.lng]} icon={greenDot} />}
-    </MapContainer>
+        {showBoundary && (
+          <Circle
+            center={CENTER}
+            radius={RADIUS_M}
+            pathOptions={{ color: '#276749', fillColor: '#276749', fillOpacity: 0.08, weight: 2, dashArray: '6 4' }}
+          />
+        )}
+        <ClickHandler onMapClick={onMapClick} />
+        {pin && <FlyTo pin={pin} />}
+        {pin && <Marker position={[pin.lat, pin.lng]} icon={greenDot} />}
+      </MapContainer>
     </>
   );
 }

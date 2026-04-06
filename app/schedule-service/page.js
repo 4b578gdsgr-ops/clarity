@@ -126,8 +126,7 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
             {'We\'re not in your area yet.'}
           </p>
           <p style={{ color: '#7f1d1d', fontSize: 14, lineHeight: 1.5 }}>
-            One Love currently serves Hartford and Tolland counties.
-            Reach out if you would like to discuss options:{' '}
+            Reach out and we'll see what we can do:{' '}
             <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#dc2626', fontWeight: 600 }}>
               service@oneloveoutdoors.org
             </a>
