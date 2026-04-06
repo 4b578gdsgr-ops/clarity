@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const CENTER      = [41.7658, -72.6734];
-const RADIUS_M    = 40234;
+const RADIUS_M    = 32187;
 
 const greenDot = L.divIcon({
   className: '',
