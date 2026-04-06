@@ -299,10 +299,10 @@ export default function EmbedService() {
   return (
     <div style={container}>
       <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 4, marginTop: 0, fontFamily: 'var(--ol-font-heading)' }}>
-        Let's get you rolling.
+        Wheels need work?
       </h2>
       <p style={{ fontSize: 14, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 16 }}>
-        Drop a pin, tell us what's wrong, and we'll handle the rest.
+        Tell us what's going on and where to meet you.
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit}>
@@ -316,11 +316,11 @@ export default function EmbedService() {
         <div ref={mapRef} style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 10 }}>
             <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--ol-text)', margin: '0 0 3px' }}>
-              Where are you?
+              Where should we meet?
               {pin && !outside && <span style={{ color: '#16a34a', marginLeft: 6 }}>✓</span>}
             </p>
             <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', margin: 0 }}>
-              Search your address or tap the map to drop a pin
+              Home, office, trailhead — wherever works best for you.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -377,7 +377,7 @@ export default function EmbedService() {
                   In service area ✓
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 3 }}>
-                  We're in your area.
+                  We can meet you there.
                 </p>
                 <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
                   Labor and parts quoted after we see the bike. No surprises.

@@ -79,11 +79,11 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
       <div style={{ marginBottom: 12 }}>
         <p style={{ fontSize: 17, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
-          {'Where should we pick up?'}
+          {'Where should we meet?'}
           {pin && !outside && <span style={{ color: '#16a34a', marginLeft: 6 }}>✓</span>}
         </p>
         <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
-          Search your address or tap the map to drop a pin
+          Home, office, trailhead — wherever works best for you.
         </p>
       </div>
 
@@ -116,7 +116,7 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
       {!pin && (
         <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 16 }}>
-          Drop a pin or search above. The shaded area shows our service area.
+          Search above or tap the map to drop a pin.
         </p>
       )}
 
