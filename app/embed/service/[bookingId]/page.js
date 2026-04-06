@@ -1,5 +1,9 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import { isInServiceArea } from '../../../lib/serviceArea';
+
+const ServiceMap = dynamic(() => import('../../../components/ServiceMap'), { ssr: false });
 
 function getStatusHeading(booking) {
   const { status, confirmed_date, confirmed_time, return_date } = booking;
@@ -92,23 +96,69 @@ const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 
 
 function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   const already = !!booking.delivery_address;
-  const [deliveryAddress, setDeliveryAddress] = useState(booking.delivery_address || booking.address || '');
+  const [mode, setMode] = useState(already ? 'same' : null); // null | 'same' | 'different'
+  const [pin, setPin] = useState(null);
+  const [pinAddress, setPinAddress] = useState('');
+  const [pinOutside, setPinOutside] = useState(false);
+  const [addrQuery, setAddrQuery] = useState('');
+  const [searching, setSearching] = useState(false);
   const [deliveryDay, setDeliveryDay] = useState(booking.delivery_preferred_day || '');
   const [deliveryTimeVal, setDeliveryTimeVal] = useState(booking.delivery_preferred_time || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(already);
   const [err, setErr] = useState('');
 
-  async function handleConfirm(e) {
-    e.preventDefault();
-    if (!deliveryAddress.trim()) { setErr('Please enter a delivery address.'); return; }
+  const deliveryAddress = mode === 'same'
+    ? (booking.delivery_address || booking.address || '')
+    : pinAddress || (pin ? `${Number(pin.lat).toFixed(5)}, ${Number(pin.lng).toFixed(5)}` : '');
+
+  function applyPin(lat, lng, resolved) {
+    setPin({ lat, lng });
+    setPinOutside(!isInServiceArea(lat, lng));
+    setPinAddress(resolved || '');
+  }
+
+  async function searchAddr(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!addrQuery.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(
+        'https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=1&q=' + encodeURIComponent(addrQuery),
+        { headers: { 'User-Agent': 'LoveOverMoney/1.0 (service.oneloveoutdoors.org)' } }
+      );
+      const results = await res.json();
+      if (results[0]) {
+        const lat = parseFloat(results[0].lat);
+        const lng = parseFloat(results[0].lon);
+        applyPin(lat, lng, results[0].display_name.split(',').slice(0, 3).join(',').trim());
+      }
+    } catch { /* ignore */ }
+    setSearching(false);
+  }
+
+  async function handleMapClick(lat, lng) {
+    applyPin(lat, lng, '');
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        { headers: { 'User-Agent': 'LoveOverMoney/1.0 (service.oneloveoutdoors.org)' } }
+      );
+      const data = await res.json();
+      if (data.display_name) setPinAddress(data.display_name.split(',').slice(0, 3).join(',').trim());
+    } catch { /* ignore */ }
+  }
+
+  async function handleConfirm() {
+    const addr = deliveryAddress.trim();
+    if (!addr) { setErr('Please select a delivery location.'); return; }
     setSaving(true); setErr('');
     try {
       const res = await fetch('/api/bookings/' + bookingId, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          delivery_address: deliveryAddress.trim(),
+          delivery_address: addr,
           delivery_preferred_day: deliveryDay || null,
           delivery_preferred_time: deliveryTimeVal || null,
         }),
@@ -120,11 +170,9 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
     finally { setSaving(false); }
   }
 
-  const inp = {
-    width: '100%', padding: '8px 11px', border: '1px solid #d1d5db',
-    borderRadius: 7, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
-  };
+  const inp = { width: '100%', padding: '8px 11px', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' };
   const lbl = { display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 };
+  const showDayTime = mode === 'same' || (mode === 'different' && pin && !pinOutside);
 
   if (saved) {
     return (
@@ -137,48 +185,125 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
 
   return (
     <div style={{ background: '#fff', border: '2px solid #0ea5e9', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-      <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
-        Your bike is ready. Where and when should we bring it back?
+      <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 14px' }}>
+        Your bike is ready. Where should we bring it?
       </p>
-      <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px' }}>
-        Takes 30 seconds. Helps us plan the route.
-      </p>
-      <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div>
-          <label style={lbl}>Delivery location</label>
-          <input
-            value={deliveryAddress}
-            onChange={e => setDeliveryAddress(e.target.value)}
-            placeholder="Where should we bring it?"
-            style={inp}
-          />
-          <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>
-            Same spot, or somewhere else — your call.
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <button
+          type="button"
+          onClick={() => { setMode('same'); setErr(''); }}
+          style={{
+            flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+            border: mode === 'same' ? '2px solid #16a34a' : '1px solid #d1d5db',
+            background: mode === 'same' ? '#f0fdf4' : '#fff',
+            color: mode === 'same' ? '#166534' : '#374151',
+            fontWeight: mode === 'same' ? 600 : 400,
+          }}
+        >
+          Same spot
+        </button>
+        <button
+          type="button"
+          onClick={() => { setMode('different'); setErr(''); }}
+          style={{
+            flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+            border: mode === 'different' ? '2px solid #1a3328' : '1px solid #d1d5db',
+            background: mode === 'different' ? '#f8faf9' : '#fff',
+            color: mode === 'different' ? '#1a3328' : '#374151',
+            fontWeight: mode === 'different' ? 600 : 400,
+          }}
+        >
+          Different location
+        </button>
+      </div>
+
+      {mode === 'same' && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+          <p style={{ fontSize: 14, color: '#166534', fontWeight: 600, margin: 0 }}>
+            ✓ {booking.address || 'Your original pickup address'}
           </p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div>
-            <label style={lbl}>Preferred day</label>
-            <select value={deliveryDay} onChange={e => setDeliveryDay(e.target.value)} style={{ ...inp, color: deliveryDay ? '#111827' : '#9ca3af' }}>
-              <option value="">No preference</option>
-              <option value="Monday">Monday</option>
-              <option value="Friday">Friday</option>
-            </select>
+      )}
+
+      {mode === 'different' && (
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14', margin: '0 0 2px' }}>Where should we meet?</p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px' }}>Home, office, trailhead — wherever works.</p>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <input
+              type="text"
+              value={addrQuery}
+              onChange={e => setAddrQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); searchAddr(e); } }}
+              placeholder="Search an address..."
+              style={{ ...inp, flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={searchAddr}
+              disabled={searching}
+              style={{ padding: '8px 14px', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+            >
+              {searching ? '...' : 'Find'}
+            </button>
           </div>
-          <div>
-            <label style={lbl}>Preferred time</label>
-            <input type="time" value={deliveryTimeVal} onChange={e => setDeliveryTimeVal(e.target.value)} style={{ ...inp, color: deliveryTimeVal ? '#111827' : '#9ca3af' }} />
+          <div style={{ height: 220, borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', marginBottom: 6 }}>
+            <ServiceMap pin={pin} onMapClick={handleMapClick} showBoundary />
           </div>
+          {!pin && (
+            <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>Search above or tap the map to drop a pin.</p>
+          )}
+          {pin && pinOutside && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px' }}>
+              <p style={{ fontSize: 13, color: '#dc2626', fontWeight: 600, margin: '0 0 2px' }}>{"That's outside our range."}</p>
+              <p style={{ fontSize: 12, color: '#7f1d1d', margin: 0 }}>
+                <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#dc2626' }}>Reach out</a> and we'll figure something out.
+              </p>
+            </div>
+          )}
+          {pin && !pinOutside && (
+            <p style={{ fontSize: 13, color: '#166534', fontWeight: 500, margin: 0 }}>
+              ✓ {pinAddress || 'Location set'}{' '}
+              <button
+                type="button"
+                onClick={() => { setPin(null); setPinAddress(''); setPinOutside(false); }}
+                style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 12, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+              >
+                clear
+              </button>
+            </p>
+          )}
         </div>
-        {err && <p style={{ margin: 0, fontSize: 13, color: '#dc2626' }}>{err}</p>}
-        <button
-          type="submit"
-          disabled={saving}
-          style={{ padding: '10px 0', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit' }}
-        >
-          {saving ? 'Saving...' : 'Confirm delivery'}
-        </button>
-      </form>
+      )}
+
+      {showDayTime && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            <div>
+              <label style={lbl}>Preferred day</label>
+              <select value={deliveryDay} onChange={e => setDeliveryDay(e.target.value)} style={{ ...inp, color: deliveryDay ? '#111827' : '#9ca3af' }}>
+                <option value="">No preference</option>
+                <option value="Monday">Monday</option>
+                <option value="Friday">Friday</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Preferred time</label>
+              <input type="time" value={deliveryTimeVal} onChange={e => setDeliveryTimeVal(e.target.value)} style={{ ...inp, color: deliveryTimeVal ? '#111827' : '#9ca3af' }} />
+            </div>
+          </div>
+          {err && <p style={{ margin: '0 0 10px', fontSize: 13, color: '#dc2626' }}>{err}</p>}
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={saving}
+            style={{ width: '100%', padding: '10px 0', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit' }}
+          >
+            {saving ? 'Saving...' : 'Confirm delivery'}
+          </button>
+        </>
+      )}
     </div>
   );
 }
