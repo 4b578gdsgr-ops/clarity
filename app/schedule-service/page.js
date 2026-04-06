@@ -400,14 +400,13 @@ function FormStep({ address, onBack, onDone, initialMember = false }) {
               style={{ width: 16, height: 16, accentColor: '#1a3328', cursor: 'pointer', flexShrink: 0 }}
             />
             <span style={{ fontSize: 14, color: '#166534', fontWeight: 600 }}>
-              {isMember
-                ? 'Free pickup & delivery (member) ✓'
-                : "I'm a One Love member — pickup & delivery is free"}
+              I'm a One Love member
             </span>
           </label>
           {!isMember && !initialMember && (
             <p style={{ fontSize: 12, color: '#15803d', margin: '6px 0 0 26px' }}>
-              Not a member? <a href="https://oneloveoutdoors.org/onelove-members-only" target="_blank" rel="noopener noreferrer" style={{ color: '#1a3328', fontWeight: 600 }}>Join for $25/month</a> — free pickups, priority service.
+              One Love members get priority scheduling and preferred pricing.{' '}
+              <a href="https://oneloveoutdoors.org/onelove-members-only" target="_blank" rel="noopener noreferrer" style={{ color: '#1a3328', fontWeight: 600 }}>Learn more →</a>
             </p>
           )}
         </div>

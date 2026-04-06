@@ -299,7 +299,7 @@ export default function EmbedService() {
           {!isMember && !memberPrefilled && (
             <div style={{ marginTop: 28, padding: '14px 16px', background: 'var(--ol-accent-light)', border: '1px solid var(--ol-accent-border)', borderRadius: 'var(--ol-radius-lg)', textAlign: 'left' }}>
               <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.6, margin: '0 0 10px' }}>
-                Want free pickup next time? Join One Love Membership — $25/month, free pickup & delivery, priority service.
+                One Love members get priority scheduling and preferred pricing.
               </p>
               <a
                 href={MEMBERSHIP_PAGE_URL}
@@ -400,23 +400,8 @@ export default function EmbedService() {
                   In service area ✓
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 3 }}>
-                  {isMember
-                    ? 'Free pickup & delivery (member) ✓'
-                    : `Pickup & delivery: $${pricingTier ? pricingTier.fee : 25}`}
+                  We're in your area. Pickup & delivery included with every service.
                 </p>
-                {!isMember && !memberPrefilled && (
-                  <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginBottom: 6 }}>
-                    Members get free pickup & delivery.{' '}
-                    <a
-                      href={MEMBERSHIP_PAGE_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'var(--ol-accent)', fontWeight: 600 }}
-                    >
-                      $25/month →
-                    </a>
-                  </p>
-                )}
                 <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
                   Labor and parts quoted after we see the bike. No surprises.
                 </p>
@@ -428,7 +413,7 @@ export default function EmbedService() {
                     style={{ width: 15, height: 15, accentColor: 'var(--ol-accent)', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span style={{ fontSize: 13, color: 'var(--ol-text)', fontWeight: 500 }}>
-                    I'm a One Love member — pickup & delivery is free
+                    I'm a One Love member
                   </span>
                 </label>
                 <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', marginTop: 6 }}>
