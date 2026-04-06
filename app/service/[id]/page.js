@@ -88,6 +88,99 @@ function fmtTime(timeStr) {
 
 const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
 
+function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
+  const already = !!booking.delivery_address;
+  const [deliveryAddress, setDeliveryAddress] = useState(booking.delivery_address || booking.address || '');
+  const [deliveryDay, setDeliveryDay] = useState(booking.delivery_preferred_day || '');
+  const [deliveryTimeVal, setDeliveryTimeVal] = useState(booking.delivery_preferred_time || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(already);
+  const [err, setErr] = useState('');
+
+  async function handleConfirm(e) {
+    e.preventDefault();
+    if (!deliveryAddress.trim()) { setErr('Please enter a delivery address.'); return; }
+    setSaving(true); setErr('');
+    try {
+      const res = await fetch('/api/bookings/' + bookingId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          delivery_address: deliveryAddress.trim(),
+          delivery_preferred_day: deliveryDay || null,
+          delivery_preferred_time: deliveryTimeVal || null,
+        }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || 'Save failed.'); return; }
+      setSaved(true);
+      onUpdated();
+    } catch { setErr('Network error — try again.'); }
+    finally { setSaving(false); }
+  }
+
+  const inp = {
+    width: '100%', padding: '8px 11px', border: '1px solid #d1d5db',
+    borderRadius: 7, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+  };
+  const lbl = { display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 };
+
+  if (saved) {
+    return (
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Delivery details confirmed.</p>
+        <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Got it. We'll confirm the exact time.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '2px solid #0ea5e9', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+        Your bike is ready. Where and when should we bring it back?
+      </p>
+      <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px' }}>
+        Takes 30 seconds. Helps us plan the route.
+      </p>
+      <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <label style={lbl}>Delivery location</label>
+          <input
+            value={deliveryAddress}
+            onChange={e => setDeliveryAddress(e.target.value)}
+            placeholder="Where should we bring it?"
+            style={inp}
+          />
+          <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>
+            Same spot, or somewhere else — your call.
+          </p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={lbl}>Preferred day</label>
+            <select value={deliveryDay} onChange={e => setDeliveryDay(e.target.value)} style={{ ...inp, color: deliveryDay ? '#111827' : '#9ca3af' }}>
+              <option value="">No preference</option>
+              <option value="Monday">Monday</option>
+              <option value="Friday">Friday</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>Preferred time</label>
+            <input type="time" value={deliveryTimeVal} onChange={e => setDeliveryTimeVal(e.target.value)} style={{ ...inp, color: deliveryTimeVal ? '#111827' : '#9ca3af' }} />
+          </div>
+        </div>
+        {err && <p style={{ margin: 0, fontSize: 13, color: '#dc2626' }}>{err}</p>}
+        <button
+          type="submit"
+          disabled={saving}
+          style={{ padding: '10px 0', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer' }}
+        >
+          {saving ? 'Saving...' : 'Confirm delivery'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function UpdateInfoSection({ booking, bookingId, onUpdated }) {
   const locked = !EDITABLE_STATUSES.has(booking.status);
   const [name, setName] = useState(booking.name || '');
@@ -350,6 +443,10 @@ export default function BookingStatusPage({ params }) {
         </div>
 
         <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
+
+        {booking.status === 'ready' && (
+          <DeliveryConfirmSection booking={booking} bookingId={id} onUpdated={loadData} />
+        )}
 
         {/* Payment section */}
         {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (booking.invoice_amount != null || booking.payment_link) && (

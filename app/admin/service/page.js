@@ -468,6 +468,17 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 Member ✓
               </span>
             )}
+            {booking.status === 'ready' && !booking.delivery_address && (
+              <span style={{
+                marginLeft: 8,
+                background: '#fff7ed', color: '#c2410c',
+                border: '1px solid #fed7aa',
+                borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Awaiting delivery details
+              </span>
+            )}
           </div>
           <span style={{
             background: color + '22', color, border: '1px solid ' + color + '55',
@@ -533,6 +544,13 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             <span>
               <strong>Est. return: </strong>
               {fmtDate(booking.return_date || pickupToReturn(booking.confirmed_date))}
+            </span>
+          )}
+          {booking.delivery_address && (
+            <span style={{ color: '#0369a1' }}>
+              <strong>Delivery to: </strong>{booking.delivery_address}
+              {booking.delivery_preferred_day && ' — ' + booking.delivery_preferred_day}
+              {booking.delivery_preferred_time && ' around ' + fmtTime(booking.delivery_preferred_time)}
             </span>
           )}
         </div>
