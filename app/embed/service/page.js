@@ -299,7 +299,7 @@ export default function EmbedService() {
   return (
     <div style={container}>
       <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 4, marginTop: 0, fontFamily: 'var(--ol-font-heading)' }}>
-        Wheels need work?
+        Your bike will thank you.
       </h2>
       <p style={{ fontSize: 14, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 16 }}>
         Tell us what's going on and where to meet you.

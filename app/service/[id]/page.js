@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { isInServiceArea } from '../../lib/serviceArea';
+import { isInServiceArea } from '../../../lib/serviceArea';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 

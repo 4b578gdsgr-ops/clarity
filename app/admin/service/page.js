@@ -284,21 +284,21 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       case 'confirmed': {
         const day = confirmDate ? fmtDate(confirmDate) : 'the scheduled day';
         const time = confirmTime ? ' around ' + fmtTime(confirmTime) : '';
-        return 'Hi ' + name + ', your bicycle service is confirmed for ' + day + time + '. Track updates here: ' + link + ' — One Love';
+        return 'Hi ' + name + ', your pickup is confirmed for ' + day + time + '. Track here: ' + link + ' — One Love';
       }
       case 'in_progress':
       case 'picked_up':
-        return 'Hi ' + name + ', your bike is with us. We\'ll update you when it\'s ready: ' + link + ' — One Love';
+        return 'Hi ' + name + ', your bike is with us. We\'ll let you know when it\'s ready: ' + link + ' — One Love';
       case 'ready':
-        return 'Hi ' + name + ', your bike is ready. Details and payment here: ' + link + ' — One Love';
+        return 'Hi ' + name + ', your bike is ready. Confirm delivery details here: ' + link + ' — One Love';
       case 'out_for_delivery':
-        return 'Hi ' + name + ', we\'re on our way with your bike now. Track here: ' + link + ' — One Love';
+        return 'Hi ' + name + ', we\'re on the way with your bike: ' + link + ' — One Love';
       case 'complete':
       case 'done':
       case 'delivered':
         return 'Hi ' + name + ', delivered. You\'re golden. — One Love';
       default:
-        return 'Hi ' + name + ', your bicycle service is confirmed. Track your booking here: ' + link + ' — One Love';
+        return 'Hi ' + name + ', your pickup is confirmed. Track here: ' + link + ' — One Love';
     }
   }
 
