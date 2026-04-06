@@ -5,7 +5,7 @@ const SERVICE_PAGE_URL = 'https://oneloveoutdoors.org/schedule-service-app';
 
 const PERKS = [
   `Direct line to a real mechanic who actually rides`,
-  `Free pickup and dropoff — we come to you`,
+  `Priority scheduling — your job gets on the calendar first`,
   `Priority service — your bike doesn't wait in a queue`,
   `Seasonal tune-up included — we'll remind you`,
   `Preferred pricing on parts — we source smart and pass the savings along`,
@@ -40,7 +40,7 @@ export default function EmbedMembership() {
         No ads. No investors. Just riders who think this matters.
       </p>
       <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', lineHeight: 1.6, marginBottom: 24 }}>
-        One pickup/dropoff can run $15–40 depending on location. The membership is $25/month — free pickups, priority service, seasonal tune-up. Most people join because they want this to exist.
+        Membership is $25/month — priority scheduling, preferred pricing, seasonal tune-up. Most people join because they want this to exist.
       </p>
 
       {/* Perks card */}
@@ -86,7 +86,7 @@ export default function EmbedMembership() {
       {/* Book service CTA */}
       <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--ol-border)' }}>
         <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', textAlign: 'center', lineHeight: 1.6, marginBottom: 14, marginTop: 0 }}>
-          Ready to book? Members get free pickup and priority scheduling.
+          Ready to book? Members get priority scheduling and preferred pricing.
         </p>
         <a
           href={SERVICE_PAGE_URL}

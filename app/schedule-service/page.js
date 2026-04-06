@@ -18,15 +18,15 @@ const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain
 function getEstimateText(issues) {
   if (!issues.length) return '';
   if (issues.includes('New bike assembly')) {
-    return "We'll need some details to quote assembly. We'll reach out with pricing before confirming pickup.";
+    return "We'll need some details to quote assembly. We'll reach out with pricing before scheduling.";
   }
   const hasOther      = issues.includes('Other');
   const hasSuspension = issues.includes('Suspension');
   const hasTuneup     = issues.includes('Tune-up');
   const nonOther      = issues.filter(i => i !== 'Other');
   if (issues.length === 1 && hasOther) return "We'll take a look and give you a quote. No obligations.";
-  if (nonOther.length >= 3) return "Sounds like it might need some love. We'll give you an honest quote after pickup — most full overhauls run $200–300.";
-  if (hasSuspension) return "Suspension service starts at $150. We'll confirm the full scope after pickup.";
+  if (nonOther.length >= 3) return "Sounds like it might need some love. We'll give you an honest quote after we see the bike — most full overhauls run $200–300.";
+  if (hasSuspension) return "Suspension service starts at $150. We'll confirm the full scope after we see it.";
   if (hasTuneup && nonOther.length <= 2) return "A tune-up covers most of this. Usually around $95 + parts.";
   return "Most jobs like this run $40–150. We'll confirm after seeing the bike.";
 }
@@ -138,7 +138,7 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
       {pin && !outside && (
         <div style={{ marginBottom: 16 }}>
           <p style={{ fontSize: 14, color: '#166534', marginBottom: 12 }}>
-            {'Pickup location: '}
+            {'Your location: '}
             <strong>{address || (Number(pin.lat).toFixed(5) + ', ' + Number(pin.lng).toFixed(5))}</strong>
             {' '}
             <button
@@ -294,7 +294,7 @@ function FormStep({ address, onBack, onDone, initialMember = false }) {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label style={{ ...lbl, color: errors.address ? '#dc2626' : '#374151' }}>Pickup address *</label>
+          <label style={{ ...lbl, color: errors.address ? '#dc2626' : '#374151' }}>Your address *</label>
           <input
             type="text"
             value={form.address}
@@ -364,7 +364,7 @@ function FormStep({ address, onBack, onDone, initialMember = false }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 6 }}>
           <div>
-            <label style={lbl}>Preferred pickup day</label>
+            <label style={lbl}>Preferred day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#111827' : '#9ca3af' }}>
               <option value="">No preference</option>
               <option value="Tuesday">Tuesday</option>
@@ -372,12 +372,12 @@ function FormStep({ address, onBack, onDone, initialMember = false }) {
             </select>
           </div>
           <div>
-            <label style={lbl}>Preferred pickup time</label>
+            <label style={lbl}>Preferred time</label>
             <input type="time" value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} min="08:00" max="17:00" style={{ ...inp, color: form.time_slot ? '#111827' : '#9ca3af' }} />
           </div>
         </div>
         <p style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.5, marginBottom: 16 }}>
-          We run pickup and delivery routes on Mondays and Fridays. Pick whichever works best. Need a different day? Let us know in the notes and we'll do our best.
+          We run routes on Mondays and Fridays. Pick whichever works best. Need a different day? Let us know in the notes.
         </p>
 
         <div style={{ marginBottom: 24 }}>
@@ -426,7 +426,7 @@ function FormStep({ address, onBack, onDone, initialMember = false }) {
           onClick={onBack}
           style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}
         >
-          Back: change pickup location
+          Back: change location
         </button>
       </div>
     </div>

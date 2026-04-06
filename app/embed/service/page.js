@@ -22,7 +22,7 @@ function getEstimateText(issues) {
   if (!issues.length) return '';
 
   if (issues.includes('New bike assembly')) {
-    return "We'll need some details to quote assembly. We'll reach out with pricing before confirming pickup.";
+    return "We'll need some details to quote assembly. We'll reach out with pricing before scheduling.";
   }
 
   const hasOther      = issues.includes('Other');
@@ -36,12 +36,12 @@ function getEstimateText(issues) {
 
   // Lots of things going on — overhaul conversation takes priority
   if (nonOther.length >= 3) {
-    return "Sounds like it might need some love. We'll give you an honest quote after pickup — most full overhauls run $200–300.";
+    return "Sounds like it might need some love. We'll give you an honest quote after we see the bike — most full overhauls run $200–300.";
   }
 
   // Suspension alone or with one other item
   if (hasSuspension) {
-    return "Suspension service starts at $150. We'll confirm the full scope after pickup.";
+    return "Suspension service starts at $150. We'll confirm the full scope after we see it.";
   }
 
   // Tune-up alone, or tune-up + one other thing — it's likely covered
@@ -321,11 +321,8 @@ export default function EmbedService() {
       <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 4, marginTop: 0, fontFamily: 'var(--ol-font-heading)' }}>
         Let's get you rolling.
       </h2>
-      <p style={{ fontSize: 14, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 4 }}>
-        Pickup Monday. Back by Friday.<sup style={{ fontSize: 10 }}>*</sup>
-      </p>
-      <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', marginBottom: 16 }}>
-        *parts permitting
+      <p style={{ fontSize: 14, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 16 }}>
+        Drop a pin, tell us what's wrong, and we'll handle the rest.
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit}>
@@ -339,7 +336,7 @@ export default function EmbedService() {
         <div ref={mapRef} style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 10 }}>
             <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--ol-text)', margin: '0 0 3px' }}>
-              Where should we pick up?
+              Where are you?
               {pin && !outside && <span style={{ color: '#16a34a', marginLeft: 6 }}>✓</span>}
             </p>
             <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', margin: 0 }}>
@@ -380,7 +377,7 @@ export default function EmbedService() {
           {/* Address confirmation / hints */}
           {!pin && (
             <p style={{ fontSize: 12, color: 'var(--ol-text-hint)' }}>
-              Search above or click the map to set your pickup location.
+              Search above or tap the map to drop a pin.
             </p>
           )}
           {pin && outside && (
@@ -400,7 +397,7 @@ export default function EmbedService() {
                   In service area ✓
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--ol-text)', marginBottom: 3 }}>
-                  We're in your area. Pickup & delivery included with every service.
+                  We're in your area.
                 </p>
                 <p style={{ fontSize: 12, color: 'var(--ol-text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
                   Labor and parts quoted after we see the bike. No surprises.
@@ -552,7 +549,7 @@ export default function EmbedService() {
         {/* ── Preferred pickup day + time ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 6 }}>
           <div>
-            <label style={lbl}>Preferred pickup day</label>
+            <label style={lbl}>Preferred day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#1a202c' : '#a0aec0' }}>
               <option value="">No preference</option>
               <option value="Monday">Monday</option>
@@ -560,12 +557,12 @@ export default function EmbedService() {
             </select>
           </div>
           <div>
-            <label style={lbl}>Preferred pickup time</label>
+            <label style={lbl}>Preferred time</label>
             <input type="time" value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} min="08:00" max="17:00" style={{ ...inp, color: form.time_slot ? '#1a202c' : '#a0aec0' }} />
           </div>
         </div>
         <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', lineHeight: 1.5, marginBottom: 12 }}>
-          We run pickup and delivery routes on Mondays and Fridays. Pick whichever works best. Need a different day? Let us know in the notes and we'll do our best.
+          We run routes on Mondays and Fridays. Pick whichever works best. Need a different day? Let us know in the notes.
         </p>
 
         {/* ── Notes ── */}
@@ -590,7 +587,7 @@ export default function EmbedService() {
 
         {!pin && (
           <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', textAlign: 'center', marginTop: 6 }}>
-            Set your pickup location above to continue
+            Drop a pin above to continue
           </p>
         )}
 
