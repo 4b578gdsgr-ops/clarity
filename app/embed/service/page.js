@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
-import { getPricingTier, getTierByDistance } from '../../../lib/servicePricing';
 import { validateBooking, isFormValid } from '../../../lib/bookingValidation';
 import PhotoUpload from '../../components/PhotoUpload';
 
@@ -59,7 +58,6 @@ export default function EmbedService() {
   const [pin, setPin] = useState(null);
   const [address, setAddress] = useState('');
   const [outside, setOutside] = useState(false);
-  const [pricingTier, setPricingTier] = useState(null); // { fee, zip } | null
   const [isMember, setIsMember] = useState(false);
   const [memberPrefilled, setMemberPrefilled] = useState(false);
 
@@ -97,20 +95,9 @@ export default function EmbedService() {
     return () => ro.disconnect();
   }, []);
 
-  function applyPin(lat, lng, resolvedAddress, zip) {
+  function applyPin(lat, lng, resolvedAddress) {
     setPin({ lat, lng });
-    // ZIP lookup is authoritative; distance-based fallback when ZIP not in tier list
-    const tier = getPricingTier(zip);
-    if (tier) {
-      setOutside(false);
-      setPricingTier(tier);
-    } else if (isInServiceArea(lat, lng)) {
-      setOutside(false);
-      setPricingTier(getTierByDistance(lat, lng));
-    } else {
-      setOutside(true);
-      setPricingTier(null);
-    }
+    setOutside(!isInServiceArea(lat, lng));
     if (resolvedAddress) {
       setAddress(resolvedAddress);
       setErrors(er => ({ ...er, address: '' }));
@@ -134,36 +121,29 @@ export default function EmbedService() {
         const lat = parseFloat(results[0].lat);
         const lng = parseFloat(results[0].lon);
         const resolved = results[0].display_name.split(',').slice(0, 3).join(',').trim();
-        const zip = results[0].address?.postcode?.slice(0, 5) || null;
-        applyPin(lat, lng, resolved, zip);
+        applyPin(lat, lng, resolved);
       }
     } catch { /* ignore */ }
     setSearching(false);
   }
 
   async function handleMapClick(lat, lng) {
-    // Optimistically set pin; geocode to get address + ZIP
-    setPin({ lat, lng });
+    applyPin(lat, lng, null);
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`,
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
         { headers: { 'User-Agent': 'LoveOverMoney/1.0 (loveovermoney.oneloveoutdoors.org)' } }
       );
       const data = await res.json();
       const resolved = data.display_name ? data.display_name.split(',').slice(0, 3).join(',').trim() : null;
-      const zip = data.address?.postcode?.slice(0, 5) || null;
-      applyPin(lat, lng, resolved, zip);
-    } catch {
-      // Geocode failed — fall back to polygon check with no address
-      applyPin(lat, lng, null, null);
-    }
+      applyPin(lat, lng, resolved);
+    } catch { /* ignore — pin and service check already set */ }
   }
 
   function clearPin() {
     setPin(null);
     setAddress('');
     setOutside(false);
-    setPricingTier(null);
     setIsMember(false);
     setMemberPrefilled(false);
     setAddrQuery('');
