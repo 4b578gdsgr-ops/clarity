@@ -36,6 +36,7 @@ export async function POST(request) {
           photos, status, confirmed_date, confirmed_time, return_date,
           admin_created } = body;
   console.log('[bookings] new booking from:', name, '| email present:', !!email);
+  console.log('[bookings] lat/lng from body:', lat, lng);
 
   if (!name || !phone) {
     return Response.json({ error: 'Name and phone are required' }, { status: 400 });
@@ -67,7 +68,8 @@ export async function POST(request) {
     .select()
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) { console.error('[bookings] insert error:', error.message); return Response.json({ error: error.message }, { status: 500 }); }
+  console.log('[bookings] inserted lat/lng:', data?.lat, data?.lng);
 
   // Notify customer — skip if admin-created with phone-only preference, or no contact info
   const skipNotification = admin_created && (
