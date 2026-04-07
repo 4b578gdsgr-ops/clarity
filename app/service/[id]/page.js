@@ -393,6 +393,7 @@ export default function BookingStatusPage({ params }) {
   const { id } = params;
   const [booking, setBooking] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [msgText, setMsgText] = useState('');
@@ -403,17 +404,20 @@ export default function BookingStatusPage({ params }) {
 
   async function loadData() {
     try {
-      const [bRes, mRes] = await Promise.all([
+      const [bRes, mRes, iRes] = await Promise.all([
         fetch('/api/bookings/' + id),
         fetch('/api/messages?booking_id=' + id),
+        fetch('/api/inspections/' + id),
       ]);
       if (!bRes.ok) { setNotFound(true); setLoading(false); return; }
       const bData = await bRes.json();
       const mData = await mRes.json();
+      const iData = iRes.ok ? await iRes.json() : {};
       const b = bData.booking || bData;
       console.log('[service/[id]] booking status:', b.status, '| invoice_amount:', b.invoice_amount, '| payment_link:', b.payment_link);
       setBooking(b);
       setMessages(mData.messages || []);
+      setReport(iData.report || null);
     } catch {
       setNotFound(true);
     } finally {
@@ -571,6 +575,61 @@ export default function BookingStatusPage({ params }) {
 
         {booking.status === 'ready' && (
           <DeliveryConfirmSection booking={booking} bookingId={id} onUpdated={loadData} />
+        )}
+
+        {/* From the shop — photos */}
+        {booking.shop_photos && booking.shop_photos.length > 0 && (
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0f1a14', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 11, color: '#6b7280' }}>
+              From the shop
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {booking.shop_photos.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }}>
+                  <img
+                    src={url}
+                    alt={'Shop photo ' + (i + 1)}
+                    style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 10, border: '1px solid #e5e7eb', display: 'block' }}
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Inspection Report */}
+        {report && report.items && report.items.some(it => it.state) && (
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Inspection Report
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {report.items.filter(it => it.state).map((item, i) => {
+                const icon = item.state === 'good' ? '✓' : item.state === 'adjusted' ? 'Adj' : '!';
+                const color = item.state === 'good' ? '#16a34a' : item.state === 'adjusted' ? '#2563eb' : '#ea580c';
+                const bg = item.state === 'good' ? '#f0fdf4' : item.state === 'adjusted' ? '#eff6ff' : '#fff7ed';
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{
+                      flexShrink: 0, width: 28, height: 20, display: 'inline-flex', alignItems: 'center',
+                      justifyContent: 'center', borderRadius: 5, background: bg, color, fontSize: 11, fontWeight: 700,
+                    }}>
+                      {icon}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 13, color: '#374151' }}>{item.label}</span>
+                      {item.note && <span style={{ fontSize: 12, color: '#6b7280', marginLeft: 6 }}>— {item.note}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {report.notes && (
+              <p style={{ fontSize: 13, color: '#374151', margin: '14px 0 0', paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
+                {report.notes}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Payment section */}

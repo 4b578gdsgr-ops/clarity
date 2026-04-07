@@ -3,6 +3,32 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
 const RouteMap = dynamic(() => import('../../components/RouteMap'), { ssr: false });
+const PhotoUpload = dynamic(() => import('../../components/PhotoUpload'), { ssr: false });
+
+// ─── Inspection checklist items ───────────────────────────────────────────────
+
+const INSPECTION_ITEMS = [
+  'Frame & fork inspection',
+  'Headset adjustment',
+  'Saddle & seatpost',
+  'Handlebar & stem',
+  'Brake levers & cables',
+  'Front brake pads & alignment',
+  'Rear brake pads & alignment',
+  'Front derailleur',
+  'Rear derailleur',
+  'Shifter cables & housing',
+  'Chain wear',
+  'Cassette / freewheel',
+  'Chainring(s)',
+  'Bottom bracket',
+  'Pedals',
+  'Front wheel & tire',
+  'Rear wheel & tire',
+  'Wheel truing (front)',
+  'Wheel truing (rear)',
+  'Quick releases / thru-axles',
+];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -300,8 +326,89 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [memberVerified, setMemberVerified] = useState(!!booking.member_verified);
   const [copiedTracking, setCopiedTracking] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [shopPhotos, setShopPhotos] = useState(() =>
+    (booking.shop_photos || []).map((url, i) => ({ id: 'existing-' + i, preview: url, url, uploading: false, error: null }))
+  );
+  const [showInspection, setShowInspection] = useState(false);
+  const [inspection, setInspection] = useState(null); // null = not loaded yet
+  const [inspSaving, setInspSaving] = useState(false);
+  const shopPhotosRef = useRef(shopPhotos);
 
   const trackingUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/embed/service/' + booking.id;
+
+  // Auto-save shop photos whenever they change (all uploads complete)
+  useEffect(() => {
+    shopPhotosRef.current = shopPhotos;
+    const allDone = shopPhotos.every(p => !p.uploading);
+    if (!allDone) return;
+    const urls = shopPhotos.filter(p => p.url && !p.error).map(p => p.url);
+    save({ shop_photos: urls.length > 0 ? urls : null });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopPhotos]);
+
+  async function loadInspection() {
+    if (inspection !== null) return;
+    const res = await fetch('/api/inspections/' + booking.id);
+    const data = await res.json();
+    if (data.report) {
+      setInspection(data.report);
+    } else {
+      // Initialize empty
+      setInspection({
+        items: INSPECTION_ITEMS.map(label => ({ label, state: null, note: '' })),
+        notes: '',
+      });
+    }
+  }
+
+  async function saveInspection(insp) {
+    setInspSaving(true);
+    await fetch('/api/inspections/' + booking.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: insp.items, notes: insp.notes }),
+    });
+    setInspSaving(false);
+  }
+
+  function toggleInspection() {
+    if (!showInspection) loadInspection();
+    setShowInspection(v => !v);
+  }
+
+  function setItemState(idx, state) {
+    setInspection(prev => {
+      const items = prev.items.map((it, i) => i === idx ? { ...it, state } : it);
+      const next = { ...prev, items };
+      saveInspection(next);
+      return next;
+    });
+  }
+
+  function setItemNote(idx, note) {
+    setInspection(prev => {
+      const items = prev.items.map((it, i) => i === idx ? { ...it, note } : it);
+      return { ...prev, items };
+    });
+  }
+
+  function blurItemNote(idx) {
+    setInspection(prev => {
+      saveInspection(prev);
+      return prev;
+    });
+  }
+
+  function setInspNotes(notes) {
+    setInspection(prev => ({ ...prev, notes }));
+  }
+
+  function blurInspNotes() {
+    setInspection(prev => {
+      saveInspection(prev);
+      return prev;
+    });
+  }
 
   function buildTextMessage() {
     const name = booking.name.split(' ')[0];
@@ -634,6 +741,17 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           </div>
         )}
 
+        {/* Shop photos */}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+            From the shop
+          </div>
+          <PhotoUpload
+            photos={shopPhotos}
+            onChange={setShopPhotos}
+          />
+        </div>
+
         {/* Invoice + Payment */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
           <div style={{ flex: '0 0 auto' }}>
@@ -834,6 +952,18 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             );
           })()}
           <button
+            onClick={toggleInspection}
+            style={{
+              padding: '7px 14px',
+              background: showInspection ? '#f0fdf4' : '#f3f4f6',
+              color: showInspection ? '#166534' : '#374151',
+              border: '1px solid ' + (showInspection ? '#bbf7d0' : '#e5e7eb'),
+              borderRadius: 8, fontSize: 13, cursor: 'pointer',
+            }}
+          >
+            Inspection
+          </button>
+          <button
             onClick={() => setShowMsgs(!showMsgs)}
             style={{
               padding: '7px 14px', background: unreadCount > 0 && !showMsgs ? '#fef2f2' : '#f3f4f6',
@@ -939,6 +1069,79 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
         }
         return null;
       })()}
+
+      {/* Inspection checklist */}
+      {showInspection && (
+        <div style={{ borderTop: '1px solid #e5e7eb', padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <span style={{ fontWeight: 600, fontSize: 14, color: '#1a3328' }}>Inspection Checklist</span>
+            {inspSaving && <span style={{ fontSize: 12, color: '#9ca3af' }}>Saving...</span>}
+          </div>
+          {inspection === null ? (
+            <p style={{ fontSize: 13, color: '#9ca3af' }}>Loading...</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                {(inspection.items || INSPECTION_ITEMS.map(label => ({ label, state: null, note: '' }))).map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ flex: '0 0 200px', fontSize: 13, color: '#374151' }}>{item.label}</span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {[
+                        { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+                        { value: 'adjusted',  label: 'Adjusted',       bg: '#eff6ff', color: '#1d4ed8', activeBg: '#2563eb' },
+                        { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setItemState(idx, item.state === opt.value ? null : opt.value)}
+                          style={{
+                            padding: '3px 9px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                            border: '1px solid ' + (item.state === opt.value ? opt.activeBg : '#e5e7eb'),
+                            background: item.state === opt.value ? opt.activeBg : opt.bg,
+                            color: item.state === opt.value ? '#fff' : opt.color,
+                            fontWeight: item.state === opt.value ? 700 : 400,
+                            transition: 'all 0.1s',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Note..."
+                      value={item.note || ''}
+                      onChange={e => setItemNote(idx, e.target.value)}
+                      onBlur={() => blurItemNote(idx)}
+                      style={{
+                        flex: 1, minWidth: 100, padding: '3px 8px', fontSize: 12,
+                        border: '1px solid #e5e7eb', borderRadius: 6, outline: 'none',
+                        color: '#374151', fontFamily: 'inherit',
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Overall notes</label>
+                <textarea
+                  value={inspection.notes || ''}
+                  onChange={e => setInspNotes(e.target.value)}
+                  onBlur={blurInspNotes}
+                  placeholder="Any additional notes for the customer..."
+                  rows={2}
+                  style={{
+                    width: '100%', padding: '7px 10px', border: '1px solid #e5e7eb',
+                    borderRadius: 7, fontSize: 13, outline: 'none', resize: 'vertical',
+                    boxSizing: 'border-box', lineHeight: 1.4, color: '#374151', fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {showMsgs && <MessageThread bookingId={booking.id} onMarkRead={onMarkRead} />}
     </div>
