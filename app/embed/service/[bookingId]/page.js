@@ -610,39 +610,67 @@ export default function EmbedBookingStatusPage({ params }) {
       )}
 
       {/* Inspection Report */}
-      {report && report.items && report.items.some(it => it.state) && (
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Inspection Report
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {report.items.filter(it => it.state).map((item, i) => {
-              const icon = item.state === 'good' ? '✓' : item.state === 'adjusted' ? 'Adj' : '!';
-              const color = item.state === 'good' ? '#16a34a' : item.state === 'adjusted' ? '#2563eb' : '#ea580c';
-              const bg = item.state === 'good' ? '#f0fdf4' : item.state === 'adjusted' ? '#eff6ff' : '#fff7ed';
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span style={{
-                    flexShrink: 0, width: 28, height: 20, display: 'inline-flex', alignItems: 'center',
-                    justifyContent: 'center', borderRadius: 5, background: bg, color, fontSize: 11, fontWeight: 700,
-                  }}>
-                    {icon}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 13, color: '#374151' }}>{item.label}</span>
-                    {item.note && <span style={{ fontSize: 12, color: '#6b7280', marginLeft: 6 }}>— {item.note}</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {report.notes && (
-            <p style={{ fontSize: 13, color: '#374151', margin: '14px 0 0', paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
-              {report.notes}
+      {report && Array.isArray(report.items) && report.items.some(it => it.state) && (() => {
+        const attention = report.items.filter(it => it.state === 'attention');
+        const adjusted  = report.items.filter(it => it.state === 'adjusted');
+        const good      = report.items.filter(it => it.state === 'good');
+        return (
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Inspection Report
             </p>
-          )}
-        </div>
-      )}
+
+            {attention.length > 0 && (
+              <div style={{ marginBottom: adjusted.length || good.length ? 16 : 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#c2410c', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Needs Attention
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {attention.map((item, i) => (
+                    <div key={i} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '8px 12px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>{item.label}</div>
+                      {item.note && <div style={{ fontSize: 12, color: '#c2410c', marginTop: 2 }}>{item.note}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adjusted.length > 0 && (
+              <div style={{ marginBottom: good.length ? 16 : 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Adjusted
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {adjusted.map((item, i) => (
+                    <div key={i} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '8px 12px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>{item.label}</div>
+                      {item.note && <div style={{ fontSize: 12, color: '#1d4ed8', marginTop: 2 }}>{item.note}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {good.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Good
+                </div>
+                <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.6 }}>
+                  {good.map(it => it.label).join(', ')}
+                </p>
+              </div>
+            )}
+
+            {report.notes && (
+              <p style={{ fontSize: 13, color: '#374151', margin: '16px 0 0', paddingTop: 14, borderTop: '1px solid #f3f4f6', lineHeight: 1.5 }}>
+                {report.notes}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Payment section */}
       {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (booking.invoice_amount != null || booking.payment_link) && (

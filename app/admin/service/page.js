@@ -332,6 +332,8 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [showInspection, setShowInspection] = useState(false);
   const [inspection, setInspection] = useState(null); // null = not loaded yet
   const [inspSaving, setInspSaving] = useState(false);
+  const [inspSaved, setInspSaved] = useState(false);
+  const [inspSaveErr, setInspSaveErr] = useState('');
   const shopPhotosRef = useRef(shopPhotos);
 
   const trackingUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/embed/service/' + booking.id;
@@ -362,13 +364,28 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   }
 
   async function saveInspection(insp) {
+    if (!insp) return;
     setInspSaving(true);
-    await fetch('/api/inspections/' + booking.id, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: insp.items, notes: insp.notes }),
-    });
-    setInspSaving(false);
+    setInspSaveErr('');
+    setInspSaved(false);
+    try {
+      const res = await fetch('/api/inspections/' + booking.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: insp.items, notes: insp.notes }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setInspSaveErr(d.error || 'Save failed');
+      } else {
+        setInspSaved(true);
+        setTimeout(() => setInspSaved(false), 2500);
+      }
+    } catch {
+      setInspSaveErr('Network error — try again');
+    } finally {
+      setInspSaving(false);
+    }
   }
 
   function toggleInspection() {
@@ -376,38 +393,29 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
     setShowInspection(v => !v);
   }
 
-  function setItemState(idx, state) {
-    setInspection(prev => {
-      const items = prev.items.map((it, i) => i === idx ? { ...it, state } : it);
-      const next = { ...prev, items };
-      saveInspection(next);
-      return next;
-    });
+  // These update state directly then save the computed next value — avoids calling async inside setState
+  function updateItemState(idx, newState) {
+    const items = (inspection.items || []).map((it, i) => i === idx ? { ...it, state: newState } : it);
+    const next = { ...inspection, items };
+    setInspection(next);
+    saveInspection(next);
   }
 
   function setItemNote(idx, note) {
-    setInspection(prev => {
-      const items = prev.items.map((it, i) => i === idx ? { ...it, note } : it);
-      return { ...prev, items };
-    });
+    const items = (inspection.items || []).map((it, i) => i === idx ? { ...it, note } : it);
+    setInspection({ ...inspection, items });
   }
 
   function blurItemNote(idx) {
-    setInspection(prev => {
-      saveInspection(prev);
-      return prev;
-    });
+    saveInspection(inspection);
   }
 
   function setInspNotes(notes) {
-    setInspection(prev => ({ ...prev, notes }));
+    setInspection({ ...inspection, notes });
   }
 
   function blurInspNotes() {
-    setInspection(prev => {
-      saveInspection(prev);
-      return prev;
-    });
+    saveInspection(inspection);
   }
 
   function buildTextMessage() {
@@ -1076,6 +1084,8 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <span style={{ fontWeight: 600, fontSize: 14, color: '#1a3328' }}>Inspection Checklist</span>
             {inspSaving && <span style={{ fontSize: 12, color: '#9ca3af' }}>Saving...</span>}
+            {inspSaved && !inspSaving && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Saved ✓</span>}
+            {inspSaveErr && <span style={{ fontSize: 12, color: '#dc2626' }}>{inspSaveErr}</span>}
           </div>
           {inspection === null ? (
             <p style={{ fontSize: 13, color: '#9ca3af' }}>Loading...</p>
@@ -1094,7 +1104,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setItemState(idx, item.state === opt.value ? null : opt.value)}
+                          onClick={() => updateItemState(idx, item.state === opt.value ? null : opt.value)}
                           style={{
                             padding: '3px 9px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
                             border: '1px solid ' + (item.state === opt.value ? opt.activeBg : '#e5e7eb'),
@@ -1123,7 +1133,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   </div>
                 ))}
               </div>
-              <div>
+              <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Overall notes</label>
                 <textarea
                   value={inspection.notes || ''}
@@ -1138,6 +1148,18 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   }}
                 />
               </div>
+              <button
+                type="button"
+                onClick={() => saveInspection(inspection)}
+                disabled={inspSaving}
+                style={{
+                  padding: '8px 20px', background: inspSaving ? '#9ca3af' : '#1a3328',
+                  color: '#fff', border: 'none', borderRadius: 8, fontSize: 13,
+                  cursor: inspSaving ? 'default' : 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {inspSaving ? 'Saving...' : inspSaved ? 'Saved ✓' : 'Save inspection'}
+              </button>
             </>
           )}
         </div>
