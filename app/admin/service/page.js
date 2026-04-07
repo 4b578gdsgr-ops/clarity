@@ -67,9 +67,9 @@ function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
   const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled Monday') +
     (time ? ' around ' + fmtTime(time) : '');
   const returnWhen = returnDate ? fmtDate(returnDate) : 'Friday';
-  const issues = booking.issues && booking.issues.length > 0
-    ? booking.issues.join(', ').toLowerCase()
-    : 'your bike';
+  const issues = booking.bikes?.length > 0
+    ? booking.bikes.flatMap(b => b.issues || []).join(', ').toLowerCase() || 'your bike'
+    : (booking.issues?.length > 0 ? booking.issues.join(', ').toLowerCase() : 'your bike');
   switch (newStatus) {
     case 'confirmed':
       return 'Hi ' + name + ', your pickup is confirmed for ' + pickupWhen + '. Plan on having it back by ' + returnWhen + '. We\'ll reach out when we\'re on the way. — One Love';
@@ -330,11 +330,22 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
     (booking.shop_photos || []).map((url, i) => ({ id: 'existing-' + i, preview: url, url, uploading: false, error: null }))
   );
   const [showInspection, setShowInspection] = useState(false);
-  const [inspection, setInspection] = useState(null); // null = not loaded yet
+  const [inspections, setInspections] = useState({}); // { [bikeIdx]: { items, notes } }
+  const [inspLoaded, setInspLoaded] = useState(false);
+  const [activeBikeIdx, setActiveBikeIdx] = useState(0);
   const [inspSaving, setInspSaving] = useState(false);
   const [inspSaved, setInspSaved] = useState(false);
   const [inspSaveErr, setInspSaveErr] = useState('');
   const shopPhotosRef = useRef(shopPhotos);
+
+  // Derived: current active bike's inspection (null = not loaded / empty)
+  const inspection = inspections[activeBikeIdx] ?? null;
+  const bikeCount = booking.bikes?.length || 1;
+  const bikeLabels = booking.bikes?.map((b, i) => b.name || b.brand || ('Bike ' + (i + 1))) || ['Bike'];
+
+  function emptyInspection() {
+    return { items: INSPECTION_ITEMS.map(label => ({ label, state: null, note: '' })), notes: '' };
+  }
 
   const trackingUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/embed/service/' + booking.id;
 
@@ -349,21 +360,18 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   }, [shopPhotos]);
 
   async function loadInspection() {
-    if (inspection !== null) return;
+    if (inspLoaded) return;
     const res = await fetch('/api/inspections/' + booking.id);
     const data = await res.json();
-    if (data.report) {
-      setInspection(data.report);
-    } else {
-      // Initialize empty
-      setInspection({
-        items: INSPECTION_ITEMS.map(label => ({ label, state: null, note: '' })),
-        notes: '',
-      });
-    }
+    const loaded = {};
+    (data.reports || []).forEach(r => {
+      loaded[r.bike_index] = { items: r.items, notes: r.notes || '' };
+    });
+    setInspections(loaded);
+    setInspLoaded(true);
   }
 
-  async function saveInspection(insp) {
+  async function saveInspection(bikeIdx, insp) {
     if (!insp) return;
     setInspSaving(true);
     setInspSaveErr('');
@@ -372,7 +380,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       const res = await fetch('/api/inspections/' + booking.id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: insp.items, notes: insp.notes }),
+        body: JSON.stringify({ bike_index: bikeIdx, items: insp.items, notes: insp.notes }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -393,29 +401,35 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
     setShowInspection(v => !v);
   }
 
-  // These update state directly then save the computed next value — avoids calling async inside setState
+  function getOrCreateInspection(bikeIdx) {
+    return inspections[bikeIdx] || emptyInspection();
+  }
+
   function updateItemState(idx, newState) {
-    const items = (inspection.items || []).map((it, i) => i === idx ? { ...it, state: newState } : it);
-    const next = { ...inspection, items };
-    setInspection(next);
-    saveInspection(next);
+    const current = getOrCreateInspection(activeBikeIdx);
+    const items = current.items.map((it, i) => i === idx ? { ...it, state: newState } : it);
+    const next = { ...current, items };
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
+    saveInspection(activeBikeIdx, next);
   }
 
   function setItemNote(idx, note) {
-    const items = (inspection.items || []).map((it, i) => i === idx ? { ...it, note } : it);
-    setInspection({ ...inspection, items });
+    const current = getOrCreateInspection(activeBikeIdx);
+    const items = current.items.map((it, i) => i === idx ? { ...it, note } : it);
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: { ...current, items } }));
   }
 
-  function blurItemNote(idx) {
-    saveInspection(inspection);
+  function blurItemNote() {
+    saveInspection(activeBikeIdx, getOrCreateInspection(activeBikeIdx));
   }
 
   function setInspNotes(notes) {
-    setInspection({ ...inspection, notes });
+    const current = getOrCreateInspection(activeBikeIdx);
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: { ...current, notes } }));
   }
 
   function blurInspNotes() {
-    saveInspection(inspection);
+    saveInspection(activeBikeIdx, getOrCreateInspection(activeBikeIdx));
   }
 
   function buildTextMessage() {
@@ -532,9 +546,13 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
           <div>
             <span style={{ fontWeight: 700, fontSize: 16 }}>{booking.name}</span>
-            {booking.bike_brand && (
+            {booking.bikes?.length > 0 ? (
+              <span style={{ marginLeft: 8, fontSize: 13, color: '#6b7280' }}>
+                {booking.bikes.length > 1 ? booking.bikes.length + ' bikes' : (booking.bikes[0].brand || 'Bike')}
+              </span>
+            ) : booking.bike_brand ? (
               <span style={{ marginLeft: 8, fontSize: 13, color: '#6b7280' }}>{booking.bike_brand}</span>
-            )}
+            ) : null}
             {booking.contact_preference && (
               <span style={{
                 marginLeft: 8,
@@ -572,7 +590,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 </span>
               )
             )}
-            {booking.issues && booking.issues.includes('New bike assembly') && (
+            {(booking.bikes?.some(b => b.issues?.includes('New bike assembly')) || booking.issues?.includes('New bike assembly')) && (
               <span style={{
                 marginLeft: 8,
                 background: '#fff7ed', color: '#c2410c',
@@ -705,22 +723,41 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           )}
         </div>
 
-        {booking.issues && booking.issues.length > 0 && (
-          <div style={{ marginBottom: booking.bike_details ? 4 : 10 }}>
-            {booking.issues.map(i => (
-              <span key={i} style={{
-                display: 'inline-block', marginRight: 5, marginBottom: 4,
-                background: '#f3f4f6', borderRadius: 12, padding: '2px 9px', fontSize: 12,
-              }}>
-                {i}
-              </span>
+        {booking.bikes?.length > 0 ? (
+          <div style={{ marginBottom: 10 }}>
+            {booking.bikes.map((bike, i) => (
+              <div key={i} style={{ marginBottom: i < booking.bikes.length - 1 ? 6 : 0 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                  {'Bike ' + (i + 1) + (bike.name ? ' — ' + bike.name : '') + (bike.brand ? ' (' + bike.brand + ')' : '') + ': '}
+                </span>
+                {(bike.issues || []).map(iss => (
+                  <span key={iss} style={{
+                    display: 'inline-block', marginRight: 4, marginBottom: 2,
+                    background: '#f3f4f6', borderRadius: 12, padding: '2px 8px', fontSize: 12,
+                  }}>{iss}</span>
+                ))}
+                {bike.notes && <span style={{ fontSize: 12, color: '#6b7280', marginLeft: 4 }}>— {bike.notes}</span>}
+              </div>
             ))}
           </div>
-        )}
-        {booking.bike_details && (
-          <div style={{ marginBottom: 10, fontSize: 13, color: '#374151' }}>
-            <strong>Bike details: </strong>{booking.bike_details}
-          </div>
+        ) : (
+          <>
+            {booking.issues && booking.issues.length > 0 && (
+              <div style={{ marginBottom: booking.bike_details ? 4 : 10 }}>
+                {booking.issues.map(i => (
+                  <span key={i} style={{
+                    display: 'inline-block', marginRight: 5, marginBottom: 4,
+                    background: '#f3f4f6', borderRadius: 12, padding: '2px 9px', fontSize: 12,
+                  }}>{i}</span>
+                ))}
+              </div>
+            )}
+            {booking.bike_details && (
+              <div style={{ marginBottom: 10, fontSize: 13, color: '#374151' }}>
+                <strong>Bike details: </strong>{booking.bike_details}
+              </div>
+            )}
+          </>
         )}
 
         {/* Photos */}
@@ -1087,12 +1124,35 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             {inspSaved && !inspSaving && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Saved ✓</span>}
             {inspSaveErr && <span style={{ fontSize: 12, color: '#dc2626' }}>{inspSaveErr}</span>}
           </div>
-          {inspection === null ? (
+          {bikeCount > 1 && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              {bikeLabels.map((label, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActiveBikeIdx(i)}
+                  style={{
+                    padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                    border: '1px solid ' + (activeBikeIdx === i ? '#1a3328' : '#e5e7eb'),
+                    background: activeBikeIdx === i ? '#1a3328' : '#fff',
+                    color: activeBikeIdx === i ? '#fff' : '#374151',
+                    fontWeight: activeBikeIdx === i ? 600 : 400,
+                  }}
+                >
+                  {label}
+                  {inspections[i] && inspections[i].items?.some(it => it.state) && (
+                    <span style={{ marginLeft: 5, fontSize: 10, opacity: 0.7 }}>✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          {!inspLoaded ? (
             <p style={{ fontSize: 13, color: '#9ca3af' }}>Loading...</p>
           ) : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                {(inspection.items || INSPECTION_ITEMS.map(label => ({ label, state: null, note: '' }))).map((item, idx) => (
+                {(inspection?.items || emptyInspection().items).map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ flex: '0 0 200px', fontSize: 13, color: '#374151' }}>{item.label}</span>
                     <div style={{ display: 'flex', gap: 4 }}>
@@ -1123,7 +1183,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                       placeholder="Note..."
                       value={item.note || ''}
                       onChange={e => setItemNote(idx, e.target.value)}
-                      onBlur={() => blurItemNote(idx)}
+                      onBlur={() => blurItemNote()}
                       style={{
                         flex: 1, minWidth: 100, padding: '3px 8px', fontSize: 12,
                         border: '1px solid #e5e7eb', borderRadius: 6, outline: 'none',
@@ -1136,7 +1196,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Overall notes</label>
                 <textarea
-                  value={inspection.notes || ''}
+                  value={inspection?.notes || ''}
                   onChange={e => setInspNotes(e.target.value)}
                   onBlur={blurInspNotes}
                   placeholder="Any additional notes for the customer..."
@@ -1150,7 +1210,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               </div>
               <button
                 type="button"
-                onClick={() => saveInspection(inspection)}
+                onClick={() => saveInspection(activeBikeIdx, getOrCreateInspection(activeBikeIdx))}
                 disabled={inspSaving}
                 style={{
                   padding: '8px 20px', background: inspSaving ? '#9ca3af' : '#1a3328',
@@ -1330,7 +1390,11 @@ function PlanRouteView({ allBookings, onRefresh }) {
                   {stop.name}
                 </div>
                 {stop.address && <div style={{ fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stop.address}</div>}
-                {stop.issues && stop.issues.length > 0 && (
+                {stop.bikes?.length > 0 ? (
+                  <div style={{ fontSize: 12, color: '#9ca3af' }}>
+                    {stop.bikes.map((b, i) => (b.brand || 'Bike ' + (i+1)) + (b.issues?.length ? ': ' + b.issues.join(', ') : '')).join(' | ')}
+                  </div>
+                ) : stop.issues && stop.issues.length > 0 && (
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>{stop.issues.join(', ')}</div>
                 )}
               </div>
@@ -1794,8 +1858,7 @@ function NewBookingModal({ onClose, onCreated }) {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [bikeBrand, setBikeBrand] = useState('');
-  const [issues, setIssues] = useState([]);
+  const [bikes, setBikes] = useState([{ name: '', brand: '', issues: [], notes: '' }]);
   const [notes, setNotes] = useState('');
   const [contactPref, setContactPref] = useState('text');
   const [isMember, setIsMember] = useState(false);
@@ -1806,8 +1869,22 @@ function NewBookingModal({ onClose, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
 
-  function toggleIssue(issue) {
-    setIssues(prev => prev.includes(issue) ? prev.filter(i => i !== issue) : [...prev, issue]);
+  function addBike() {
+    if (bikes.length >= 5) return;
+    setBikes(prev => [...prev, { name: '', brand: '', issues: [], notes: '' }]);
+  }
+  function removeBike(idx) {
+    setBikes(prev => prev.filter((_, i) => i !== idx));
+  }
+  function updateBike(idx, key, val) {
+    setBikes(prev => prev.map((b, i) => i === idx ? { ...b, [key]: val } : b));
+  }
+  function toggleBikeIssue(idx, issue) {
+    setBikes(prev => prev.map((b, i) => {
+      if (i !== idx) return b;
+      const issues = b.issues.includes(issue) ? b.issues.filter(x => x !== issue) : [...b.issues, issue];
+      return { ...b, issues };
+    }));
   }
 
   async function handleSubmit(e) {
@@ -1836,8 +1913,7 @@ function NewBookingModal({ onClose, onCreated }) {
           address: address.trim() || null,
           lat,
           lng,
-          bike_brand: bikeBrand || null,
-          issues,
+          bikes,
           notes: notes.trim() || null,
           contact_preference: contactPref,
           is_member: isMember,
@@ -1920,31 +1996,67 @@ function NewBookingModal({ onClose, onCreated }) {
             <input value={address} onChange={e => setAddress(e.target.value)} placeholder="123 Main St, Hartford, CT" style={inputStyle} />
           </div>
 
-          {/* Bike brand */}
+          {/* Bikes */}
           <div>
-            <label style={labelStyle}>Bike brand (optional)</label>
-            <select value={bikeBrand} onChange={e => setBikeBrand(e.target.value)} style={{ ...inputStyle, background: '#fff', cursor: 'pointer' }}>
-              <option value="">— select brand —</option>
-              {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
-
-          {/* Issues */}
-          <div>
-            <label style={labelStyle}>Issues</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {ISSUE_OPTIONS.map(opt => (
-                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 14, color: '#374151', userSelect: 'none' }}>
-                  <input
-                    type="checkbox"
-                    checked={issues.includes(opt)}
-                    onChange={() => toggleIssue(opt)}
-                    style={{ accentColor: '#1a3328', cursor: 'pointer' }}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
+            <label style={labelStyle}>Bikes</label>
+            {bikes.map((bike, bikeIdx) => (
+              <div key={bikeIdx} style={{
+                border: '1px solid #e5e7eb', borderRadius: 8, padding: 12,
+                marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Bike {bikeIdx + 1}
+                  </span>
+                  {bikeIdx > 0 && (
+                    <button type="button" onClick={() => removeBike(bikeIdx)} style={{
+                      background: 'none', border: 'none', color: '#9ca3af',
+                      cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0, fontFamily: 'inherit',
+                    }}>×</button>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 10 }}>Name (optional)</label>
+                    <input value={bike.name} onChange={e => updateBike(bikeIdx, 'name', e.target.value)}
+                      placeholder="Scott's Stumpjumper, Kids bike..." style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 10 }}>Brand</label>
+                    <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
+                      style={{ ...inputStyle, background: '#fff', cursor: 'pointer' }}>
+                      <option value="">— select —</option>
+                      {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ ...labelStyle, fontSize: 10 }}>Issues</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {ISSUE_OPTIONS.map(opt => (
+                      <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 13, color: '#374151', userSelect: 'none' }}>
+                        <input type="checkbox" checked={bike.issues.includes(opt)}
+                          onChange={() => toggleBikeIssue(bikeIdx, opt)}
+                          style={{ accentColor: '#1a3328', cursor: 'pointer' }} />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, fontSize: 10 }}>Notes for this bike</label>
+                  <input value={bike.notes} onChange={e => updateBike(bikeIdx, 'notes', e.target.value)}
+                    placeholder="Details, model, anything specific..." style={inputStyle} />
+                </div>
+              </div>
+            ))}
+            {bikes.length < 5 && (
+              <button type="button" onClick={addBike} style={{
+                marginTop: 8, padding: '7px 0', background: '#fff',
+                border: '1px dashed #d1d5db', borderRadius: 7, fontSize: 13,
+                cursor: 'pointer', color: '#6b7280', fontFamily: 'inherit', width: '100%',
+              }}>+ Add another bike</button>
+            )}
           </div>
 
           {/* Notes */}

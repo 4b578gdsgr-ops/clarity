@@ -73,10 +73,9 @@ export default function EmbedService() {
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
     contact_preference: '',
-    bike_brand: '', issues: [],
-    bike_details: '',
     preferred_day: '', time_slot: '', notes: '',
   });
+  const [bikes, setBikes] = useState([{ brand: '', issues: [], notes: '' }]);
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -155,19 +154,32 @@ export default function EmbedService() {
     setErrors(er => ({ ...er, [k]: '' }));
   }
 
-  function toggleIssue(issue) {
-    setForm(f => ({
-      ...f,
-      issues: f.issues.includes(issue) ? f.issues.filter(i => i !== issue) : [...f.issues, issue],
+  function addBike() {
+    if (bikes.length >= 5) return;
+    setBikes(prev => [...prev, { brand: '', issues: [], notes: '' }]);
+  }
+  function removeBike(idx) {
+    setBikes(prev => prev.filter((_, i) => i !== idx));
+    setErrors(er => ({ ...er, issues: '' }));
+  }
+  function updateBike(idx, key, val) {
+    setBikes(prev => prev.map((b, i) => i === idx ? { ...b, [key]: val } : b));
+    if (key === 'issues') setErrors(er => ({ ...er, issues: '' }));
+  }
+  function toggleBikeIssue(idx, issue) {
+    setBikes(prev => prev.map((b, i) => {
+      if (i !== idx) return b;
+      const issues = b.issues.includes(issue) ? b.issues.filter(x => x !== issue) : [...b.issues, issue];
+      return { ...b, issues };
     }));
     setErrors(er => ({ ...er, issues: '' }));
   }
 
   const formRef = useRef(null);
   const mapRef = useRef(null);
-  const isAssembly = form.issues.includes('New bike assembly');
-  const canSubmit = pin && !outside && isFormValid({ ...form, address });
-  const estimateText = getEstimateText(form.issues);
+  const isAssembly = bikes.some(b => b.issues.includes('New bike assembly'));
+  const allIssues = bikes.flatMap(b => b.issues);
+  const canSubmit = pin && !outside && isFormValid({ ...form, address, bikes });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -177,7 +189,7 @@ export default function EmbedService() {
       mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
-    const errs = validateBooking({ ...form, address });
+    const errs = validateBooking({ ...form, address, bikes });
     if (Object.keys(errs).length) {
       setErrors(errs);
       setTimeout(() => {
@@ -198,8 +210,8 @@ export default function EmbedService() {
           lat: pin ? pin.lat : null,
           lng: pin ? pin.lng : null,
           is_member: isMember,
-          bike_details: form.bike_details || null,
           photos: photoUrls,
+          bikes,
         }),
       });
       const data = await res.json();
@@ -217,7 +229,8 @@ export default function EmbedService() {
     setAddress('');
     setOutside(false);
     setAddrQuery('');
-    setForm({ name: '', phone: '', email: '', contact_preference: '', bike_brand: '', issues: [], bike_details: '', preferred_day: '', time_slot: '', notes: '' });
+    setForm({ name: '', phone: '', email: '', contact_preference: '', preferred_day: '', time_slot: '', notes: '' });
+    setBikes([{ brand: '', issues: [], notes: '' }]);
     setErrors({});
     setSubmitErr('');
     setBookingId(null);
@@ -239,7 +252,7 @@ export default function EmbedService() {
   // ── Confirmation screen ──
   if (bookingId) {
     const via = form.contact_preference === 'email' ? 'email' : 'text';
-    const isAssembly = form.issues.includes('New bike assembly');
+    const confirmedIsAssembly = bikes.some(b => b.issues.includes('New bike assembly'));
     return (
       <div style={container}>
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
@@ -250,7 +263,7 @@ export default function EmbedService() {
             Got it.
           </h3>
           <p style={{ color: 'var(--ol-text-muted)', fontSize: 15, marginBottom: 10, lineHeight: 1.6 }}>
-            {isAssembly
+            {confirmedIsAssembly
               ? "Got it. We'll review the details and send you a quote before scheduling pickup."
               : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
           </p>
@@ -460,66 +473,80 @@ export default function EmbedService() {
           {errors.contact_preference && <span data-field-error style={errStyle}>{errors.contact_preference}</span>}
         </div>
 
-        {/* ── Bike brand ── */}
+        {/* ── Bikes ── */}
         <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>Bike brand</label>
-          <select value={form.bike_brand} onChange={e => setField('bike_brand', e.target.value)} style={{ ...inp, color: form.bike_brand ? '#1a202c' : '#a0aec0' }}>
-            <option value="">Select (optional)</option>
-            {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-          </select>
+          {bikes.map((bike, bikeIdx) => {
+            const bikeIsAssembly = bike.issues.includes('New bike assembly');
+            const bikeEstimate = getEstimateText(bike.issues);
+            return (
+              <div key={bikeIdx} style={{
+                border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)',
+                padding: 14, marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ol-text)' }}>
+                    {bikes.length > 1 ? 'Bike ' + (bikeIdx + 1) : 'Your bike'}
+                  </span>
+                  {bikeIdx > 0 && (
+                    <button type="button" onClick={() => removeBike(bikeIdx)} style={{
+                      background: 'none', border: 'none', color: 'var(--ol-text-hint)',
+                      cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px', fontFamily: 'inherit',
+                    }}>×</button>
+                  )}
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={lbl}>Brand</label>
+                  <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
+                    style={{ ...inp, color: bike.brand ? 'var(--ol-text)' : '#a0aec0' }}>
+                    <option value="">Select (optional)</option>
+                    {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#e53e3e' : '#4a5568' }}>
+                    What needs attention? {bikeIdx === 0 ? '*' : ''}
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {ISSUE_OPTIONS.map(issue => {
+                      const on = bike.issues.includes(issue);
+                      return (
+                        <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
+                          padding: '6px 13px', borderRadius: '20px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                          border: on ? '2px solid var(--ol-chip-selected-border)' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? 'var(--ol-border-error)' : 'var(--ol-chip-border)')),
+                          background: on ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
+                          color: on ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
+                        }}>{issue}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {bikeIsAssembly && (
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={lbl}>Tell us about the bike (optional)</label>
+                    <input type="text" value={bike.notes} onChange={e => updateBike(bikeIdx, 'notes', e.target.value)}
+                      placeholder="Brand, model, year, where you ordered it from..." style={inp} />
+                  </div>
+                )}
+                {bikeEstimate && (
+                  <div style={{ padding: '8px 12px', background: 'var(--ol-bg-callout)', borderRadius: 'var(--ol-radius-md)', border: '1px solid var(--ol-border)' }}>
+                    <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.5, margin: 0 }}>{bikeEstimate}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {errors.issues && <span data-field-error style={{ ...errStyle, display: 'block', marginTop: 6 }}>{errors.issues}</span>}
+          {bikes.length < 5 && (
+            <button type="button" onClick={addBike} style={{
+              marginTop: 10, padding: '7px 14px',
+              background: 'none', border: '1px dashed var(--ol-chip-border)',
+              borderRadius: 'var(--ol-radius-md)', fontSize: 13, cursor: 'pointer',
+              color: 'var(--ol-text-muted)', fontFamily: 'inherit', width: '100%',
+            }}>
+              + Add another bike
+            </button>
+          )}
         </div>
-
-        {/* ── What needs attention ── */}
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ ...lbl, color: errors.issues ? '#e53e3e' : '#4a5568' }}>What needs attention? *</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
-            {ISSUE_OPTIONS.map(issue => {
-              const on = form.issues.includes(issue);
-              return (
-                <button
-                  key={issue}
-                  type="button"
-                  onClick={() => toggleIssue(issue)}
-                  style={{
-                    padding: '6px 13px', borderRadius: '20px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                    border: on ? '2px solid var(--ol-chip-selected-border)' : ('1px solid ' + (errors.issues ? 'var(--ol-border-error)' : 'var(--ol-chip-border)')),
-                    background: on ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
-                    color: on ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
-                  }}
-                >
-                  {issue}
-                </button>
-              );
-            })}
-          </div>
-          {errors.issues && <span data-field-error style={errStyle}>{errors.issues}</span>}
-        </div>
-
-        {/* ── Bike details (assembly only) ── */}
-        {isAssembly && (
-          <div style={{ marginBottom: 12 }}>
-            <label style={lbl}>Tell us about the bike (optional)</label>
-            <input
-              type="text"
-              value={form.bike_details}
-              onChange={e => setField('bike_details', e.target.value)}
-              placeholder="Brand, model, year, where you ordered it from..."
-              style={inp}
-            />
-          </div>
-        )}
-
-        {/* ── Estimate hint ── */}
-        {estimateText && (
-          <div style={{ marginBottom: 12, padding: '10px 14px', background: 'var(--ol-bg-callout)', borderRadius: 'var(--ol-radius-md)', border: '1px solid var(--ol-border)' }}>
-            <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', lineHeight: 1.5, margin: '0 0 3px' }}>
-              {estimateText}
-            </p>
-            <p style={{ fontSize: 11, color: 'var(--ol-text-hint)', margin: 0 }}>
-              No surprises. We quote before we wrench.
-            </p>
-          </div>
-        )}
 
         {/* ── Photos ── */}
         <div style={{ marginBottom: 14 }}>
@@ -551,7 +578,7 @@ export default function EmbedService() {
           <textarea
             value={form.notes}
             onChange={e => setField('notes', e.target.value)}
-            placeholder={isAssembly ? "Anything else — how it ships, box dimensions, e-bike, etc." : "Access instructions, anything specific about the bike..."}
+            placeholder="Access instructions, gate codes, anything we should know..."
             rows={2}
             style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
           />

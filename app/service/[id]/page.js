@@ -417,7 +417,9 @@ export default function BookingStatusPage({ params }) {
       console.log('[service/[id]] booking status:', b.status, '| invoice_amount:', b.invoice_amount, '| payment_link:', b.payment_link);
       setBooking(b);
       setMessages(mData.messages || []);
-      setReport(iData.report || null);
+      // Merge all bike reports into one view — pick the report with most data, or combine
+      const reports = iData.reports || (iData.report ? [iData.report] : []);
+      setReport(reports.length > 0 ? reports : null);
     } catch {
       setNotFound(true);
     } finally {
@@ -598,10 +600,14 @@ export default function BookingStatusPage({ params }) {
         )}
 
         {/* Inspection Report */}
-        {report && Array.isArray(report.items) && report.items.some(it => it.state) && (() => {
-          const attention = report.items.filter(it => it.state === 'attention');
-          const adjusted  = report.items.filter(it => it.state === 'adjusted');
-          const good      = report.items.filter(it => it.state === 'good');
+        {Array.isArray(report) && report.some(r => r.items?.some(it => it.state)) && (() => {
+          // Flatten all bikes' items — show per-bike section if multiple
+          const allItems = report.flatMap(r => (r.items || []).filter(it => it.state).map(it => ({ ...it, bikeIdx: r.bike_index })));
+          const attention = allItems.filter(it => it.state === 'attention');
+          const adjusted  = allItems.filter(it => it.state === 'adjusted');
+          const good      = allItems.filter(it => it.state === 'good');
+          // Reuse report[0] for notes if single bike, combine notes if multiple
+          const combinedNotes = report.map(r => r.notes).filter(Boolean).join(' | ');
           return (
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -651,9 +657,9 @@ export default function BookingStatusPage({ params }) {
                 </div>
               )}
 
-              {report.notes && (
+              {combinedNotes && (
                 <p style={{ fontSize: 13, color: '#374151', margin: '16px 0 0', paddingTop: 14, borderTop: '1px solid #f3f4f6', lineHeight: 1.5 }}>
-                  {report.notes}
+                  {combinedNotes}
                 </p>
               )}
             </div>

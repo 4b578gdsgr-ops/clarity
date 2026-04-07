@@ -170,10 +170,9 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
     name: '', phone: '', email: '',
     contact_preference: '',
     address: address || '',
-    bike_brand: '', issues: [],
-    bike_details: '',
     preferred_day: '', time_slot: '', notes: '',
   });
+  const [bikes, setBikes] = useState([{ brand: '', issues: [], notes: '' }]);
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -184,21 +183,33 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
     setErrors(e => ({ ...e, [k]: '' }));
   }
 
-  function toggleIssue(issue) {
-    setForm(f => ({
-      ...f,
-      issues: f.issues.includes(issue) ? f.issues.filter(i => i !== issue) : [...f.issues, issue],
+  function addBike() {
+    if (bikes.length >= 5) return;
+    setBikes(prev => [...prev, { brand: '', issues: [], notes: '' }]);
+  }
+  function removeBike(idx) {
+    setBikes(prev => prev.filter((_, i) => i !== idx));
+    setErrors(e => ({ ...e, issues: '' }));
+  }
+  function updateBike(idx, key, val) {
+    setBikes(prev => prev.map((b, i) => i === idx ? { ...b, [key]: val } : b));
+    if (key === 'issues') setErrors(e => ({ ...e, issues: '' }));
+  }
+  function toggleBikeIssue(idx, issue) {
+    setBikes(prev => prev.map((b, i) => {
+      if (i !== idx) return b;
+      const issues = b.issues.includes(issue) ? b.issues.filter(x => x !== issue) : [...b.issues, issue];
+      return { ...b, issues };
     }));
     setErrors(e => ({ ...e, issues: '' }));
   }
 
-  const isAssembly = form.issues.includes('New bike assembly');
-  const estimateText = getEstimateText(form.issues);
-  const canSubmit = isFormValid(form);
+  const isAssembly = bikes.some(b => b.issues.includes('New bike assembly'));
+  const canSubmit = isFormValid({ ...form, bikes });
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const errs = validateBooking(form);
+    const errs = validateBooking({ ...form, bikes });
     if (Object.keys(errs).length) {
       setErrors(errs);
       setTimeout(() => {
@@ -213,11 +224,11 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, is_member: isMember, photos: photoUrls, lat: pin?.lat ?? null, lng: pin?.lng ?? null }),
+        body: JSON.stringify({ ...form, is_member: isMember, photos: photoUrls, lat: pin?.lat ?? null, lng: pin?.lng ?? null, bikes }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitErr(data.error || 'Something went wrong.'); return; }
-      onDone(data.booking.id, form.contact_preference, form.issues.includes('New bike assembly'));
+      onDone(data.booking.id, form.contact_preference, isAssembly);
     } catch {
       setSubmitErr('Network error. Please try again.');
     } finally {
@@ -305,61 +316,81 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>Bike brand</label>
-          <select value={form.bike_brand} onChange={e => setField('bike_brand', e.target.value)} style={{ ...inp, color: form.bike_brand ? '#111827' : '#9ca3af' }}>
-            <option value="">Select (optional)</option>
-            {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-          </select>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ ...lbl, color: errors.issues ? '#dc2626' : '#374151' }}>What needs attention? *</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {ISSUE_OPTIONS.map(issue => {
-              const on = form.issues.includes(issue);
-              return (
-                <button
-                  key={issue}
-                  type="button"
-                  onClick={() => toggleIssue(issue)}
-                  style={{
-                    padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                    border: on ? '2px solid #1a3328' : ('1px solid ' + (errors.issues ? '#dc2626' : '#d1d5db')),
-                    background: on ? '#1a3328' : '#fff',
-                    color: on ? '#fff' : '#374151',
-                  }}
-                >
-                  {issue}
-                </button>
-              );
-            })}
-          </div>
+          {bikes.map((bike, bikeIdx) => {
+            const bikeIsAssembly = bike.issues.includes('New bike assembly');
+            const bikeEstimate = getEstimateText(bike.issues);
+            return (
+              <div key={bikeIdx} style={{
+                border: '1px solid #d1d5db', borderRadius: 10, padding: 14,
+                marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14' }}>
+                    {bikes.length > 1 ? 'Bike ' + (bikeIdx + 1) : 'Your bike'}
+                  </span>
+                  {bikeIdx > 0 && (
+                    <button type="button" onClick={() => removeBike(bikeIdx)} style={{
+                      background: 'none', border: 'none', color: '#9ca3af',
+                      cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: '0 4px', fontFamily: 'inherit',
+                    }}>×</button>
+                  )}
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>Brand</label>
+                  <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
+                    style={{ ...inp, color: bike.brand ? '#111827' : '#9ca3af' }}>
+                    <option value="">Select (optional)</option>
+                    {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
+                    What needs attention? {bikeIdx === 0 ? '*' : ''}
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {ISSUE_OPTIONS.map(issue => {
+                      const on = bike.issues.includes(issue);
+                      return (
+                        <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
+                          padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                          border: on ? '2px solid #1a3328' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db')),
+                          background: on ? '#1a3328' : '#fff',
+                          color: on ? '#fff' : '#374151',
+                        }}>{issue}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {bikeIsAssembly && (
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={lbl}>Tell us about the bike (optional)</label>
+                    <input type="text" value={bike.notes} onChange={e => updateBike(bikeIdx, 'notes', e.target.value)}
+                      placeholder="Brand, model, year, where you ordered it from..." style={inp} />
+                  </div>
+                )}
+                {bikeEstimate && (
+                  <div style={{ padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                    <p style={{ fontSize: 13, color: '#166534', lineHeight: 1.5, margin: 0 }}>{bikeEstimate}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {errors.issues && <p data-field-error style={errStyle}>{errors.issues}</p>}
+          {bikes.length < 5 && (
+            <button type="button" onClick={addBike} style={{
+              marginTop: 10, padding: '8px 0', background: '#fff',
+              border: '1px dashed #d1d5db', borderRadius: 8, fontSize: 14, cursor: 'pointer',
+              color: '#6b7280', fontFamily: 'inherit', width: '100%',
+            }}>
+              + Add another bike
+            </button>
+          )}
         </div>
-
-        {estimateText && (
-          <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-            <p style={{ fontSize: 14, color: '#166534', lineHeight: 1.5, margin: '0 0 3px' }}>{estimateText}</p>
-            <p style={{ fontSize: 12, color: '#15803d', margin: 0 }}>No surprises. We quote before we wrench.</p>
-          </div>
-        )}
 
         <div style={{ marginBottom: 16 }}>
           <PhotoUpload photos={photos} onChange={setPhotos} />
         </div>
-
-        {isAssembly && (
-          <div style={{ marginBottom: 16 }}>
-            <label style={lbl}>Tell us about the bike (optional)</label>
-            <input
-              type="text"
-              value={form.bike_details}
-              onChange={e => setField('bike_details', e.target.value)}
-              placeholder="Brand, model, year, where you ordered it from..."
-              style={inp}
-            />
-          </div>
-        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 6 }}>
           <div>
@@ -384,7 +415,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
           <textarea
             value={form.notes}
             onChange={e => setField('notes', e.target.value)}
-            placeholder={isAssembly ? "Anything else — how it ships, box dimensions, e-bike, etc." : "Access instructions, anything specific about the bike..."}
+            placeholder="Access instructions, gate codes, anything we should know..."
             rows={3}
             style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
           />

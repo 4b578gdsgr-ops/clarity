@@ -34,7 +34,7 @@ export async function POST(request) {
           bike_brand, issues, bike_details, notes,
           preferred_day, time_slot, contact_preference, is_member,
           photos, status, confirmed_date, confirmed_time, return_date,
-          admin_created } = body;
+          admin_created, bikes } = body;
   console.log('[bookings] new booking from:', name, '| email present:', !!email);
   console.log('[bookings] lat/lng from body:', lat, lng);
 
@@ -64,6 +64,7 @@ export async function POST(request) {
       confirmed_date: confirmed_date || null,
       confirmed_time: confirmed_time || null,
       return_date: return_date || null,
+      bikes: Array.isArray(bikes) && bikes.length > 0 ? bikes : null,
     }])
     .select()
     .single();
@@ -100,7 +101,11 @@ export async function POST(request) {
       from: 'One Love Outdoors <service@oneloveoutdoors.org>',
       to: ['service@oneloveoutdoors.org'],
       subject: 'New booking — ' + (data.name || 'Unknown') + ' (' + (data.bike_brand || 'No brand') + ')',
-      text: 'New bicycle service:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nAddress: ' + data.address + '\nBike: ' + (data.bike_brand || 'Not specified') + '\nIssues: ' + (data.issues || []).join(', ') + '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: ' + (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/admin/service',
+      text: 'New bicycle service:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nAddress: ' + data.address + '\n' +
+        (data.bikes?.length > 0
+          ? data.bikes.map((b, i) => 'Bike ' + (i+1) + ': ' + (b.brand || '?') + ' — ' + (b.issues || []).join(', ')).join('\n')
+          : 'Bike: ' + (data.bike_brand || 'Not specified') + '\nIssues: ' + (data.issues || []).join(', ')) +
+        '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: ' + (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/admin/service',
     });
     console.log('[bookings] ADMIN EMAIL SENT:', JSON.stringify(result));
   } catch (err) {
