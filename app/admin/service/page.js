@@ -252,6 +252,19 @@ function MessageThread({ bookingId, onMarkRead }) {
   );
 }
 
+function pdFeeInfo(lat, lng) {
+  if (!lat || !lng) return null;
+  const R = 6371000;
+  const φ1 = 41.7658 * Math.PI / 180;
+  const φ2 = Number(lat) * Math.PI / 180;
+  const Δφ = (Number(lat) - 41.7658) * Math.PI / 180;
+  const Δλ = (Number(lng) - (-72.6734)) * Math.PI / 180;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const miles = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) / 1609.34;
+  const fee = miles < 10 ? 15 : miles < 20 ? 25 : 40;
+  return { miles: miles.toFixed(1), fee };
+}
+
 // ─── BookingCard ──────────────────────────────────────────────────────────────
 
 function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
@@ -534,6 +547,14 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               </a>
             </span>
           )}
+          {(() => {
+            const info = pdFeeInfo(booking.lat, booking.lng);
+            return (
+              <span style={{ color: '#9ca3af' }}>
+                {info ? `${info.miles} mi — suggested P/D fee: $${info.fee}` : 'Distance: unknown'}
+              </span>
+            );
+          })()}
           {booking.preferred_day && (
             <span><strong>Prefers: </strong>{booking.preferred_day}{booking.time_slot ? ', ' + booking.time_slot : ''}</span>
           )}

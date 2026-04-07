@@ -163,7 +163,7 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
 // ─── Step 2: Form ─────────────────────────────────────────────────────────────
 
-function FormStep({ address, onBack, onDone, initialMember = false }) {
+function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
   const formRef = useRef(null);
   const [isMember, setIsMember] = useState(initialMember);
   const [form, setForm] = useState({
@@ -213,7 +213,7 @@ function FormStep({ address, onBack, onDone, initialMember = false }) {
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, is_member: isMember, photos: photoUrls }),
+        body: JSON.stringify({ ...form, is_member: isMember, photos: photoUrls, lat: pin?.lat ?? null, lng: pin?.lng ?? null }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitErr(data.error || 'Something went wrong.'); return; }
@@ -546,6 +546,7 @@ export default function ScheduleService() {
       {step === 'form' && (
         <FormStep
           address={address}
+          pin={pin}
           initialMember={initialMember}
           onBack={() => setStep('location')}
           onDone={(id, pref, assembly) => { setBookingId(id); setContactPreference(pref); setBookingIsAssembly(!!assembly); setStep('done'); }}
