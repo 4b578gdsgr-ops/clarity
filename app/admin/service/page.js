@@ -265,6 +265,20 @@ function pdFeeInfo(lat, lng) {
   return { miles: miles.toFixed(1), fee };
 }
 
+async function geocodeAddress(address) {
+  try {
+    const res = await fetch(
+      'https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=1&q=' + encodeURIComponent(address),
+      { headers: { 'User-Agent': 'LoveOverMoney/1.0 (service.oneloveoutdoors.org)' } }
+    );
+    const results = await res.json();
+    if (results[0]) {
+      return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 // ─── BookingCard ──────────────────────────────────────────────────────────────
 
 function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
@@ -1580,6 +1594,13 @@ function NewBookingModal({ onClose, onCreated }) {
     setSubmitting(true);
     setSubmitErr('');
     try {
+      // Geocode address before creating so lat/lng are stored from the start
+      let lat = null, lng = null;
+      if (address.trim()) {
+        const coords = await geocodeAddress(address.trim());
+        if (coords) { lat = coords.lat; lng = coords.lng; }
+      }
+
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1588,6 +1609,8 @@ function NewBookingModal({ onClose, onCreated }) {
           phone: phone.trim(),
           email: email.trim() || null,
           address: address.trim() || null,
+          lat,
+          lng,
           bike_brand: bikeBrand || null,
           issues,
           notes: notes.trim() || null,
@@ -1823,8 +1846,30 @@ export default function AdminServicePage() {
       const uData = uRes.ok ? await uRes.json() : { total: 0, counts: {} };
       const mmData = mmRes.ok ? await mmRes.json() : { messages: [] };
       if (!bRes.ok) { setError(bData.error || 'Failed to load'); return; }
-      setBookings(bData.bookings || []);
+      const loadedBookings = bData.bookings || [];
+      setBookings(loadedBookings);
       setUnreadCounts({ total: uData.total || 0, counts: uData.counts || {} });
+
+      // Backfill lat/lng for bookings with address but no coordinates
+      const missing = loadedBookings.filter(b => b.address && !b.lat && !b.lng);
+      if (missing.length > 0) {
+        (async () => {
+          for (const b of missing) {
+            const coords = await geocodeAddress(b.address);
+            if (coords) {
+              fetch('/api/bookings/' + b.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat: coords.lat, lng: coords.lng }),
+              }).catch(() => {});
+              setBookings(prev => prev.map(p => p.id === b.id ? { ...p, lat: coords.lat, lng: coords.lng } : p));
+            }
+            if (missing.indexOf(b) < missing.length - 1) {
+              await new Promise(r => setTimeout(r, 1100)); // Nominatim: max 1 req/sec
+            }
+          }
+        })();
+      }
       const msgs = mmData.messages || [];
       setMemberMessages(msgs);
       setMemberUnread(msgs.filter(m => m.sender === 'member' && m.unread).length);
