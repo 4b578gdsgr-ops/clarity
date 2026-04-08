@@ -422,28 +422,7 @@ export default function EmbedService() {
           {errors.address && <span data-field-error style={errStyle}>{errors.address}</span>}
         </div>
 
-        {/* ── Name + Phone ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-          <div>
-            <label style={lbl}>Name *</label>
-            <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#e53e3e' : '#e2e8f0' }} />
-            {errors.name && <span data-field-error style={errStyle}>{errors.name}</span>}
-          </div>
-          <div>
-            <label style={lbl}>Phone *</label>
-            <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#e53e3e' : '#e2e8f0' }} />
-            {errors.phone && <span data-field-error style={errStyle}>{errors.phone}</span>}
-          </div>
-        </div>
-
-        {/* ── Email ── */}
-        <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>Email *</label>
-          <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#e53e3e' : '#e2e8f0' }} />
-          {errors.email && <span data-field-error style={errStyle}>{errors.email}</span>}
-        </div>
-
-        {/* ── Contact preference ── */}
+        {/* ── Contact preference — shown first ── */}
         <div style={{ marginBottom: 12 }}>
           <label style={{ ...lbl, color: errors.contact_preference ? '#e53e3e' : '#4a5568' }}>
             How should we reach you? *
@@ -472,6 +451,31 @@ export default function EmbedService() {
           </div>
           {errors.contact_preference && <span data-field-error style={errStyle}>{errors.contact_preference}</span>}
         </div>
+
+        {/* ── Name ── */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={lbl}>Name *</label>
+          <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#e53e3e' : '#e2e8f0' }} />
+          {errors.name && <span data-field-error style={errStyle}>{errors.name}</span>}
+        </div>
+
+        {/* ── Phone — only if text selected ── */}
+        {form.contact_preference === 'text' && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>Phone *</label>
+            <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#e53e3e' : '#e2e8f0' }} />
+            {errors.phone && <span data-field-error style={errStyle}>{errors.phone}</span>}
+          </div>
+        )}
+
+        {/* ── Email — only if email selected ── */}
+        {form.contact_preference === 'email' && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>Email *</label>
+            <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#e53e3e' : '#e2e8f0' }} />
+            {errors.email && <span data-field-error style={errStyle}>{errors.email}</span>}
+          </div>
+        )}
 
         {/* ── Bikes ── */}
         <div style={{ marginBottom: 12 }}>

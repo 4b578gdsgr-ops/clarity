@@ -256,25 +256,6 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
       )}
 
       <form ref={formRef} onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
-          <div>
-            <label style={lbl}>Name *</label>
-            <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#dc2626' : '#d1d5db' }} />
-            {errors.name && <p data-field-error style={errStyle}>{errors.name}</p>}
-          </div>
-          <div>
-            <label style={lbl}>Phone *</label>
-            <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#dc2626' : '#d1d5db' }} />
-            {errors.phone && <p data-field-error style={errStyle}>{errors.phone}</p>}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>Email *</label>
-          <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }} />
-          {errors.email && <p data-field-error style={errStyle}>{errors.email}</p>}
-        </div>
-
         <div style={{ marginBottom: 16 }}>
           <label style={{ ...lbl, color: errors.contact_preference ? '#dc2626' : '#374151' }}>
             How should we reach you? *
@@ -302,6 +283,28 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
           </div>
           {errors.contact_preference && <p data-field-error style={errStyle}>{errors.contact_preference}</p>}
         </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={lbl}>Name *</label>
+          <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#dc2626' : '#d1d5db' }} />
+          {errors.name && <p data-field-error style={errStyle}>{errors.name}</p>}
+        </div>
+
+        {form.contact_preference === 'text' && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Phone *</label>
+            <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#dc2626' : '#d1d5db' }} />
+            {errors.phone && <p data-field-error style={errStyle}>{errors.phone}</p>}
+          </div>
+        )}
+
+        {form.contact_preference === 'email' && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Email *</label>
+            <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }} />
+            {errors.email && <p data-field-error style={errStyle}>{errors.email}</p>}
+          </div>
+        )}
 
         <div style={{ marginBottom: 16 }}>
           <label style={{ ...lbl, color: errors.address ? '#dc2626' : '#374151' }}>Your address *</label>
