@@ -350,6 +350,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [inspSaving, setInspSaving] = useState(false);
   const [inspSaved, setInspSaved] = useState(false);
   const [inspSaveErr, setInspSaveErr] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState(booking.payment_status || '');
   const [bookingBikes, setBookingBikes] = useState(booking.bikes?.length > 0 ? booking.bikes : null);
   const [bikesSaving, setBikesSaving] = useState(false);
   const [bikesSaved, setBikesSaved] = useState(false);
@@ -1179,6 +1180,30 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           >
             Customer view
           </a>
+          {['complete', 'done', 'delivered'].includes(booking.status) && (
+            paymentStatus === 'paid' ? (
+              <span style={{
+                padding: '5px 12px', background: '#f0fdf4', color: '#166534',
+                border: '1px solid #bbf7d0', borderRadius: 7, fontSize: 12, fontWeight: 700,
+              }}>
+                Paid ✓
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={async () => {
+                  await save({ payment_status: 'paid' });
+                  setPaymentStatus('paid');
+                }}
+                style={{
+                  padding: '5px 12px', background: '#fff', color: '#166534',
+                  border: '1px solid #bbf7d0', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Mark paid
+              </button>
+            )
+          )}
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -1389,7 +1414,6 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
 
 function PlanRouteView({ allBookings, onRefresh }) {
   const [date, setDate] = useState(nextServiceDay());
-  const [startTime, setStartTime] = useState('09:00');
   const [stops, setStops] = useState([]);
   const [times, setTimes] = useState({});
   const [confirming, setConfirming] = useState(false);
@@ -1404,27 +1428,30 @@ function PlanRouteView({ allBookings, onRefresh }) {
       .filter(b => b.return_date === date && ['ready', 'out_for_delivery'].includes(b.status))
       .map(b => ({ ...b, _stopType: 'delivery' }));
     const dayBookings = [...pickups, ...deliveries];
-    setStops(dayBookings);
-    setTimes(autoTimes(dayBookings, startTime));
+    const t = {};
+    dayBookings.forEach(s => {
+      t[s.id] = s._stopType === 'delivery' ? (s.delivery_time || '') : (s.confirmed_time || '');
+    });
+    // Sort: stops with times first (by time), then stops without times
+    const sorted = [...dayBookings].sort((a, b) => {
+      const ta = t[a.id];
+      const tb = t[b.id];
+      if (!ta && !tb) return 0;
+      if (!ta) return 1;
+      if (!tb) return -1;
+      return ta.localeCompare(tb);
+    });
+    setStops(sorted);
+    setTimes(t);
     setConfirmed(false);
   }, [date, allBookings]);
-
-  useEffect(() => {
-    setTimes(autoTimes(stops, startTime));
-  }, [startTime]);
-
-  function autoTimes(list, start) {
-    const t = {};
-    list.forEach((s, i) => { t[s.id] = addMins(start, i * 30); });
-    return t;
-  }
 
   function reorder(from, to) {
     const next = [...stops];
     const [item] = next.splice(from, 1);
     next.splice(to, 0, item);
     setStops(next);
-    setTimes(autoTimes(next, startTime));
+    // Times are preserved as-is — drag only changes order
   }
 
   function changeDate(delta) {
@@ -1483,15 +1510,6 @@ function PlanRouteView({ allBookings, onRefresh }) {
           onChange={e => setDate(e.target.value)}
           style={{ padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, outline: 'none' }}
         />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-          <label style={{ fontSize: 13, color: '#6b7280' }}>Start:</label>
-          <input
-            type="time"
-            value={startTime}
-            onChange={e => setStartTime(e.target.value)}
-            style={{ padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, outline: 'none' }}
-          />
-        </div>
       </div>
 
       {/* Map */}

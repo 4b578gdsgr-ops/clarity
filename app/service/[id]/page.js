@@ -743,12 +743,15 @@ export default function BookingStatusPage({ params }) {
         })()}
 
         {/* Payment section */}
-        {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (booking.invoice_amount != null || booking.payment_link) && (
+        {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (booking.payment_status === 'paid' ? (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid. Thanks!</p>
+          </div>
+        ) : (booking.invoice_amount != null || booking.payment_link) && (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
             <p style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
               {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
             </p>
-
             {booking.payment_link ? (
               <>
                 <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '14px 16px', marginBottom: 10 }}>
@@ -774,7 +777,7 @@ export default function BookingStatusPage({ params }) {
               </p>
             )}
           </div>
-        )}
+        ))}
 
         {/* Message thread */}
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
