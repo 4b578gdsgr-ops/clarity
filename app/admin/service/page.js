@@ -13,21 +13,35 @@ const INSPECTION_ITEMS = [
   'Saddle & seatpost',
   'Handlebar & stem',
   'Brake levers & cables',
-  'Front brake pads & alignment',
-  'Rear brake pads & alignment',
+  'Brake pads (front)',
+  'Brake pads (rear)',
   'Front derailleur',
   'Rear derailleur',
   'Shifter cables & housing',
-  'Chain wear',
-  'Cassette / freewheel',
+  'Chain',
+  'Cassette',
   'Chainring(s)',
   'Bottom bracket',
   'Pedals',
-  'Front wheel & tire',
-  'Rear wheel & tire',
+  'Tires (front)',
+  'Tires (rear)',
   'Wheel truing (front)',
   'Wheel truing (rear)',
   'Quick releases / thru-axles',
+];
+
+const WEAR_ITEMS = new Set([
+  'Brake pads (front)', 'Brake pads (rear)',
+  'Tires (front)', 'Tires (rear)',
+  'Chain', 'Cassette', 'Chainring(s)',
+]);
+
+const WEAR_OPTIONS = [
+  { value: 100, label: '100% — new' },
+  { value: 75,  label: '75% — good' },
+  { value: 50,  label: '50% — halfway' },
+  { value: 25,  label: '25% — replace soon' },
+  { value: 0,   label: '0% — replace now' },
 ];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -336,15 +350,46 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [inspSaving, setInspSaving] = useState(false);
   const [inspSaved, setInspSaved] = useState(false);
   const [inspSaveErr, setInspSaveErr] = useState('');
+  const [bookingBikes, setBookingBikes] = useState(booking.bikes?.length > 0 ? booking.bikes : null);
+  const [bikesSaving, setBikesSaving] = useState(false);
+  const [bikesSaveErr, setBikesSaveErr] = useState('');
   const shopPhotosRef = useRef(shopPhotos);
 
   // Derived: current active bike's inspection (null = not loaded / empty)
   const inspection = inspections[activeBikeIdx] ?? null;
-  const bikeCount = booking.bikes?.length || 1;
-  const bikeLabels = booking.bikes?.map((b, i) => b.name || b.brand || ('Bike ' + (i + 1))) || ['Bike'];
+  const effectiveBikes = bookingBikes ?? booking.bikes;
+  const bikeCount = effectiveBikes?.length || 1;
+  const bikeLabels = effectiveBikes?.map((b, i) => b.name || b.brand || ('Bike ' + (i + 1))) || ['Bike'];
 
   function emptyInspection() {
-    return { items: INSPECTION_ITEMS.map(label => ({ label, state: null, note: '' })), notes: '' };
+    return {
+      items: INSPECTION_ITEMS.map(label => ({
+        label,
+        ...(WEAR_ITEMS.has(label) ? { wear: null } : { state: null }),
+        note: '',
+      })),
+      notes: '',
+    };
+  }
+
+  async function saveBikes(bikes) {
+    setBikesSaving(true);
+    setBikesSaveErr('');
+    try {
+      const res = await fetch('/api/bookings/' + booking.id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bikes }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setBikesSaveErr(d.error || 'Save failed');
+      }
+    } catch {
+      setBikesSaveErr('Network error');
+    } finally {
+      setBikesSaving(false);
+    }
   }
 
   const trackingUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/embed/service/' + booking.id;
@@ -408,6 +453,14 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   function updateItemState(idx, newState) {
     const current = getOrCreateInspection(activeBikeIdx);
     const items = current.items.map((it, i) => i === idx ? { ...it, state: newState } : it);
+    const next = { ...current, items };
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
+    saveInspection(activeBikeIdx, next);
+  }
+
+  function updateItemWear(idx, wear) {
+    const current = getOrCreateInspection(activeBikeIdx);
+    const items = current.items.map((it, i) => i === idx ? { ...it, wear } : it);
     const next = { ...current, items };
     setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
     saveInspection(activeBikeIdx, next);
@@ -723,41 +776,103 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           )}
         </div>
 
-        {booking.bikes?.length > 0 ? (
+        {bookingBikes !== null ? (
           <div style={{ marginBottom: 10 }}>
-            {booking.bikes.map((bike, i) => (
-              <div key={i} style={{ marginBottom: i < booking.bikes.length - 1 ? 6 : 0 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
-                  {'Bike ' + (i + 1) + (bike.name ? ' — ' + bike.name : '') + (bike.brand ? ' (' + bike.brand + ')' : '') + ': '}
-                </span>
-                {(bike.issues || []).map(iss => (
-                  <span key={iss} style={{
-                    display: 'inline-block', marginRight: 4, marginBottom: 2,
-                    background: '#f3f4f6', borderRadius: 12, padding: '2px 8px', fontSize: 12,
-                  }}>{iss}</span>
-                ))}
-                {bike.notes && <span style={{ fontSize: 12, color: '#6b7280', marginLeft: 4 }}>— {bike.notes}</span>}
+            {bookingBikes.map((bike, i) => (
+              <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Bike {i + 1}
+                  </span>
+                  {bookingBikes.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = bookingBikes.filter((_, j) => j !== i);
+                        setBookingBikes(next);
+                        saveBikes(next);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 5 }}>
+                  <input
+                    placeholder="Name"
+                    value={bike.name || ''}
+                    onChange={e => {
+                      const next = bookingBikes.map((b, j) => j === i ? { ...b, name: e.target.value } : b);
+                      setBookingBikes(next);
+                    }}
+                    onBlur={() => saveBikes(bookingBikes)}
+                    style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
+                  />
+                  <input
+                    placeholder="Brand"
+                    value={bike.brand || ''}
+                    onChange={e => {
+                      const next = bookingBikes.map((b, j) => j === i ? { ...b, brand: e.target.value } : b);
+                      setBookingBikes(next);
+                    }}
+                    onBlur={() => saveBikes(bookingBikes)}
+                    style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
+                  />
+                </div>
+                {(bike.issues || []).length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {(bike.issues || []).map(iss => (
+                      <span key={iss} style={{ background: '#f3f4f6', borderRadius: 12, padding: '2px 8px', fontSize: 11 }}>{iss}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = [...bookingBikes, { name: '', brand: '', issues: [], notes: '' }];
+                  setBookingBikes(next);
+                  saveBikes(next);
+                }}
+                style={{ fontSize: 12, color: '#1a3328', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                + Add bike
+              </button>
+              {bikesSaving && <span style={{ fontSize: 11, color: '#9ca3af' }}>Saving...</span>}
+              {bikesSaveErr && <span style={{ fontSize: 11, color: '#dc2626' }}>{bikesSaveErr}</span>}
+            </div>
           </div>
         ) : (
-          <>
+          <div style={{ marginBottom: 10 }}>
             {booking.issues && booking.issues.length > 0 && (
-              <div style={{ marginBottom: booking.bike_details ? 4 : 10 }}>
-                {booking.issues.map(i => (
-                  <span key={i} style={{
-                    display: 'inline-block', marginRight: 5, marginBottom: 4,
-                    background: '#f3f4f6', borderRadius: 12, padding: '2px 9px', fontSize: 12,
-                  }}>{i}</span>
+              <div style={{ marginBottom: booking.bike_details ? 4 : 6 }}>
+                {booking.issues.map(iss => (
+                  <span key={iss} style={{ display: 'inline-block', marginRight: 5, marginBottom: 4, background: '#f3f4f6', borderRadius: 12, padding: '2px 9px', fontSize: 12 }}>{iss}</span>
                 ))}
               </div>
             )}
             {booking.bike_details && (
-              <div style={{ marginBottom: 10, fontSize: 13, color: '#374151' }}>
+              <div style={{ marginBottom: 6, fontSize: 13, color: '#374151' }}>
                 <strong>Bike details: </strong>{booking.bike_details}
               </div>
             )}
-          </>
+            <button
+              type="button"
+              onClick={() => {
+                const init = booking.bike_brand
+                  ? [{ name: '', brand: booking.bike_brand, issues: booking.issues || [], notes: booking.bike_details || '' }]
+                  : [{ name: '', brand: '', issues: [], notes: '' }];
+                setBookingBikes(init);
+                saveBikes(init);
+              }}
+              style={{ fontSize: 12, color: '#1a3328', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              + Add bike
+            </button>
+          </div>
         )}
 
         {/* Photos */}
@@ -1140,7 +1255,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   }}
                 >
                   {label}
-                  {inspections[i] && inspections[i].items?.some(it => it.state) && (
+                  {inspections[i] && inspections[i].items?.some(it => it.state || it.wear != null) && (
                     <span style={{ marginLeft: 5, fontSize: 10, opacity: 0.7 }}>✓</span>
                   )}
                 </button>
@@ -1155,29 +1270,40 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 {(inspection?.items || emptyInspection().items).map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ flex: '0 0 200px', fontSize: 13, color: '#374151' }}>{item.label}</span>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {[
-                        { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
-                        { value: 'adjusted',  label: 'Adjusted',       bg: '#eff6ff', color: '#1d4ed8', activeBg: '#2563eb' },
-                        { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
-                      ].map(opt => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => updateItemState(idx, item.state === opt.value ? null : opt.value)}
-                          style={{
-                            padding: '3px 9px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
-                            border: '1px solid ' + (item.state === opt.value ? opt.activeBg : '#e5e7eb'),
-                            background: item.state === opt.value ? opt.activeBg : opt.bg,
-                            color: item.state === opt.value ? '#fff' : opt.color,
-                            fontWeight: item.state === opt.value ? 700 : 400,
-                            transition: 'all 0.1s',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
+                    {WEAR_ITEMS.has(item.label) ? (
+                      <select
+                        value={item.wear ?? ''}
+                        onChange={e => updateItemWear(idx, e.target.value === '' ? null : Number(e.target.value))}
+                        style={{ padding: '3px 8px', fontSize: 11, borderRadius: 6, border: '1px solid #e5e7eb', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
+                      >
+                        <option value="">—</option>
+                        {WEAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {[
+                          { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+                          { value: 'adjusted',  label: 'Adjusted',       bg: '#eff6ff', color: '#1d4ed8', activeBg: '#2563eb' },
+                          { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => updateItemState(idx, item.state === opt.value ? null : opt.value)}
+                            style={{
+                              padding: '3px 9px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                              border: '1px solid ' + (item.state === opt.value ? opt.activeBg : '#e5e7eb'),
+                              background: item.state === opt.value ? opt.activeBg : opt.bg,
+                              color: item.state === opt.value ? '#fff' : opt.color,
+                              fontWeight: item.state === opt.value ? 700 : 400,
+                              transition: 'all 0.1s',
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <input
                       type="text"
                       placeholder="Note..."

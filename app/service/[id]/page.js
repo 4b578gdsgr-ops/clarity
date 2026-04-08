@@ -561,16 +561,33 @@ export default function BookingStatusPage({ params }) {
           )}
 
           <div style={{ fontSize: 14, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {booking.bike_brand && (
+            {!booking.bikes?.length && booking.bike_brand && (
               <span><strong>Bike:</strong> {booking.bike_brand}</span>
             )}
-            {booking.issues && booking.issues.length > 0 && (
+            {!booking.bikes?.length && booking.issues && booking.issues.length > 0 && (
               <span><strong>Issues:</strong> {booking.issues.join(', ')}</span>
             )}
             {booking.address && (
               <span><strong>Pickup:</strong> {booking.address}</span>
             )}
           </div>
+
+          {booking.bikes?.length > 0 && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
+              {booking.bikes.map((bike, i) => (
+                <div key={i} style={{ marginBottom: i < booking.bikes.length - 1 ? 8 : 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
+                    {'Bike ' + (i + 1) + (bike.name ? ' — ' + bike.name : '') + (bike.brand ? ' (' + bike.brand + ')' : '')}
+                  </div>
+                  {(bike.issues || []).length > 0 && (
+                    <div style={{ fontSize: 13, color: '#6b7280', marginTop: 1 }}>
+                      {(bike.issues || []).join(', ')}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
@@ -600,19 +617,43 @@ export default function BookingStatusPage({ params }) {
         )}
 
         {/* Inspection Report */}
-        {Array.isArray(report) && report.some(r => r.items?.some(it => it.state)) && (() => {
-          // Flatten all bikes' items — show per-bike section if multiple
-          const allItems = report.flatMap(r => (r.items || []).filter(it => it.state).map(it => ({ ...it, bikeIdx: r.bike_index })));
-          const attention = allItems.filter(it => it.state === 'attention');
-          const adjusted  = allItems.filter(it => it.state === 'adjusted');
-          const good      = allItems.filter(it => it.state === 'good');
-          // Reuse report[0] for notes if single bike, combine notes if multiple
+        {Array.isArray(report) && report.some(r => r.items?.some(it => it.state || it.wear != null)) && (() => {
+          const wearItems = report.flatMap(r => (r.items || []).filter(it => it.wear != null).map(it => ({ ...it, bikeIdx: r.bike_index })));
+          const stateItems = report.flatMap(r => (r.items || []).filter(it => it.state).map(it => ({ ...it, bikeIdx: r.bike_index })));
+          const attention = stateItems.filter(it => it.state === 'attention');
+          const adjusted  = stateItems.filter(it => it.state === 'adjusted');
+          const good      = stateItems.filter(it => it.state === 'good');
           const combinedNotes = report.map(r => r.notes).filter(Boolean).join(' | ');
           return (
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Inspection Report
               </p>
+
+              {wearItems.length > 0 && (
+                <div style={{ marginBottom: attention.length || adjusted.length || good.length ? 16 : 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                    Component Wear
+                  </div>
+                  {wearItems.map((item, i) => {
+                    const pct = item.wear;
+                    const wearColor = pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct >= 25 ? '#ea580c' : '#dc2626';
+                    const wearLabel = pct === 100 ? 'new' : pct === 75 ? 'good' : pct === 50 ? 'halfway — plan to replace next service' : pct === 25 ? 'replace soon' : 'replace now';
+                    return (
+                      <div key={i} style={{ marginBottom: i < wearItems.length - 1 ? 10 : 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{item.label}</span>
+                          <span style={{ fontSize: 12, color: wearColor, fontWeight: 600 }}>{pct}%</span>
+                        </div>
+                        <div style={{ height: 6, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: pct + '%', background: wearColor, borderRadius: 3 }} />
+                        </div>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{wearLabel}{item.note ? ' — ' + item.note : ''}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {attention.length > 0 && (
                 <div style={{ marginBottom: adjusted.length || good.length ? 16 : 0 }}>
