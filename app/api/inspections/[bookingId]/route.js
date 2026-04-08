@@ -27,19 +27,48 @@ export async function PUT(request, { params }) {
     return Response.json({ error: 'items must be an array' }, { status: 400 });
   }
 
-  // Upsert: delete existing for this bike then insert
-  await supabaseAdmin
+  // Check if a row already exists for this booking + bike
+  const { data: existing } = await supabaseAdmin
+    .from('inspection_reports')
+    .select('id')
+    .eq('booking_id', bookingId)
+    .eq('bike_index', bike_index)
+    .maybeSingle();
+
+  let data, error;
+  if (existing?.id) {
+    ({ data, error } = await supabaseAdmin
+      .from('inspection_reports')
+      .update({ items, notes: notes || null })
+      .eq('id', existing.id)
+      .select()
+      .single());
+  } else {
+    ({ data, error } = await supabaseAdmin
+      .from('inspection_reports')
+      .insert([{ booking_id: bookingId, bike_index, items, notes: notes || null }])
+      .select()
+      .single());
+  }
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ report: data });
+}
+
+// DELETE /api/inspections/[bookingId]?bike_index=N — removes one bike's report
+export async function DELETE(request, { params }) {
+  if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+
+  const { bookingId } = params;
+  const url = new URL(request.url);
+  const bike_index = parseInt(url.searchParams.get('bike_index') ?? '0', 10);
+
+  const { error } = await supabaseAdmin
     .from('inspection_reports')
     .delete()
     .eq('booking_id', bookingId)
     .eq('bike_index', bike_index);
 
-  const { data, error } = await supabaseAdmin
-    .from('inspection_reports')
-    .insert([{ booking_id: bookingId, bike_index, items, notes: notes || null }])
-    .select()
-    .single();
-
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ report: data });
+  return Response.json({ ok: true });
 }

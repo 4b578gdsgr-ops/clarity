@@ -352,6 +352,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [inspSaveErr, setInspSaveErr] = useState('');
   const [bookingBikes, setBookingBikes] = useState(booking.bikes?.length > 0 ? booking.bikes : null);
   const [bikesSaving, setBikesSaving] = useState(false);
+  const [bikesSaved, setBikesSaved] = useState(false);
   const [bikesSaveErr, setBikesSaveErr] = useState('');
   const shopPhotosRef = useRef(shopPhotos);
 
@@ -375,6 +376,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   async function saveBikes(bikes) {
     setBikesSaving(true);
     setBikesSaveErr('');
+    setBikesSaved(false);
     try {
       const res = await fetch('/api/bookings/' + booking.id, {
         method: 'PATCH',
@@ -384,6 +386,9 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         setBikesSaveErr(d.error || 'Save failed');
+      } else {
+        setBikesSaved(true);
+        setTimeout(() => setBikesSaved(false), 2500);
       }
     } catch {
       setBikesSaveErr('Network error');
@@ -787,11 +792,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   {bookingBikes.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => {
-                        const next = bookingBikes.filter((_, j) => j !== i);
-                        setBookingBikes(next);
-                        saveBikes(next);
-                      }}
+                      onClick={() => setBookingBikes(bookingBikes.filter((_, j) => j !== i))}
                       style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
                     >
                       Remove
@@ -802,21 +803,13 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   <input
                     placeholder="Name"
                     value={bike.name || ''}
-                    onChange={e => {
-                      const next = bookingBikes.map((b, j) => j === i ? { ...b, name: e.target.value } : b);
-                      setBookingBikes(next);
-                    }}
-                    onBlur={() => saveBikes(bookingBikes)}
+                    onChange={e => setBookingBikes(bookingBikes.map((b, j) => j === i ? { ...b, name: e.target.value } : b))}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
                   />
                   <input
                     placeholder="Brand"
                     value={bike.brand || ''}
-                    onChange={e => {
-                      const next = bookingBikes.map((b, j) => j === i ? { ...b, brand: e.target.value } : b);
-                      setBookingBikes(next);
-                    }}
-                    onBlur={() => saveBikes(bookingBikes)}
+                    onChange={e => setBookingBikes(bookingBikes.map((b, j) => j === i ? { ...b, brand: e.target.value } : b))}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
                   />
                 </div>
@@ -832,16 +825,19 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 type="button"
-                onClick={() => {
-                  const next = [...bookingBikes, { name: '', brand: '', issues: [], notes: '' }];
-                  setBookingBikes(next);
-                  saveBikes(next);
-                }}
-                style={{ fontSize: 12, color: '#1a3328', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
+                onClick={() => setBookingBikes([...bookingBikes, { name: '', brand: '', issues: [], notes: '' }])}
+                style={{ fontSize: 12, color: '#6b7280', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 + Add bike
               </button>
-              {bikesSaving && <span style={{ fontSize: 11, color: '#9ca3af' }}>Saving...</span>}
+              <button
+                type="button"
+                onClick={() => saveBikes(bookingBikes)}
+                disabled={bikesSaving}
+                style={{ fontSize: 12, padding: '4px 12px', background: bikesSaved ? '#f0fdf4' : '#1a3328', color: bikesSaved ? '#166534' : '#fff', border: bikesSaved ? '1px solid #bbf7d0' : 'none', borderRadius: 7, cursor: bikesSaving ? 'default' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {bikesSaving ? 'Saving...' : bikesSaved ? 'Saved ✓' : 'Save'}
+              </button>
               {bikesSaveErr && <span style={{ fontSize: 11, color: '#dc2626' }}>{bikesSaveErr}</span>}
             </div>
           </div>
@@ -866,9 +862,8 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   ? [{ name: '', brand: booking.bike_brand, issues: booking.issues || [], notes: booking.bike_details || '' }]
                   : [{ name: '', brand: '', issues: [], notes: '' }];
                 setBookingBikes(init);
-                saveBikes(init);
               }}
-              style={{ fontSize: 12, color: '#1a3328', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ fontSize: 12, color: '#6b7280', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               + Add bike
             </button>
@@ -1334,18 +1329,40 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   }}
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => saveInspection(activeBikeIdx, getOrCreateInspection(activeBikeIdx))}
-                disabled={inspSaving}
-                style={{
-                  padding: '8px 20px', background: inspSaving ? '#9ca3af' : '#1a3328',
-                  color: '#fff', border: 'none', borderRadius: 8, fontSize: 13,
-                  cursor: inspSaving ? 'default' : 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                {inspSaving ? 'Saving...' : inspSaved ? 'Saved ✓' : 'Save inspection'}
-              </button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => saveInspection(activeBikeIdx, getOrCreateInspection(activeBikeIdx))}
+                  disabled={inspSaving}
+                  style={{
+                    padding: '8px 20px', background: inspSaving ? '#9ca3af' : '#1a3328',
+                    color: '#fff', border: 'none', borderRadius: 8, fontSize: 13,
+                    cursor: inspSaving ? 'default' : 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  {inspSaving ? 'Saving...' : inspSaved ? 'Saved ✓' : 'Save inspection'}
+                </button>
+                {inspections[activeBikeIdx] && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.confirm('Reset this inspection? This can\'t be undone.')) return;
+                      await fetch('/api/inspections/' + booking.id + '?bike_index=' + activeBikeIdx, { method: 'DELETE' });
+                      setInspections(prev => {
+                        const next = { ...prev };
+                        delete next[activeBikeIdx];
+                        return next;
+                      });
+                    }}
+                    style={{
+                      padding: '8px 14px', background: 'none', border: '1px solid #fca5a5',
+                      borderRadius: 8, fontSize: 13, color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>
