@@ -624,11 +624,12 @@ export default function BookingStatusPage({ params }) {
             ? (report.find(r => r.bike_index === inspBikeIdx) || null)
             : (report[0] || null);
           const wearItems = (activeReport?.items || []).filter(it => it.wear != null);
+          const replaced  = (activeReport?.items || []).filter(it => it.state === 'replaced');
           const attention = (activeReport?.items || []).filter(it => it.state === 'attention');
           const adjusted  = (activeReport?.items || []).filter(it => it.state === 'adjusted');
           const good      = (activeReport?.items || []).filter(it => it.state === 'good');
           const notes     = activeReport?.notes;
-          const hasData   = wearItems.length || attention.length || adjusted.length || good.length || notes;
+          const hasData   = wearItems.length || replaced.length || attention.length || adjusted.length || good.length || notes;
           return (
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -662,27 +663,53 @@ export default function BookingStatusPage({ params }) {
               {hasData ? (
                 <>
                   {wearItems.length > 0 && (
-                    <div style={{ marginBottom: attention.length || adjusted.length || good.length ? 16 : 0 }}>
+                    <div style={{ marginBottom: replaced.length || attention.length || adjusted.length || good.length ? 16 : 0 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                         Component Wear
                       </div>
                       {wearItems.map((item, i) => {
                         const pct = item.wear;
-                        const wearColor = pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct >= 25 ? '#ea580c' : '#dc2626';
-                        const wearLabel = pct === 100 ? 'new' : pct === 75 ? 'good' : pct === 50 ? 'halfway — plan to replace next service' : pct === 25 ? 'replace soon' : 'replace now';
+                        const wearColor = item.replaced ? '#16a34a' : (pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct >= 25 ? '#ea580c' : '#dc2626');
+                        const wearLabel = item.replaced ? 'Replaced ✓' : pct === 100 ? 'new' : pct === 75 ? 'good' : pct === 50 ? 'halfway — plan to replace next service' : pct === 25 ? 'replace soon' : 'replace now';
                         return (
                           <div key={i} style={{ marginBottom: i < wearItems.length - 1 ? 10 : 0 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                               <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{item.label}</span>
-                              <span style={{ fontSize: 12, color: wearColor, fontWeight: 600 }}>{pct}%</span>
+                              <span style={{ fontSize: 12, color: wearColor, fontWeight: 600 }}>{item.replaced ? 'Replaced ✓' : pct + '%'}</span>
                             </div>
                             <div style={{ height: 6, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
                               <div style={{ height: '100%', width: pct + '%', background: wearColor, borderRadius: 3 }} />
                             </div>
                             <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{wearLabel}{item.note ? ' — ' + item.note : ''}</div>
+                            {item.photo && (
+                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
+                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb', display: 'block' }} />
+                              </a>
+                            )}
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {replaced.length > 0 && (
+                    <div style={{ marginBottom: attention.length || adjusted.length || good.length ? 16 : 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                        Replaced
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {replaced.map((item, i) => (
+                          <div key={i} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 12px' }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#166534' }}>{item.label} ✓</div>
+                            {item.note && <div style={{ fontSize: 12, color: '#4b7c5e', marginTop: 2 }}>{item.note}</div>}
+                            {item.photo && (
+                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
+                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #bbf7d0', display: 'block' }} />
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -696,6 +723,11 @@ export default function BookingStatusPage({ params }) {
                           <div key={i} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '8px 12px' }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>{item.label}</div>
                             {item.note && <div style={{ fontSize: 12, color: '#c2410c', marginTop: 2 }}>{item.note}</div>}
+                            {item.photo && (
+                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
+                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #fed7aa', display: 'block' }} />
+                              </a>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -712,6 +744,11 @@ export default function BookingStatusPage({ params }) {
                           <div key={i} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '8px 12px' }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>{item.label}</div>
                             {item.note && <div style={{ fontSize: 12, color: '#1d4ed8', marginTop: 2 }}>{item.note}</div>}
+                            {item.photo && (
+                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
+                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #bfdbfe', display: 'block' }} />
+                              </a>
+                            )}
                           </div>
                         ))}
                       </div>

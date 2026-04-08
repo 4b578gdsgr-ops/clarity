@@ -400,8 +400,9 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
             <label style={lbl}>Preferred pickup day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#111827' : '#9ca3af' }}>
               <option value="">No preference</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Thursday">Thursday</option>
+              <option value="Monday">Monday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Friday">Friday</option>
             </select>
           </div>
           <div>

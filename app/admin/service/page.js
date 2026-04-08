@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { createClient } from '@supabase/supabase-js';
 
 const RouteMap = dynamic(() => import('../../components/RouteMap'), { ssr: false });
 const PhotoUpload = dynamic(() => import('../../components/PhotoUpload'), { ssr: false });
@@ -319,6 +320,18 @@ async function geocodeAddress(address) {
   return null;
 }
 
+async function uploadInspPhoto(file) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase not configured');
+  const client = createClient(url, key);
+  const ext = file.type === 'image/png' ? 'png' : 'jpg';
+  const path = `insp/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await client.storage.from('booking-photos').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+  if (error) throw error;
+  return client.storage.from('booking-photos').getPublicUrl(path).data.publicUrl;
+}
+
 // ─── BookingCard ──────────────────────────────────────────────────────────────
 
 function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
@@ -356,6 +369,8 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [bikesSaved, setBikesSaved] = useState(false);
   const [bikesSaveErr, setBikesSaveErr] = useState('');
   const shopPhotosRef = useRef(shopPhotos);
+  const inspPhotoInputRef = useRef(null);
+  const inspPhotoItemIdxRef = useRef(null);
 
   // Derived: current active bike's inspection (null = not loaded / empty)
   const inspection = inspections[activeBikeIdx] ?? null;
@@ -492,6 +507,44 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
 
   function blurInspNotes() {
     saveInspection(activeBikeIdx, getOrCreateInspection(activeBikeIdx));
+  }
+
+  function updateItemReplaced(idx) {
+    const current = getOrCreateInspection(activeBikeIdx);
+    const item = current.items[idx];
+    const isReplaced = !!item.replaced;
+    const items = current.items.map((it, i) => i === idx
+      ? { ...it, replaced: !isReplaced, wear: !isReplaced ? 100 : it.wear }
+      : it);
+    const next = { ...current, items };
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
+    saveInspection(activeBikeIdx, next);
+  }
+
+  async function handleInspPhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const bikeIdx = activeBikeIdx;
+    const itemIdx = inspPhotoItemIdxRef.current;
+    const current = inspections[bikeIdx] || emptyInspection();
+    setInspections(prev => ({
+      ...prev,
+      [bikeIdx]: { ...current, items: current.items.map((it, i) => i === itemIdx ? { ...it, photoUploading: true } : it) },
+    }));
+    try {
+      const photoUrl = await uploadInspPhoto(file);
+      const items = current.items.map((it, i) => i === itemIdx ? { ...it, photo: photoUrl, photoUploading: undefined } : it);
+      const next = { ...current, items };
+      setInspections(prev => ({ ...prev, [bikeIdx]: next }));
+      saveInspection(bikeIdx, next);
+    } catch (err) {
+      setInspections(prev => ({
+        ...prev,
+        [bikeIdx]: { ...current, items: current.items.map((it, i) => i === itemIdx ? { ...it, photoUploading: undefined } : it) },
+      }));
+      alert('Photo upload failed: ' + (err?.message || 'Upload failed'));
+    }
   }
 
   function buildTextMessage() {
@@ -1298,25 +1351,49 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             <p style={{ fontSize: 13, color: '#9ca3af' }}>Loading...</p>
           ) : (
             <>
+              <input
+                ref={inspPhotoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic"
+                style={{ display: 'none' }}
+                onChange={handleInspPhoto}
+              />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
                 {(inspection?.items || emptyInspection().items).map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ flex: '0 0 200px', fontSize: 13, color: '#374151' }}>{item.label}</span>
                     {WEAR_ITEMS.has(item.label) ? (
-                      <select
-                        value={item.wear ?? ''}
-                        onChange={e => updateItemWear(idx, e.target.value === '' ? null : Number(e.target.value))}
-                        style={{ padding: '3px 8px', fontSize: 11, borderRadius: 6, border: '1px solid #e5e7eb', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
-                      >
-                        <option value="">—</option>
-                        {WEAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <select
+                          value={item.wear ?? ''}
+                          onChange={e => updateItemWear(idx, e.target.value === '' ? null : Number(e.target.value))}
+                          style={{ padding: '3px 8px', fontSize: 11, borderRadius: 6, border: '1px solid #e5e7eb', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
+                        >
+                          <option value="">—</option>
+                          {WEAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => updateItemReplaced(idx)}
+                          style={{
+                            padding: '3px 9px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                            border: '1px solid ' + (item.replaced ? '#16a34a' : '#e5e7eb'),
+                            background: item.replaced ? '#16a34a' : '#f0fdf4',
+                            color: item.replaced ? '#fff' : '#166534',
+                            fontWeight: item.replaced ? 700 : 400,
+                            transition: 'all 0.1s',
+                          }}
+                        >
+                          {item.replaced ? 'Replaced ✓' : 'Replaced'}
+                        </button>
+                      </div>
                     ) : (
                       <div style={{ display: 'flex', gap: 4 }}>
                         {[
                           { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
                           { value: 'adjusted',  label: 'Adjusted',       bg: '#eff6ff', color: '#1d4ed8', activeBg: '#2563eb' },
                           { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+                          { value: 'replaced',  label: 'Replaced',       bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
                         ].map(opt => (
                           <button
                             key={opt.value}
@@ -1348,6 +1425,25 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                         color: '#374151', fontFamily: 'inherit',
                       }}
                     />
+                    <button
+                      type="button"
+                      title={item.photo ? 'Change photo' : 'Add photo'}
+                      onClick={() => { inspPhotoItemIdxRef.current = idx; inspPhotoInputRef.current?.click(); }}
+                      style={{
+                        padding: '3px 8px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                        border: '1px solid ' + (item.photo ? '#bbf7d0' : '#e5e7eb'),
+                        background: item.photo ? '#f0fdf4' : '#fafafa',
+                        color: item.photo ? '#16a34a' : '#9ca3af',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.photoUploading ? '...' : item.photo ? 'Photo ✓' : '+ Photo'}
+                    </button>
+                    {item.photo && (
+                      <a href={item.photo} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }}>
+                        <img src={item.photo} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, border: '1px solid #e5e7eb', display: 'block' }} />
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>
