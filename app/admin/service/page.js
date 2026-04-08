@@ -374,6 +374,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   }
 
   async function saveBikes(bikes) {
+    console.log('[saveBikes] saving bikes for booking', booking.id, ':', JSON.stringify(bikes));
     setBikesSaving(true);
     setBikesSaveErr('');
     setBikesSaved(false);
@@ -383,15 +384,17 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bikes }),
       });
+      const d = await res.json().catch(() => ({}));
+      console.log('[saveBikes] response', res.status, JSON.stringify(d));
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        setBikesSaveErr(d.error || 'Save failed');
+        setBikesSaveErr(d.error || 'Save failed (' + res.status + ')');
       } else {
         setBikesSaved(true);
         setTimeout(() => setBikesSaved(false), 2500);
       }
-    } catch {
-      setBikesSaveErr('Network error');
+    } catch (e) {
+      console.error('[saveBikes] network error:', e);
+      setBikesSaveErr('Network error — check console');
     } finally {
       setBikesSaving(false);
     }
@@ -838,7 +841,11 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               >
                 {bikesSaving ? 'Saving...' : bikesSaved ? 'Saved ✓' : 'Save'}
               </button>
-              {bikesSaveErr && <span style={{ fontSize: 11, color: '#dc2626' }}>{bikesSaveErr}</span>}
+              {bikesSaveErr && (
+                <span style={{ fontSize: 11, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 5, padding: '3px 8px' }}>
+                  {bikesSaveErr}
+                </span>
+              )}
             </div>
           </div>
         ) : (
@@ -867,6 +874,11 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             >
               + Add bike
             </button>
+          </div>
+        )}
+        {bookingBikes !== null && bikesSaveErr && (
+          <div style={{ marginBottom: 8, fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '6px 10px' }}>
+            Bikes not saved: {bikesSaveErr}
           </div>
         )}
 

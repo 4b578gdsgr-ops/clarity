@@ -401,6 +401,7 @@ export default function EmbedBookingStatusPage({ params }) {
   const [msgText, setMsgText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
+  const [inspBikeIdx, setInspBikeIdx] = useState(0);
   const bottomRef = useRef(null);
   const intervalRef = useRef(null);
 
@@ -629,90 +630,124 @@ export default function EmbedBookingStatusPage({ params }) {
 
       {/* Inspection Report */}
       {Array.isArray(report) && report.some(r => r.items?.some(it => it.state || it.wear != null)) && (() => {
-        const wearItems = report.flatMap(r => (r.items || []).filter(it => it.wear != null).map(it => ({ ...it, bikeIdx: r.bike_index })));
-        const stateItems = report.flatMap(r => (r.items || []).filter(it => it.state).map(it => ({ ...it, bikeIdx: r.bike_index })));
-        const attention = stateItems.filter(it => it.state === 'attention');
-        const adjusted  = stateItems.filter(it => it.state === 'adjusted');
-        const good      = stateItems.filter(it => it.state === 'good');
-        const combinedNotes = report.map(r => r.notes).filter(Boolean).join(' | ');
+        const showTabs = (booking.bikes?.length || 0) > 1;
+        const activeReport = showTabs
+          ? (report.find(r => r.bike_index === inspBikeIdx) || null)
+          : (report[0] || null);
+        const wearItems = (activeReport?.items || []).filter(it => it.wear != null);
+        const attention = (activeReport?.items || []).filter(it => it.state === 'attention');
+        const adjusted  = (activeReport?.items || []).filter(it => it.state === 'adjusted');
+        const good      = (activeReport?.items || []).filter(it => it.state === 'good');
+        const notes     = activeReport?.notes;
+        const hasData   = wearItems.length || attention.length || adjusted.length || good.length || notes;
         return (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Inspection Report
             </p>
 
-            {wearItems.length > 0 && (
-              <div style={{ marginBottom: attention.length || adjusted.length || good.length ? 16 : 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Component Wear
-                </div>
-                {wearItems.map((item, i) => {
-                  const pct = item.wear;
-                  const wearColor = pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct >= 25 ? '#ea580c' : '#dc2626';
-                  const wearLabel = pct === 100 ? 'new' : pct === 75 ? 'good' : pct === 50 ? 'halfway — plan to replace next service' : pct === 25 ? 'replace soon' : 'replace now';
+            {showTabs && (
+              <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+                {booking.bikes.map((bike, i) => {
+                  const hasReport = report.some(r => r.bike_index === i && r.items?.some(it => it.state || it.wear != null));
+                  const label = bike.name || bike.brand || ('Bike ' + (i + 1));
+                  const active = inspBikeIdx === i;
                   return (
-                    <div key={i} style={{ marginBottom: i < wearItems.length - 1 ? 10 : 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{item.label}</span>
-                        <span style={{ fontSize: 12, color: wearColor, fontWeight: 600 }}>{pct}%</span>
-                      </div>
-                      <div style={{ height: 6, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: pct + '%', background: wearColor, borderRadius: 3 }} />
-                      </div>
-                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{wearLabel}{item.note ? ' — ' + item.note : ''}</div>
-                    </div>
+                    <button key={i} type="button" onClick={() => setInspBikeIdx(i)}
+                      style={{
+                        padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                        border: '1px solid ' + (active ? '#1a3328' : '#e5e7eb'),
+                        background: active ? '#1a3328' : '#fff',
+                        color: active ? '#fff' : (hasReport ? '#374151' : '#9ca3af'),
+                        fontWeight: active ? 600 : 400,
+                      }}
+                    >
+                      {'Bike ' + (i + 1) + ': ' + label}
+                      {!hasReport && <span style={{ fontSize: 10, marginLeft: 4 }}>Pending</span>}
+                    </button>
                   );
                 })}
               </div>
             )}
 
-            {attention.length > 0 && (
-              <div style={{ marginBottom: adjusted.length || good.length ? 16 : 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#c2410c', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Needs Attention
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {attention.map((item, i) => (
-                    <div key={i} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '8px 12px' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>{item.label}</div>
-                      {item.note && <div style={{ fontSize: 12, color: '#c2410c', marginTop: 2 }}>{item.note}</div>}
+            {hasData ? (
+              <>
+                {wearItems.length > 0 && (
+                  <div style={{ marginBottom: attention.length || adjusted.length || good.length ? 16 : 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                      Component Wear
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                    {wearItems.map((item, i) => {
+                      const pct = item.wear;
+                      const wearColor = pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct >= 25 ? '#ea580c' : '#dc2626';
+                      const wearLabel = pct === 100 ? 'new' : pct === 75 ? 'good' : pct === 50 ? 'halfway — plan to replace next service' : pct === 25 ? 'replace soon' : 'replace now';
+                      return (
+                        <div key={i} style={{ marginBottom: i < wearItems.length - 1 ? 10 : 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                            <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{item.label}</span>
+                            <span style={{ fontSize: 12, color: wearColor, fontWeight: 600 }}>{pct}%</span>
+                          </div>
+                          <div style={{ height: 6, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: pct + '%', background: wearColor, borderRadius: 3 }} />
+                          </div>
+                          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{wearLabel}{item.note ? ' — ' + item.note : ''}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-            {adjusted.length > 0 && (
-              <div style={{ marginBottom: good.length ? 16 : 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Adjusted
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {adjusted.map((item, i) => (
-                    <div key={i} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '8px 12px' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>{item.label}</div>
-                      {item.note && <div style={{ fontSize: 12, color: '#1d4ed8', marginTop: 2 }}>{item.note}</div>}
+                {attention.length > 0 && (
+                  <div style={{ marginBottom: adjusted.length || good.length ? 16 : 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#c2410c', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                      Needs Attention
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {attention.map((item, i) => (
+                        <div key={i} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '8px 12px' }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>{item.label}</div>
+                          {item.note && <div style={{ fontSize: 12, color: '#c2410c', marginTop: 2 }}>{item.note}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {good.length > 0 && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Good
-                </div>
-                <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.6 }}>
-                  {good.map(it => it.label).join(', ')}
-                </p>
-              </div>
-            )}
+                {adjusted.length > 0 && (
+                  <div style={{ marginBottom: good.length ? 16 : 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                      Adjusted
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {adjusted.map((item, i) => (
+                        <div key={i} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '8px 12px' }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>{item.label}</div>
+                          {item.note && <div style={{ fontSize: 12, color: '#1d4ed8', marginTop: 2 }}>{item.note}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {combinedNotes && (
-              <p style={{ fontSize: 13, color: '#374151', margin: '16px 0 0', paddingTop: 14, borderTop: '1px solid #f3f4f6', lineHeight: 1.5 }}>
-                {combinedNotes}
-              </p>
+                {good.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                      Good
+                    </div>
+                    <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.6 }}>
+                      {good.map(it => it.label).join(', ')}
+                    </p>
+                  </div>
+                )}
+
+                {notes && (
+                  <p style={{ fontSize: 13, color: '#374151', margin: '16px 0 0', paddingTop: 14, borderTop: '1px solid #f3f4f6', lineHeight: 1.5 }}>
+                    {notes}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>Inspection pending for this bike.</p>
             )}
           </div>
         );
