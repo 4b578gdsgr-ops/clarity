@@ -285,6 +285,7 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
               <select value={deliveryDay} onChange={e => setDeliveryDay(e.target.value)} style={{ ...inp, color: deliveryDay ? '#111827' : '#9ca3af' }}>
                 <option value="">No preference</option>
                 <option value="Monday">Monday</option>
+                <option value="Wednesday">Wednesday</option>
                 <option value="Friday">Friday</option>
               </select>
             </div>
@@ -643,9 +644,19 @@ export default function EmbedBookingStatusPage({ params }) {
         const hasData   = wearItems.length || replaced.length || attention.length || adjusted.length || good.length || notes;
         return (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Inspection Report
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Inspection Report
+              </p>
+              <a
+                href={'/api/inspection-pdf/' + booking.id}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: 12, color: '#1a3328', textDecoration: 'underline' }}
+              >
+                Download report
+              </a>
+            </div>
 
             {showTabs && (
               <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>

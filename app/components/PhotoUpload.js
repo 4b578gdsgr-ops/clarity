@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const BUCKET = 'booking-photos';
-const MAX_FILES = 3;
+const MAX_FILES = 10;
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_DIM = 1400;
 const QUALITY = 0.78;

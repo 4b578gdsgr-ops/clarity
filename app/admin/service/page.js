@@ -6,36 +6,101 @@ import { createClient } from '@supabase/supabase-js';
 const RouteMap = dynamic(() => import('../../components/RouteMap'), { ssr: false });
 const PhotoUpload = dynamic(() => import('../../components/PhotoUpload'), { ssr: false });
 
-// ─── Inspection checklist items ───────────────────────────────────────────────
+// ─── Inspection item definitions ──────────────────────────────────────────────
+// { label, wear?: true, noteOnly?: true, notePlaceholder?: string }
 
-const INSPECTION_ITEMS = [
-  'Frame & fork inspection',
-  'Headset adjustment',
-  'Saddle & seatpost',
-  'Handlebar & stem',
-  'Brake levers & cables',
-  'Brake pads (front)',
-  'Brake pads (rear)',
-  'Front derailleur',
-  'Rear derailleur',
-  'Shifter cables & housing',
-  'Chain',
-  'Cassette',
-  'Chainring(s)',
-  'Bottom bracket',
-  'Pedals',
-  'Tires (front)',
-  'Tires (rear)',
-  'Wheel truing (front)',
-  'Wheel truing (rear)',
-  'Quick releases / thru-axles',
+const BASE_ITEMS = [
+  { label: 'Headset' },
+  { label: 'Stem & handlebar torque' },
+  { label: 'Grips / bar tape' },
+  { label: 'Front brake' },
+  { label: 'Rear brake' },
+  { label: 'Brake levers' },
+  { label: 'Front wheel true' },
+  { label: 'Rear wheel true' },
+  { label: 'Tire condition (front)', wear: true },
+  { label: 'Tire condition (rear)', wear: true },
+  { label: 'Tire pressure', noteOnly: true, notePlaceholder: 'PSI...' },
+  { label: 'Front hub' },
+  { label: 'Rear hub' },
+  { label: 'Chain wear', wear: true },
+  { label: 'Cassette wear', wear: true },
+  { label: 'Chainring wear', wear: true },
+  { label: 'Bottom bracket' },
+  { label: 'Seatpost & saddle' },
+  { label: 'Derailleur alignment / shifting' },
 ];
 
+const MTB_ITEMS = [
+  { label: 'Fork air pressure', noteOnly: true, notePlaceholder: 'PSI...' },
+  { label: 'Fork rebound setting', noteOnly: true, notePlaceholder: 'Setting...' },
+  { label: 'Fork compression setting', noteOnly: true, notePlaceholder: 'Setting...' },
+  { label: 'Rear shock air pressure', noteOnly: true, notePlaceholder: 'PSI...' },
+  { label: 'Rear shock rebound setting', noteOnly: true, notePlaceholder: 'Setting...' },
+  { label: 'Rear shock compression setting', noteOnly: true, notePlaceholder: 'Setting...' },
+  { label: 'Linkage pivot bearings' },
+  { label: 'Linkage bolt torque' },
+  { label: 'Dropper post function' },
+  { label: 'Tubeless sealant level' },
+  { label: 'Next suspension service interval', noteOnly: true, notePlaceholder: 'e.g. 50 hours / next season...' },
+];
+
+const ROAD_GRAVEL_ITEMS = [
+  { label: 'Bar tape condition' },
+  { label: 'Brake hood alignment' },
+  { label: 'Di2 / AXS battery level', noteOnly: true, notePlaceholder: '%...' },
+  { label: 'Electronic firmware status' },
+  { label: 'Tubeless sealant level' },
+];
+
+const EBIKE_ITEMS = [
+  { label: 'Motor firmware / software' },
+  { label: 'Battery health / cycle count', noteOnly: true, notePlaceholder: 'e.g. 80% / 200 cycles...' },
+  { label: 'Display / computer function' },
+  { label: 'Motor mounting bolt torque' },
+  { label: 'Sensor alignment' },
+];
+
+// Flat lookup map by label (for admin render and backward compat)
+const ALL_ITEM_DEFS = {};
+[...BASE_ITEMS, ...MTB_ITEMS, ...ROAD_GRAVEL_ITEMS, ...EBIKE_ITEMS].forEach(d => { ALL_ITEM_DEFS[d.label] = d; });
+
+// Keep WEAR_ITEMS for backward compat with old saved inspections using old labels
 const WEAR_ITEMS = new Set([
-  'Brake pads (front)', 'Brake pads (rear)',
-  'Tires (front)', 'Tires (rear)',
+  ...BASE_ITEMS.filter(d => d.wear).map(d => d.label),
+  // legacy labels from before the bike-type refactor:
+  'Brake pads (front)', 'Brake pads (rear)', 'Tires (front)', 'Tires (rear)',
   'Chain', 'Cassette', 'Chainring(s)',
+  'Tire condition (front)', 'Tire condition (rear)',
+  'Chain wear', 'Cassette wear', 'Chainring wear',
 ]);
+
+function getBikeItemDefs(bikeType) {
+  const base = [...BASE_ITEMS];
+  if (bikeType === 'MTB') return [...base, ...MTB_ITEMS];
+  if (bikeType === 'Road' || bikeType === 'Gravel') return [...base, ...ROAD_GRAVEL_ITEMS];
+  if (bikeType === 'E-bike') return [...base, ...ROAD_GRAVEL_ITEMS, ...EBIKE_ITEMS];
+  return base; // Commuter / unset
+}
+
+function rebuildItems(bikeType, existingItems) {
+  const defs = getBikeItemDefs(bikeType);
+  const existingMap = {};
+  (existingItems || []).forEach(it => { existingMap[it.label] = it; });
+  return defs.map(def => existingMap[def.label] || {
+    label: def.label,
+    ...(def.wear ? { wear: null } : def.noteOnly ? {} : { state: null }),
+    note: '',
+  });
+}
+
+function isWearItem(item) {
+  return WEAR_ITEMS.has(item.label) || 'wear' in item;
+}
+
+function isNoteOnlyItem(item) {
+  return !!(ALL_ITEM_DEFS[item.label]?.noteOnly);
+}
 
 const WEAR_OPTIONS = [
   { value: 100, label: '100% — new' },
@@ -378,11 +443,13 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const bikeCount = effectiveBikes?.length || 1;
   const bikeLabels = effectiveBikes?.map((b, i) => b.name || b.brand || ('Bike ' + (i + 1))) || ['Bike'];
 
-  function emptyInspection() {
+  function emptyInspection(bikeType) {
+    const defs = getBikeItemDefs(bikeType || null);
     return {
-      items: INSPECTION_ITEMS.map(label => ({
-        label,
-        ...(WEAR_ITEMS.has(label) ? { wear: null } : { state: null }),
+      bikeType: bikeType || null,
+      items: defs.map(def => ({
+        label: def.label,
+        ...(def.wear ? { wear: null } : def.noteOnly ? {} : { state: null }),
         note: '',
       })),
       notes: '',
@@ -507,6 +574,14 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
 
   function blurInspNotes() {
     saveInspection(activeBikeIdx, getOrCreateInspection(activeBikeIdx));
+  }
+
+  function changeBikeType(newType) {
+    const current = getOrCreateInspection(activeBikeIdx);
+    const newItems = rebuildItems(newType, current.items);
+    const next = { ...current, bikeType: newType, items: newItems };
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
+    saveInspection(activeBikeIdx, next);
   }
 
   function updateItemReplaced(idx) {
@@ -1351,6 +1426,27 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             <p style={{ fontSize: 13, color: '#9ca3af' }}>Loading...</p>
           ) : (
             <>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Bike type</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {['MTB', 'Road', 'Gravel', 'E-bike', 'Commuter'].map(type => {
+                    const active = (inspection?.bikeType || null) === type;
+                    return (
+                      <button key={type} type="button" onClick={() => changeBikeType(type)}
+                        style={{
+                          padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                          border: '1px solid ' + (active ? '#1a3328' : '#e5e7eb'),
+                          background: active ? '#1a3328' : '#f9fafb',
+                          color: active ? '#fff' : '#374151',
+                          fontWeight: active ? 600 : 400,
+                        }}
+                      >
+                        {type}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <input
                 ref={inspPhotoInputRef}
                 type="file"
@@ -1362,7 +1458,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 {(inspection?.items || emptyInspection().items).map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ flex: '0 0 200px', fontSize: 13, color: '#374151' }}>{item.label}</span>
-                    {WEAR_ITEMS.has(item.label) ? (
+                    {isNoteOnlyItem(item) ? null : isWearItem(item) ? (
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select
                           value={item.wear ?? ''}
@@ -1415,12 +1511,12 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                     )}
                     <input
                       type="text"
-                      placeholder="Note..."
+                      placeholder={isNoteOnlyItem(item) ? (ALL_ITEM_DEFS[item.label]?.notePlaceholder || 'Note...') : 'Note...'}
                       value={item.note || ''}
                       onChange={e => setItemNote(idx, e.target.value)}
                       onBlur={() => blurItemNote()}
                       style={{
-                        flex: 1, minWidth: 100, padding: '3px 8px', fontSize: 12,
+                        flex: 1, minWidth: isNoteOnlyItem(item) ? 160 : 100, padding: '3px 8px', fontSize: 12,
                         border: '1px solid #e5e7eb', borderRadius: 6, outline: 'none',
                         color: '#374151', fontFamily: 'inherit',
                       }}
