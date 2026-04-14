@@ -21,7 +21,7 @@ export async function PUT(request, { params }) {
 
   const { bookingId } = params;
   const body = await request.json();
-  const { bike_index = 0, items, notes, bike_type, drivetrain_type } = body;
+  const { bike_index = 0, items, notes, bike_type, drivetrain_type, suspension_type } = body;
 
   if (!Array.isArray(items)) {
     return Response.json({ error: 'items must be an array' }, { status: 400 });
@@ -32,6 +32,7 @@ export async function PUT(request, { params }) {
     notes: notes || null,
     bike_type: bike_type || null,
     drivetrain_type: drivetrain_type || null,
+    suspension_type: suspension_type || null,
   };
 
   // Check if a row already exists for this booking + bike

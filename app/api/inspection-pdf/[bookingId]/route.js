@@ -20,12 +20,12 @@ function wearColor(pct) {
 function renderItems(items) {
   if (!items || items.length === 0) return '<p style="color:#9ca3af;font-size:13px;">No items recorded.</p>';
 
-  const wearItems = items.filter(it => 'wear' in it && it.wear != null);
-  const replaced  = items.filter(it => it.state === 'replaced');
-  const attention = items.filter(it => it.state === 'attention');
-  const adjusted  = items.filter(it => it.state === 'adjusted');
-  const good      = items.filter(it => it.state === 'good');
-  const noteOnly  = items.filter(it => !('state' in it) && !('wear' in it) && it.note);
+  const wearItems = items.filter(it => !it.na && 'wear' in it && it.wear != null);
+  const replaced  = items.filter(it => !it.na && it.state === 'replaced');
+  const attention = items.filter(it => !it.na && it.state === 'attention');
+  const adjusted  = items.filter(it => !it.na && it.state === 'adjusted');
+  const good      = items.filter(it => !it.na && it.state === 'good');
+  const noteOnly  = items.filter(it => !it.na && !('state' in it) && !('wear' in it) && it.note);
 
   let html = '';
 

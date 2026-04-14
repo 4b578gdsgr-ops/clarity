@@ -630,17 +630,17 @@ export default function EmbedBookingStatusPage({ params }) {
       )}
 
       {/* Inspection Report */}
-      {Array.isArray(report) && report.some(r => r.items?.some(it => it.state || it.wear != null || it.note)) && (() => {
+      {Array.isArray(report) && report.some(r => r.items?.some(it => !it.na && (it.state || it.wear != null || it.note))) && (() => {
         const showTabs = (booking.bikes?.length || 0) > 1;
         const activeReport = showTabs
           ? (report.find(r => r.bike_index === inspBikeIdx) || null)
           : (report[0] || null);
-        const wearItems   = (activeReport?.items || []).filter(it => it.wear != null);
-        const replaced    = (activeReport?.items || []).filter(it => it.state === 'replaced');
-        const attention   = (activeReport?.items || []).filter(it => it.state === 'attention');
-        const adjusted    = (activeReport?.items || []).filter(it => it.state === 'adjusted');
-        const good        = (activeReport?.items || []).filter(it => it.state === 'good');
-        const noteValues  = (activeReport?.items || []).filter(it => !('state' in it) && !('wear' in it) && it.note);
+        const wearItems   = (activeReport?.items || []).filter(it => !it.na && it.wear != null);
+        const replaced    = (activeReport?.items || []).filter(it => !it.na && it.state === 'replaced');
+        const attention   = (activeReport?.items || []).filter(it => !it.na && it.state === 'attention');
+        const adjusted    = (activeReport?.items || []).filter(it => !it.na && it.state === 'adjusted');
+        const good        = (activeReport?.items || []).filter(it => !it.na && it.state === 'good');
+        const noteValues  = (activeReport?.items || []).filter(it => !it.na && !('state' in it) && !('wear' in it) && it.note);
         const notes       = activeReport?.notes;
         const hasData     = wearItems.length || replaced.length || attention.length || adjusted.length || good.length || noteValues.length || notes;
         return (

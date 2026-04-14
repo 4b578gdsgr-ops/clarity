@@ -99,14 +99,19 @@ function getDrivetrainItemDefs(drivetrainType) {
   return [];
 }
 
-function rebuildItems(bikeType, drivetrainType, existingItems) {
+function rebuildItems(bikeType, drivetrainType, suspensionType, existingItems) {
   const defs = [...getBikeItemDefs(bikeType), ...getDrivetrainItemDefs(drivetrainType)];
   const existingMap = {};
   (existingItems || []).forEach(it => { existingMap[it.label] = it; });
-  return defs.map(def => existingMap[def.label] || {
-    label: def.label,
-    ...(def.wear ? { wear: null } : def.noteOnly ? {} : { state: null }),
-    note: '',
+  const autoNA = new Set(getAutoNALabels(bikeType, suspensionType));
+  return defs.map(def => {
+    if (existingMap[def.label]) return existingMap[def.label];
+    return {
+      label: def.label,
+      ...(def.wear ? { wear: null } : def.noteOnly ? {} : { state: null }),
+      note: '',
+      ...(autoNA.has(def.label) ? { na: true } : {}),
+    };
   });
 }
 
@@ -116,6 +121,27 @@ function isWearItem(item) {
 
 function isNoteOnlyItem(item) {
   return !!(ALL_ITEM_DEFS[item.label]?.noteOnly);
+}
+
+// Labels affected by suspension type selection (used to re-apply auto-NA on type change)
+const SUSPENSION_AFFECTED_LABELS = new Set([
+  'Fork air pressure', 'Fork rebound setting', 'Fork compression setting',
+  'Rear shock air pressure', 'Rear shock rebound setting', 'Rear shock compression setting',
+  'Linkage pivot bearings', 'Linkage bolt torque',
+]);
+
+function getAutoNALabels(bikeType, suspensionType) {
+  if (bikeType !== 'MTB') return [];
+  if (suspensionType === 'Hardtail') return [
+    'Rear shock air pressure', 'Rear shock rebound setting', 'Rear shock compression setting',
+    'Linkage pivot bearings', 'Linkage bolt torque',
+  ];
+  if (suspensionType === 'Rigid') return [
+    'Fork air pressure', 'Fork rebound setting', 'Fork compression setting',
+    'Rear shock air pressure', 'Rear shock rebound setting', 'Rear shock compression setting',
+    'Linkage pivot bearings', 'Linkage bolt torque',
+  ];
+  return [];
 }
 
 const WEAR_OPTIONS = [
@@ -459,15 +485,18 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const bikeCount = effectiveBikes?.length || 1;
   const bikeLabels = effectiveBikes?.map((b, i) => b.name || b.brand || ('Bike ' + (i + 1))) || ['Bike'];
 
-  function emptyInspection(bikeType, drivetrainType) {
+  function emptyInspection(bikeType, drivetrainType, suspensionType) {
     const defs = [...getBikeItemDefs(bikeType || null), ...getDrivetrainItemDefs(drivetrainType || null)];
+    const autoNA = new Set(getAutoNALabels(bikeType, suspensionType));
     return {
       bikeType: bikeType || null,
       drivetrainType: drivetrainType || null,
+      suspensionType: suspensionType || null,
       items: defs.map(def => ({
         label: def.label,
         ...(def.wear ? { wear: null } : def.noteOnly ? {} : { state: null }),
         note: '',
+        ...(autoNA.has(def.label) ? { na: true } : {}),
       })),
       notes: '',
     };
@@ -521,6 +550,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       loaded[r.bike_index] = {
         bikeType: r.bike_type || null,
         drivetrainType: r.drivetrain_type || null,
+        suspensionType: r.suspension_type || null,
         items: r.items,
         notes: r.notes || '',
       };
@@ -539,12 +569,13 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-        bike_index: bikeIdx,
-        items: insp.items,
-        notes: insp.notes,
-        bike_type: insp.bikeType || null,
-        drivetrain_type: insp.drivetrainType || null,
-      }),
+          bike_index: bikeIdx,
+          items: insp.items,
+          notes: insp.notes,
+          bike_type: insp.bikeType || null,
+          drivetrain_type: insp.drivetrainType || null,
+          suspension_type: insp.suspensionType || null,
+        }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -606,16 +637,46 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
 
   function changeBikeType(newType) {
     const current = getOrCreateInspection(activeBikeIdx);
-    const newItems = rebuildItems(newType, current.drivetrainType, current.items);
-    const next = { ...current, bikeType: newType, items: newItems };
+    const newSuspType = newType === 'MTB' ? current.suspensionType : null;
+    const newItems = rebuildItems(newType, current.drivetrainType, newSuspType, current.items);
+    const next = { ...current, bikeType: newType, suspensionType: newSuspType, items: newItems };
     setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
     saveInspection(activeBikeIdx, next);
   }
 
   function changeDrivetrainType(newType) {
     const current = getOrCreateInspection(activeBikeIdx);
-    const newItems = rebuildItems(current.bikeType, newType, current.items);
+    const newItems = rebuildItems(current.bikeType, newType, current.suspensionType, current.items);
     const next = { ...current, drivetrainType: newType, items: newItems };
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
+    saveInspection(activeBikeIdx, next);
+  }
+
+  function changeSuspensionType(newType) {
+    const current = getOrCreateInspection(activeBikeIdx);
+    const autoNA = new Set(getAutoNALabels(current.bikeType, newType));
+    const newItems = current.items.map(it => {
+      if (!SUSPENSION_AFFECTED_LABELS.has(it.label)) return it;
+      if (autoNA.has(it.label)) return { ...it, na: true };
+      const { na, ...rest } = it;
+      return rest;
+    });
+    const next = { ...current, suspensionType: newType, items: newItems };
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
+    saveInspection(activeBikeIdx, next);
+  }
+
+  function toggleNA(idx) {
+    const current = getOrCreateInspection(activeBikeIdx);
+    const items = current.items.map((it, i) => {
+      if (i !== idx) return it;
+      if (it.na) {
+        const { na, ...rest } = it;
+        return rest;
+      }
+      return { ...it, na: true };
+    });
+    const next = { ...current, items };
     setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
     saveInspection(activeBikeIdx, next);
   }
@@ -1484,6 +1545,29 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                     })}
                   </div>
                 </div>
+                {inspection?.bikeType === 'MTB' && (
+                  <div>
+                    <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Suspension</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {['Full Suspension', 'Hardtail', 'Rigid'].map(type => {
+                        const active = (inspection?.suspensionType || null) === type;
+                        return (
+                          <button key={type} type="button" onClick={() => changeSuspensionType(type)}
+                            style={{
+                              padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                              border: '1px solid ' + (active ? '#1a3328' : '#e5e7eb'),
+                              background: active ? '#1a3328' : '#f9fafb',
+                              color: active ? '#fff' : '#374151',
+                              fontWeight: active ? 600 : 400,
+                            }}
+                          >
+                            {type}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Drivetrain</div>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -1515,9 +1599,9 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
                 {(inspection?.items || emptyInspection().items).map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ flex: '0 0 200px', fontSize: 13, color: '#374151' }}>{item.label}</span>
-                    {isNoteOnlyItem(item) ? null : isWearItem(item) ? (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', opacity: item.na ? 0.45 : 1 }}>
+                    <span style={{ flex: '0 0 200px', fontSize: 13, color: item.na ? '#9ca3af' : '#374151' }}>{item.label}</span>
+                    {item.na ? null : isNoteOnlyItem(item) ? null : isWearItem(item) ? (
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select
                           value={item.wear ?? ''}
@@ -1568,36 +1652,55 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                         ))}
                       </div>
                     )}
-                    <input
-                      type="text"
-                      placeholder={isNoteOnlyItem(item) ? (ALL_ITEM_DEFS[item.label]?.notePlaceholder || 'Note...') : 'Note...'}
-                      value={item.note || ''}
-                      onChange={e => setItemNote(idx, e.target.value)}
-                      onBlur={() => blurItemNote()}
-                      style={{
-                        flex: 1, minWidth: isNoteOnlyItem(item) ? 160 : 100, padding: '3px 8px', fontSize: 12,
-                        border: '1px solid #e5e7eb', borderRadius: 6, outline: 'none',
-                        color: '#374151', fontFamily: 'inherit',
-                      }}
-                    />
                     <button
                       type="button"
-                      title={item.photo ? 'Change photo' : 'Add photo'}
-                      onClick={() => { inspPhotoItemIdxRef.current = idx; inspPhotoInputRef.current?.click(); }}
+                      onClick={() => toggleNA(idx)}
                       style={{
-                        padding: '3px 8px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
-                        border: '1px solid ' + (item.photo ? '#bbf7d0' : '#e5e7eb'),
-                        background: item.photo ? '#f0fdf4' : '#fafafa',
-                        color: item.photo ? '#16a34a' : '#9ca3af',
+                        padding: '3px 9px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                        border: '1px solid ' + (item.na ? '#6b7280' : '#e5e7eb'),
+                        background: item.na ? '#6b7280' : '#f9fafb',
+                        color: item.na ? '#fff' : '#9ca3af',
+                        fontWeight: item.na ? 700 : 400,
                         flexShrink: 0,
+                        transition: 'all 0.1s',
                       }}
                     >
-                      {item.photoUploading ? '...' : item.photo ? 'Photo ✓' : '+ Photo'}
+                      N/A
                     </button>
-                    {item.photo && (
-                      <a href={item.photo} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }}>
-                        <img src={item.photo} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, border: '1px solid #e5e7eb', display: 'block' }} />
-                      </a>
+                    {!item.na && (
+                      <>
+                        <input
+                          type="text"
+                          placeholder={isNoteOnlyItem(item) ? (ALL_ITEM_DEFS[item.label]?.notePlaceholder || 'Note...') : 'Note...'}
+                          value={item.note || ''}
+                          onChange={e => setItemNote(idx, e.target.value)}
+                          onBlur={() => blurItemNote()}
+                          style={{
+                            flex: 1, minWidth: isNoteOnlyItem(item) ? 160 : 100, padding: '3px 8px', fontSize: 12,
+                            border: '1px solid #e5e7eb', borderRadius: 6, outline: 'none',
+                            color: '#374151', fontFamily: 'inherit',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          title={item.photo ? 'Change photo' : 'Add photo'}
+                          onClick={() => { inspPhotoItemIdxRef.current = idx; inspPhotoInputRef.current?.click(); }}
+                          style={{
+                            padding: '3px 8px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                            border: '1px solid ' + (item.photo ? '#bbf7d0' : '#e5e7eb'),
+                            background: item.photo ? '#f0fdf4' : '#fafafa',
+                            color: item.photo ? '#16a34a' : '#9ca3af',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.photoUploading ? '...' : item.photo ? 'Photo ✓' : '+ Photo'}
+                        </button>
+                        {item.photo && (
+                          <a href={item.photo} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }}>
+                            <img src={item.photo} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, border: '1px solid #e5e7eb', display: 'block' }} />
+                          </a>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
