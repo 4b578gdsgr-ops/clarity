@@ -21,11 +21,18 @@ export async function PUT(request, { params }) {
 
   const { bookingId } = params;
   const body = await request.json();
-  const { bike_index = 0, items, notes } = body;
+  const { bike_index = 0, items, notes, bike_type, drivetrain_type } = body;
 
   if (!Array.isArray(items)) {
     return Response.json({ error: 'items must be an array' }, { status: 400 });
   }
+
+  const fields = {
+    items,
+    notes: notes || null,
+    bike_type: bike_type || null,
+    drivetrain_type: drivetrain_type || null,
+  };
 
   // Check if a row already exists for this booking + bike
   const { data: existing } = await supabaseAdmin
@@ -39,14 +46,14 @@ export async function PUT(request, { params }) {
   if (existing?.id) {
     ({ data, error } = await supabaseAdmin
       .from('inspection_reports')
-      .update({ items, notes: notes || null })
+      .update(fields)
       .eq('id', existing.id)
       .select()
       .single());
   } else {
     ({ data, error } = await supabaseAdmin
       .from('inspection_reports')
-      .insert([{ booking_id: bookingId, bike_index, items, notes: notes || null }])
+      .insert([{ booking_id: bookingId, bike_index, ...fields }])
       .select()
       .single());
   }

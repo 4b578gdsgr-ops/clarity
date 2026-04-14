@@ -630,18 +630,19 @@ export default function EmbedBookingStatusPage({ params }) {
       )}
 
       {/* Inspection Report */}
-      {Array.isArray(report) && report.some(r => r.items?.some(it => it.state || it.wear != null)) && (() => {
+      {Array.isArray(report) && report.some(r => r.items?.some(it => it.state || it.wear != null || it.note)) && (() => {
         const showTabs = (booking.bikes?.length || 0) > 1;
         const activeReport = showTabs
           ? (report.find(r => r.bike_index === inspBikeIdx) || null)
           : (report[0] || null);
-        const wearItems = (activeReport?.items || []).filter(it => it.wear != null);
-        const replaced  = (activeReport?.items || []).filter(it => it.state === 'replaced');
-        const attention = (activeReport?.items || []).filter(it => it.state === 'attention');
-        const adjusted  = (activeReport?.items || []).filter(it => it.state === 'adjusted');
-        const good      = (activeReport?.items || []).filter(it => it.state === 'good');
-        const notes     = activeReport?.notes;
-        const hasData   = wearItems.length || replaced.length || attention.length || adjusted.length || good.length || notes;
+        const wearItems   = (activeReport?.items || []).filter(it => it.wear != null);
+        const replaced    = (activeReport?.items || []).filter(it => it.state === 'replaced');
+        const attention   = (activeReport?.items || []).filter(it => it.state === 'attention');
+        const adjusted    = (activeReport?.items || []).filter(it => it.state === 'adjusted');
+        const good        = (activeReport?.items || []).filter(it => it.state === 'good');
+        const noteValues  = (activeReport?.items || []).filter(it => !('state' in it) && !('wear' in it) && it.note);
+        const notes       = activeReport?.notes;
+        const hasData     = wearItems.length || replaced.length || attention.length || adjusted.length || good.length || noteValues.length || notes;
         return (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -778,13 +779,29 @@ export default function EmbedBookingStatusPage({ params }) {
                 )}
 
                 {good.length > 0 && (
-                  <div>
+                  <div style={{ marginBottom: noteValues.length ? 16 : 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                       Good
                     </div>
                     <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.6 }}>
                       {good.map(it => it.label).join(', ')}
                     </p>
+                  </div>
+                )}
+
+                {noteValues.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                      Recorded Values
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {noteValues.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, fontSize: 13 }}>
+                          <span style={{ color: '#6b7280', minWidth: 160 }}>{item.label}</span>
+                          <span style={{ color: '#374151', fontWeight: 500 }}>{item.note}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

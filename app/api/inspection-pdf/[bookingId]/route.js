@@ -124,8 +124,9 @@ export async function GET(request, { params }) {
     const bike = bikes[i];
     const report = reports.find(r => r.bike_index === i);
     const bikeLabel = [bike.name, bike.brand].filter(Boolean).join(' — ') || `Bike ${i + 1}`;
+    const typeBadges = [report?.bike_type, report?.drivetrain_type].filter(Boolean).map(t => `<span class="bike-type-badge">${esc(t)}</span>`).join(' ');
     bikesSections += `<div class="bike-section">
-      <h3 class="bike-title">${esc(bikeLabel)}${report?.bikeType ? ' <span class="bike-type-badge">' + esc(report.bikeType) + '</span>' : ''}</h3>
+      <h3 class="bike-title">${esc(bikeLabel)}${typeBadges ? ' ' + typeBadges : ''}</h3>
       ${report ? renderItems(report.items) : '<p style="color:#9ca3af;font-size:13px;">No inspection on file for this bike.</p>'}
       ${report?.notes ? `<div class="overall-notes"><strong>Notes:</strong> ${esc(report.notes)}</div>` : ''}
     </div>`;
