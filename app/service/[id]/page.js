@@ -626,12 +626,14 @@ export default function BookingStatusPage({ params }) {
             : (report[0] || null);
           const wearItems   = (activeReport?.items || []).filter(it => !it.na && it.wear != null);
           const replaced    = (activeReport?.items || []).filter(it => !it.na && it.state === 'replaced');
+          const done        = (activeReport?.items || []).filter(it => !it.na && it.state === 'done');
+          const sentOut     = (activeReport?.items || []).filter(it => !it.na && it.state === 'sent_out');
           const attention   = (activeReport?.items || []).filter(it => !it.na && it.state === 'attention');
           const adjusted    = (activeReport?.items || []).filter(it => !it.na && it.state === 'adjusted');
           const good        = (activeReport?.items || []).filter(it => !it.na && it.state === 'good');
           const noteValues  = (activeReport?.items || []).filter(it => !it.na && !('state' in it) && !('wear' in it) && it.note);
           const notes       = activeReport?.notes;
-          const hasData     = wearItems.length || replaced.length || attention.length || adjusted.length || good.length || noteValues.length || notes;
+          const hasData     = wearItems.length || replaced.length || done.length || sentOut.length || attention.length || adjusted.length || good.length || noteValues.length || notes;
           return (
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -704,13 +706,13 @@ export default function BookingStatusPage({ params }) {
                     </div>
                   )}
 
-                  {replaced.length > 0 && (
-                    <div style={{ marginBottom: attention.length || adjusted.length || good.length ? 16 : 0 }}>
+                  {(replaced.length > 0 || done.length > 0) && (
+                    <div style={{ marginBottom: sentOut.length || attention.length || adjusted.length || good.length ? 16 : 0 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                        Replaced
+                        Replaced / Done
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {replaced.map((item, i) => (
+                        {[...replaced, ...done].map((item, i) => (
                           <div key={i} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 12px' }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#166534' }}>{item.label} ✓</div>
                             {item.note && <div style={{ fontSize: 12, color: '#4b7c5e', marginTop: 2 }}>{item.note}</div>}
@@ -719,6 +721,23 @@ export default function BookingStatusPage({ params }) {
                                 <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #bbf7d0', display: 'block' }} />
                               </a>
                             )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sentOut.length > 0 && (
+                    <div style={{ marginBottom: attention.length || adjusted.length || good.length ? 16 : 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                        Sent to Specialist
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {sentOut.map((item, i) => (
+                          <div key={i} style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '8px 12px' }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#6d28d9' }}>{item.label}</div>
+                            <div style={{ fontSize: 12, color: '#7c3aed', marginTop: 2 }}>Sent to specialist for service</div>
+                            {item.note && <div style={{ fontSize: 12, color: '#7c3aed', marginTop: 1 }}>{item.note}</div>}
                           </div>
                         ))}
                       </div>

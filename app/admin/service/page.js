@@ -7,15 +7,24 @@ const RouteMap = dynamic(() => import('../../components/RouteMap'), { ssr: false
 const PhotoUpload = dynamic(() => import('../../components/PhotoUpload'), { ssr: false });
 
 // ─── Inspection item definitions ──────────────────────────────────────────────
-// { label, wear?: true, noteOnly?: true, notePlaceholder?: string }
+// { label, wear?: true, noteOnly?: true, notePlaceholder?: string, stateSet?: string }
 
 const BASE_ITEMS = [
   { label: 'Headset' },
   { label: 'Stem & handlebar torque' },
   { label: 'Grips / bar tape' },
-  { label: 'Front brake' },
-  { label: 'Rear brake' },
+  // Brakes — granular
+  { label: 'Brake pad wear — front', wear: true },
+  { label: 'Brake pad wear — rear', wear: true },
+  { label: 'Brake pad replaced — front', stateSet: 'replaced_only' },
+  { label: 'Brake pad replaced — rear', stateSet: 'replaced_only' },
+  { label: 'Brake bleed/fluid — front' },
+  { label: 'Brake bleed/fluid — rear' },
+  { label: 'Rotor condition — front', wear: true },
+  { label: 'Rotor condition — rear', wear: true },
+  { label: 'Brake lever feel & engagement', stateSet: 'no_replaced' },
   { label: 'Brake levers' },
+  // Wheels & tires
   { label: 'Front wheel true' },
   { label: 'Rear wheel true' },
   { label: 'Tire condition (front)', wear: true },
@@ -23,6 +32,7 @@ const BASE_ITEMS = [
   { label: 'Tire pressure', noteOnly: true, notePlaceholder: 'PSI...' },
   { label: 'Front hub' },
   { label: 'Rear hub' },
+  // Drivetrain
   { label: 'Chain wear', wear: true },
   { label: 'Cassette wear', wear: true },
   { label: 'Chainring wear', wear: true },
@@ -32,12 +42,21 @@ const BASE_ITEMS = [
 ];
 
 const MTB_ITEMS = [
+  // Fork
+  { label: 'Fork dust wipers & seals', stateSet: 'seals' },
+  { label: 'Fork bath oil service', stateSet: 'service' },
+  { label: 'Fork damper service', stateSet: 'damper' },
   { label: 'Fork air pressure', noteOnly: true, notePlaceholder: 'PSI...' },
   { label: 'Fork rebound setting', noteOnly: true, notePlaceholder: 'Setting...' },
   { label: 'Fork compression setting', noteOnly: true, notePlaceholder: 'Setting...' },
+  // Rear shock
+  { label: 'Rear shock dust wiper & seals', stateSet: 'seals' },
+  { label: 'Rear shock air can service', stateSet: 'service' },
+  { label: 'Rear shock damper service', stateSet: 'damper' },
   { label: 'Rear shock air pressure', noteOnly: true, notePlaceholder: 'PSI...' },
   { label: 'Rear shock rebound setting', noteOnly: true, notePlaceholder: 'Setting...' },
   { label: 'Rear shock compression setting', noteOnly: true, notePlaceholder: 'Setting...' },
+  // Linkage & other
   { label: 'Linkage pivot bearings' },
   { label: 'Linkage bolt torque' },
   { label: 'Dropper post function' },
@@ -71,6 +90,47 @@ const EBIKE_ITEMS = [
   { label: 'Sensor alignment' },
 ];
 
+// State button sets — keyed by stateSet value on item def
+// Each entry: { value, label, bg, color, activeBg }
+const STATE_SETS = {
+  default: [
+    { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'adjusted',  label: 'Adjusted',       bg: '#eff6ff', color: '#1d4ed8', activeBg: '#2563eb' },
+    { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+    { value: 'replaced',  label: 'Replaced',       bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+  ],
+  // Pad-replaced items: just Good / Replaced
+  replaced_only: [
+    { value: 'good',     label: 'Good',     bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'replaced', label: 'Replaced', bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+  ],
+  // Lever feel: no Replaced
+  no_replaced: [
+    { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'adjusted',  label: 'Adjusted',       bg: '#eff6ff', color: '#1d4ed8', activeBg: '#2563eb' },
+    { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+  ],
+  // Dust wipers/seals: no Adjusted
+  seals: [
+    { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+    { value: 'replaced',  label: 'Replaced',       bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+  ],
+  // Bath oil / air can service: Done replaces Adjusted
+  service: [
+    { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'done',      label: 'Done',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+  ],
+  // Damper service: adds Sent out
+  damper: [
+    { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'done',      label: 'Done',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
+    { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
+    { value: 'sent_out',  label: 'Sent out',       bg: '#f5f3ff', color: '#6d28d9', activeBg: '#7c3aed' },
+  ],
+};
+
 // Flat lookup map by label (for admin render and backward compat)
 const ALL_ITEM_DEFS = {};
 [...BASE_ITEMS, ...MTB_ITEMS, ...ROAD_GRAVEL_ITEMS, ...EBIKE_ITEMS, ...DRIVETRAIN_MECHANICAL_ITEMS, ...DRIVETRAIN_ELECTRONIC_ITEMS].forEach(d => { ALL_ITEM_DEFS[d.label] = d; });
@@ -83,6 +143,9 @@ const WEAR_ITEMS = new Set([
   'Chain', 'Cassette', 'Chainring(s)',
   'Tire condition (front)', 'Tire condition (rear)',
   'Chain wear', 'Cassette wear', 'Chainring wear',
+  // new brake items
+  'Brake pad wear — front', 'Brake pad wear — rear',
+  'Rotor condition — front', 'Rotor condition — rear',
 ]);
 
 function getBikeItemDefs(bikeType) {
@@ -97,6 +160,11 @@ function getDrivetrainItemDefs(drivetrainType) {
   if (drivetrainType === 'Mechanical') return DRIVETRAIN_MECHANICAL_ITEMS;
   if (drivetrainType === 'Electronic') return DRIVETRAIN_ELECTRONIC_ITEMS;
   return [];
+}
+
+function getItemStateDefs(item) {
+  const def = ALL_ITEM_DEFS[item.label];
+  return STATE_SETS[def?.stateSet] || STATE_SETS.default;
 }
 
 function rebuildItems(bikeType, drivetrainType, suspensionType, existingItems) {
@@ -125,7 +193,9 @@ function isNoteOnlyItem(item) {
 
 // Labels affected by suspension type selection (used to re-apply auto-NA on type change)
 const SUSPENSION_AFFECTED_LABELS = new Set([
+  'Fork dust wipers & seals', 'Fork bath oil service', 'Fork damper service',
   'Fork air pressure', 'Fork rebound setting', 'Fork compression setting',
+  'Rear shock dust wiper & seals', 'Rear shock air can service', 'Rear shock damper service',
   'Rear shock air pressure', 'Rear shock rebound setting', 'Rear shock compression setting',
   'Linkage pivot bearings', 'Linkage bolt torque',
 ]);
@@ -133,11 +203,14 @@ const SUSPENSION_AFFECTED_LABELS = new Set([
 function getAutoNALabels(bikeType, suspensionType) {
   if (bikeType !== 'MTB') return [];
   if (suspensionType === 'Hardtail') return [
+    'Rear shock dust wiper & seals', 'Rear shock air can service', 'Rear shock damper service',
     'Rear shock air pressure', 'Rear shock rebound setting', 'Rear shock compression setting',
     'Linkage pivot bearings', 'Linkage bolt torque',
   ];
   if (suspensionType === 'Rigid') return [
+    'Fork dust wipers & seals', 'Fork bath oil service', 'Fork damper service',
     'Fork air pressure', 'Fork rebound setting', 'Fork compression setting',
+    'Rear shock dust wiper & seals', 'Rear shock air can service', 'Rear shock damper service',
     'Rear shock air pressure', 'Rear shock rebound setting', 'Rear shock compression setting',
     'Linkage pivot bearings', 'Linkage bolt torque',
   ];
@@ -1658,13 +1731,8 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                         </button>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {[
-                          { value: 'good',      label: 'Good',           bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
-                          { value: 'adjusted',  label: 'Adjusted',       bg: '#eff6ff', color: '#1d4ed8', activeBg: '#2563eb' },
-                          { value: 'attention', label: 'Needs Attention', bg: '#fff7ed', color: '#c2410c', activeBg: '#ea580c' },
-                          { value: 'replaced',  label: 'Replaced',       bg: '#f0fdf4', color: '#166534', activeBg: '#16a34a' },
-                        ].map(opt => (
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        {getItemStateDefs(item).map(opt => (
                           <button
                             key={opt.value}
                             type="button"

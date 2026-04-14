@@ -20,12 +20,14 @@ function wearColor(pct) {
 function renderItems(items) {
   if (!items || items.length === 0) return '<p style="color:#9ca3af;font-size:13px;">No items recorded.</p>';
 
-  const wearItems = items.filter(it => !it.na && 'wear' in it && it.wear != null);
-  const replaced  = items.filter(it => !it.na && it.state === 'replaced');
-  const attention = items.filter(it => !it.na && it.state === 'attention');
-  const adjusted  = items.filter(it => !it.na && it.state === 'adjusted');
-  const good      = items.filter(it => !it.na && it.state === 'good');
-  const noteOnly  = items.filter(it => !it.na && !('state' in it) && !('wear' in it) && it.note);
+  const wearItems  = items.filter(it => !it.na && 'wear' in it && it.wear != null);
+  const replaced   = items.filter(it => !it.na && it.state === 'replaced');
+  const done       = items.filter(it => !it.na && it.state === 'done');
+  const sentOut    = items.filter(it => !it.na && it.state === 'sent_out');
+  const attention  = items.filter(it => !it.na && it.state === 'attention');
+  const adjusted   = items.filter(it => !it.na && it.state === 'adjusted');
+  const good       = items.filter(it => !it.na && it.state === 'good');
+  const noteOnly   = items.filter(it => !it.na && !('state' in it) && !('wear' in it) && it.note);
 
   let html = '';
 
@@ -48,13 +50,25 @@ function renderItems(items) {
     html += '</div>';
   }
 
-  if (replaced.length > 0) {
-    html += '<div class="section"><div class="section-title" style="color:#166534;">Replaced</div>';
-    for (const item of replaced) {
+  if (replaced.length > 0 || done.length > 0) {
+    html += '<div class="section"><div class="section-title" style="color:#166534;">Replaced / Done</div>';
+    for (const item of [...replaced, ...done]) {
       html += `<div class="card card-green">
         <div class="item-label" style="color:#166534;">${esc(item.label)} ✓</div>
         ${item.note ? `<div style="font-size:12px;color:#4b7c5e;margin-top:3px;">${esc(item.note)}</div>` : ''}
         ${item.photo ? `<img src="${esc(item.photo)}" class="item-photo" />` : ''}
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  if (sentOut.length > 0) {
+    html += '<div class="section"><div class="section-title" style="color:#6d28d9;">Sent to Specialist</div>';
+    for (const item of sentOut) {
+      html += `<div class="card" style="background:#f5f3ff;border:1px solid #ddd6fe;">
+        <div class="item-label" style="color:#6d28d9;">${esc(item.label)}</div>
+        <div style="font-size:12px;color:#7c3aed;margin-top:3px;">Sent to specialist for service</div>
+        ${item.note ? `<div style="font-size:12px;color:#7c3aed;margin-top:2px;">${esc(item.note)}</div>` : ''}
       </div>`;
     }
     html += '</div>';
