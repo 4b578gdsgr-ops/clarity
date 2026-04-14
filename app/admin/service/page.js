@@ -16,8 +16,6 @@ const BASE_ITEMS = [
   // Brakes — granular
   { label: 'Brake pad wear — front', wear: true },
   { label: 'Brake pad wear — rear', wear: true },
-  { label: 'Brake pad replaced — front', stateSet: 'replaced_only' },
-  { label: 'Brake pad replaced — rear', stateSet: 'replaced_only' },
   { label: 'Brake bleed/fluid — front' },
   { label: 'Brake bleed/fluid — rear' },
   { label: 'Rotor condition — front', wear: true },
