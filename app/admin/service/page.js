@@ -1021,52 +1021,83 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                   {bookingBikes.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => setBookingBikes(bookingBikes.filter((_, j) => j !== i))}
-                      style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+                      onClick={() => {
+                        if (!window.confirm('Remove this bike?')) return;
+                        const next = bookingBikes.filter((_, j) => j !== i);
+                        setBookingBikes(next);
+                        saveBikes(next);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 14, lineHeight: 1, cursor: 'pointer', padding: '0 2px', fontFamily: 'inherit' }}
+                      title="Remove bike"
                     >
-                      Remove
+                      ×
                     </button>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 5 }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
                   <input
                     placeholder="Name"
                     value={bike.name || ''}
                     onChange={e => setBookingBikes(bookingBikes.map((b, j) => j === i ? { ...b, name: e.target.value } : b))}
+                    onBlur={() => saveBikes(bookingBikes)}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
                   />
                   <input
                     placeholder="Brand"
                     value={bike.brand || ''}
                     onChange={e => setBookingBikes(bookingBikes.map((b, j) => j === i ? { ...b, brand: e.target.value } : b))}
+                    onBlur={() => saveBikes(bookingBikes)}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
                   />
                 </div>
-                {(bike.issues || []).length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {(bike.issues || []).map(iss => (
-                      <span key={iss} style={{ background: '#f3f4f6', borderRadius: 12, padding: '2px 8px', fontSize: 11 }}>{iss}</span>
-                    ))}
-                  </div>
-                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {ISSUE_OPTIONS.map(opt => {
+                    const active = (bike.issues || []).includes(opt);
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => {
+                          const next = bookingBikes.map((b, j) => {
+                            if (j !== i) return b;
+                            const issues = active
+                              ? (b.issues || []).filter(x => x !== opt)
+                              : [...(b.issues || []), opt];
+                            return { ...b, issues };
+                          });
+                          setBookingBikes(next);
+                          saveBikes(next);
+                        }}
+                        style={{
+                          padding: '3px 10px', borderRadius: 12, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                          border: '1px solid ' + (active ? '#1a3328' : '#e5e7eb'),
+                          background: active ? '#1a3328' : '#f9fafb',
+                          color: active ? '#fff' : '#6b7280',
+                          fontWeight: active ? 600 : 400,
+                          transition: 'all 0.1s',
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ))}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 type="button"
-                onClick={() => setBookingBikes([...bookingBikes, { name: '', brand: '', issues: [], notes: '' }])}
+                onClick={() => {
+                  const next = [...bookingBikes, { name: '', brand: '', issues: [], notes: '' }];
+                  setBookingBikes(next);
+                  saveBikes(next);
+                }}
                 style={{ fontSize: 12, color: '#6b7280', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 + Add bike
               </button>
-              <button
-                type="button"
-                onClick={() => saveBikes(bookingBikes)}
-                disabled={bikesSaving}
-                style={{ fontSize: 12, padding: '4px 12px', background: bikesSaved ? '#f0fdf4' : '#1a3328', color: bikesSaved ? '#166534' : '#fff', border: bikesSaved ? '1px solid #bbf7d0' : 'none', borderRadius: 7, cursor: bikesSaving ? 'default' : 'pointer', fontFamily: 'inherit' }}
-              >
-                {bikesSaving ? 'Saving...' : bikesSaved ? 'Saved ✓' : 'Save'}
-              </button>
+              {bikesSaving && <span style={{ fontSize: 11, color: '#9ca3af' }}>Saving...</span>}
+              {bikesSaved && !bikesSaving && <span style={{ fontSize: 11, color: '#16a34a' }}>Saved ✓</span>}
               {bikesSaveErr && (
                 <span style={{ fontSize: 11, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 5, padding: '3px 8px' }}>
                   {bikesSaveErr}
