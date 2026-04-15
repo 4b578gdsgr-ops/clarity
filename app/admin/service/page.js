@@ -527,8 +527,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [copied, setCopied] = useState(false);
   const [estimateAmount, setEstimateAmount] = useState(booking.estimate_amount != null ? String(booking.estimate_amount) : '');
   const [estimateNotes, setEstimateNotes] = useState(booking.estimate_notes || '');
-  const [quoteSending, setQuoteSending] = useState(false);
-  const [quoteSent, setQuoteSent] = useState(false);
+  const [quoteCopied, setQuoteCopied] = useState(false);
   const [invoiceAmount, setInvoiceAmount] = useState(booking.invoice_amount != null ? String(booking.invoice_amount) : '');
   const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
   const [address, setAddress] = useState(booking.address || '');
@@ -862,29 +861,38 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
     onRefresh();
   }
 
-  async function sendQuote() {
+  function buildQuoteText() {
+    const firstName = (booking.name || 'there').split(' ')[0];
+    const amount = Math.round(parseFloat(estimateAmount) || 0);
+    const notes = estimateNotes.trim();
+    const link = trackingUrl;
+    return [
+      `Hi ${firstName}, here's a rough estimate for your bike: around $${amount}.`,
+      notes ? notes + '.' : '',
+      `If anything changes once we dig in, we'll reach out before doing extra work.`,
+      `Track here: ${link}`,
+      `— One Love`,
+    ].filter(Boolean).join(' ');
+  }
+
+  async function copyQuoteText() {
     const amount = estimateAmount === '' ? null : parseFloat(estimateAmount);
     if (!amount) { alert('Enter an estimate amount first.'); return; }
-    setQuoteSending(true);
-    setQuoteSent(false);
-    const res = await fetch('/api/bookings/' + booking.id, {
+    const text = buildQuoteText();
+    navigator.clipboard.writeText(text).catch(() => {});
+    setQuoteCopied(true);
+    setTimeout(() => setQuoteCopied(false), 2500);
+    // Save estimate fields silently (no refresh)
+    const isEmail = booking.contact_preference !== 'text' && booking.contact_preference !== 'phone';
+    await fetch('/api/bookings/' + booking.id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         estimate_amount: amount,
         estimate_notes: estimateNotes.trim() || null,
-        send_quote: true,
+        ...(isEmail ? { send_quote: true } : {}),
       }),
     });
-    setQuoteSending(false);
-    if (res.ok) {
-      setQuoteSent(true);
-      setTimeout(() => setQuoteSent(false), 3000);
-      onRefresh();
-    } else {
-      const d = await res.json().catch(() => ({}));
-      alert('Failed to send quote: ' + (d.error || res.status));
-    }
   }
 
   async function advance() {
@@ -1313,21 +1321,17 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 type="button"
-                onClick={sendQuote}
-                disabled={quoteSending}
+                onClick={copyQuoteText}
                 style={{
-                  padding: '6px 14px', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', cursor: quoteSending ? 'default' : 'pointer',
-                  background: quoteSent ? '#f0fdf4' : '#1a3328', color: quoteSent ? '#166534' : '#fff',
-                  border: quoteSent ? '1px solid #bbf7d0' : 'none', fontWeight: 600,
+                  padding: '6px 14px', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+                  background: quoteCopied ? '#f0fdf4' : '#f3f4f6',
+                  border: '1px solid ' + (quoteCopied ? '#bbf7d0' : '#e5e7eb'),
+                  color: quoteCopied ? '#166534' : '#374151',
+                  fontWeight: 500,
                 }}
               >
-                {quoteSending ? 'Sending...' : quoteSent ? 'Sent ✓' : 'Send quote'}
+                {quoteCopied ? 'Copied ✓' : 'Copy quote text'}
               </button>
-              {(booking.contact_preference === 'text' || booking.contact_preference === 'phone') && (
-                <span style={{ fontSize: 11, background: '#fef9c3', color: '#854d0e', border: '1px solid #fde047', borderRadius: 5, padding: '3px 7px', fontWeight: 600 }}>
-                  NEEDS TEXT
-                </span>
-              )}
             </div>
           </div>
         </div>
