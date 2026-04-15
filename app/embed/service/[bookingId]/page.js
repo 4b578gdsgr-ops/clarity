@@ -837,6 +837,32 @@ export default function EmbedBookingStatusPage({ params }) {
         );
       })()}
 
+      {/* Estimate section */}
+      {booking.estimate_amount != null && !['complete', 'done', 'delivered'].includes(booking.status) && (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Estimated Cost
+          </p>
+          <p style={{ fontSize: 20, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+            Around ${Math.round(Number(booking.estimate_amount))}
+          </p>
+          {booking.estimate_notes && (
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.5 }}>
+              {booking.estimate_notes}
+            </p>
+          )}
+          <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px', lineHeight: 1.5 }}>
+            This is a rough estimate based on what we know so far. If we find anything else once we&apos;re in there, we&apos;ll let you know before doing any additional work. No surprises.
+          </p>
+          <a
+            href={'#messages'}
+            style={{ fontSize: 13, color: '#1a3328', textDecoration: 'underline' }}
+          >
+            Questions about this estimate?
+          </a>
+        </div>
+      )}
+
       {/* Payment section */}
       {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (booking.payment_status === 'paid' ? (
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>

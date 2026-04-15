@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
-import { notifyCustomer } from '../../../../lib/notify';
+import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
 
 const VALID_STATUSES = [
   'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled',
@@ -30,14 +30,15 @@ export async function PATCH(request, { params }) {
 
   const { id } = params;
   const body = await request.json();
-  const { skip_notification } = body;
+  const { skip_notification, send_quote } = body;
 
   const allowed = ['status', 'notes', 'time_slot', 'preferred_day',
                    'confirmed_date', 'confirmed_time', 'return_date', 'delivery_time', 'zone', 'preferred_time',
                    'invoice_amount', 'payment_link', 'address', 'member_verified',
                    'name', 'phone', 'email', 'last_notified_status',
                    'delivery_address', 'delivery_preferred_day', 'delivery_preferred_time',
-                   'lat', 'lng', 'shop_photos', 'bikes', 'payment_status'];
+                   'lat', 'lng', 'shop_photos', 'bikes', 'payment_status',
+                   'estimate_amount', 'estimate_notes'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];
@@ -61,6 +62,17 @@ export async function PATCH(request, { params }) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Send quote notification if requested
+  if (send_quote) {
+    const pref = data.contact_preference;
+    if (pref !== 'text' && pref !== 'phone') {
+      notifyCustomerQuote(data).catch(err =>
+        console.error('[bookings/[id]] quote notification failed:', err?.message || err)
+      );
+    }
+    // text/phone: admin handles manually — no auto-notification
+  }
 
   // Notify customer on confirmed and ready only — skip_notification suppresses this for backward moves
   const NOTIFY_TRIGGERS = new Set(['confirmed', 'ready']);

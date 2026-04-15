@@ -525,6 +525,10 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [showMsgs, setShowMsgs] = useState(false);
   const [template, setTemplate] = useState('');
   const [copied, setCopied] = useState(false);
+  const [estimateAmount, setEstimateAmount] = useState(booking.estimate_amount != null ? String(booking.estimate_amount) : '');
+  const [estimateNotes, setEstimateNotes] = useState(booking.estimate_notes || '');
+  const [quoteSending, setQuoteSending] = useState(false);
+  const [quoteSent, setQuoteSent] = useState(false);
   const [invoiceAmount, setInvoiceAmount] = useState(booking.invoice_amount != null ? String(booking.invoice_amount) : '');
   const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
   const [address, setAddress] = useState(booking.address || '');
@@ -856,6 +860,31 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   async function patch(fields) {
     await save(fields);
     onRefresh();
+  }
+
+  async function sendQuote() {
+    const amount = estimateAmount === '' ? null : parseFloat(estimateAmount);
+    if (!amount) { alert('Enter an estimate amount first.'); return; }
+    setQuoteSending(true);
+    setQuoteSent(false);
+    const res = await fetch('/api/bookings/' + booking.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        estimate_amount: amount,
+        estimate_notes: estimateNotes.trim() || null,
+        send_quote: true,
+      }),
+    });
+    setQuoteSending(false);
+    if (res.ok) {
+      setQuoteSent(true);
+      setTimeout(() => setQuoteSent(false), 3000);
+      onRefresh();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      alert('Failed to send quote: ' + (d.error || res.status));
+    }
   }
 
   async function advance() {
@@ -1245,6 +1274,62 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
             photos={shopPhotos}
             onChange={setShopPhotos}
           />
+        </div>
+
+        {/* Estimate / Quote */}
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Estimate</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Amount ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                value={estimateAmount}
+                onChange={e => setEstimateAmount(e.target.value)}
+                onBlur={() => {
+                  const val = estimateAmount === '' ? null : parseFloat(estimateAmount);
+                  if (val !== booking.estimate_amount) save({ estimate_amount: val });
+                }}
+                style={{ width: 90, padding: '6px 9px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 13, outline: 'none' }}
+              />
+            </div>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Quote notes</label>
+              <input
+                type="text"
+                placeholder="e.g. pending inspection, may need cassette..."
+                value={estimateNotes}
+                onChange={e => setEstimateNotes(e.target.value)}
+                onBlur={() => {
+                  const val = estimateNotes.trim() || null;
+                  if (val !== (booking.estimate_notes || null)) save({ estimate_notes: val });
+                }}
+                style={{ width: '100%', padding: '6px 9px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                onClick={sendQuote}
+                disabled={quoteSending}
+                style={{
+                  padding: '6px 14px', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', cursor: quoteSending ? 'default' : 'pointer',
+                  background: quoteSent ? '#f0fdf4' : '#1a3328', color: quoteSent ? '#166534' : '#fff',
+                  border: quoteSent ? '1px solid #bbf7d0' : 'none', fontWeight: 600,
+                }}
+              >
+                {quoteSending ? 'Sending...' : quoteSent ? 'Sent ✓' : 'Send quote'}
+              </button>
+              {(booking.contact_preference === 'text' || booking.contact_preference === 'phone') && (
+                <span style={{ fontSize: 11, background: '#fef9c3', color: '#854d0e', border: '1px solid #fde047', borderRadius: 5, padding: '3px 7px', fontWeight: 600 }}>
+                  NEEDS TEXT
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Invoice + Payment */}
