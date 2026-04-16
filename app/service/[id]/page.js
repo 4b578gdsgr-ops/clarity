@@ -401,7 +401,8 @@ export default function BookingStatusPage({ params }) {
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
   const [inspBikeIdx, setInspBikeIdx] = useState(0);
-  const bottomRef = useRef(null);
+  const threadRef = useRef(null);
+  const threadMountedRef = useRef(false);
   const intervalRef = useRef(null);
 
   async function loadData() {
@@ -436,7 +437,8 @@ export default function BookingStatusPage({ params }) {
   }, [id]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!threadMountedRef.current) { threadMountedRef.current = true; return; }
+    if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [messages]);
 
   async function sendMessage(e) {
@@ -887,7 +889,7 @@ export default function BookingStatusPage({ params }) {
             <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Got questions? We're here.</span>
           </div>
 
-          <div style={{ padding: 16, minHeight: 120, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div ref={threadRef} style={{ padding: 16, minHeight: 120, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {messages.length === 0 && (
               <p style={{ color: '#9ca3af', fontSize: 14, textAlign: 'center', margin: 'auto' }}>
                 {'No messages yet. Ask us anything.'}
@@ -905,7 +907,6 @@ export default function BookingStatusPage({ params }) {
                 </div>
               </div>
             ))}
-            <div ref={bottomRef} />
           </div>
 
           {sendErr && (
