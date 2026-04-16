@@ -2575,13 +2575,131 @@ const ALL_STATUSES = [
   { value: 'complete',        label: 'Complete'        },
 ];
 
-function NewBookingModal({ onClose, onCreated }) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
+function PhoneLeadsView({ onCreateBooking }) {
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
+
+  async function loadLeads() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/phone-leads');
+      const data = await res.json();
+      setLeads(data.leads || []);
+    } catch {}
+    setLoading(false);
+  }
+
+  async function updateStatus(id, status) {
+    const res = await fetch('/api/phone-leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    if (res.ok) {
+      setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
+    }
+  }
+
+  useEffect(() => { loadLeads(); }, []);
+
+  const active = leads.filter(l => l.status !== 'dismissed' && l.status !== 'junk' && l.call_type !== 'junk');
+  const archived = leads.filter(l => l.status === 'dismissed' || l.status === 'junk' || l.call_type === 'junk');
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  if (loading) return <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>;
+
+  return (
+    <div>
+      {active.length === 0 && (
+        <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>No active phone leads.</p>
+      )}
+      {active.map(lead => (
+        <div key={lead.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                {lead.status === 'new' && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}>NEW</span>
+                )}
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{lead.name || 'Unknown caller'}</span>
+                {lead.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.phone}</span>}
+              </div>
+              {lead.summary && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 6px', lineHeight: 1.5 }}>{lead.summary}</p>}
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(lead.created_at)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', notes: lead.summary || '' })}
+                style={{ padding: '6px 12px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Create Booking
+              </button>
+              <button
+                onClick={() => updateStatus(lead.id, 'dismissed')}
+                style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => updateStatus(lead.id, 'junk')}
+                style={{ padding: '6px 12px', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}
+              >
+                Junk
+              </button>
+            </div>
+          </div>
+          {lead.transcript && (
+            <div style={{ marginTop: 8 }}>
+              <button
+                onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
+                style={{ fontSize: 12, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                {expandedId === lead.id ? 'Hide transcript' : 'Show transcript'}
+              </button>
+              {expandedId === lead.id && (
+                <pre style={{ fontSize: 12, color: '#374151', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, marginTop: 6, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                  {lead.transcript}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+      {archived.length > 0 && (
+        <details style={{ marginTop: 16 }}>
+          <summary style={{ fontSize: 12, color: '#9ca3af', cursor: 'pointer', userSelect: 'none' }}>
+            {archived.length} dismissed / junk
+          </summary>
+          <div style={{ marginTop: 8 }}>
+            {archived.map(lead => (
+              <div key={lead.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f9fafb', borderRadius: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', background: '#f3f4f6', borderRadius: 8, padding: '2px 7px' }}>
+                  {lead.status === 'junk' || lead.call_type === 'junk' ? 'JUNK' : 'DISMISSED'}
+                </span>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.name || 'Unknown'}</span>
+                {lead.phone && <span style={{ fontSize: 12, color: '#9ca3af' }}>{lead.phone}</span>}
+                <span style={{ fontSize: 11, color: '#d1d5db', marginLeft: 'auto' }}>{fmtTime(lead.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function NewBookingModal({ onClose, onCreated, prefill }) {
+  const [name, setName] = useState(prefill?.name || '');
+  const [phone, setPhone] = useState(prefill?.phone || '');
+  const [email, setEmail] = useState(prefill?.email || '');
+  const [address, setAddress] = useState(prefill?.address || '');
   const [bikes, setBikes] = useState([{ name: '', brand: '', issues: [], notes: '' }]);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(prefill?.notes || '');
   const [contactPref, setContactPref] = useState('text');
   const [isMember, setIsMember] = useState(false);
   const [status, setStatus] = useState('new');
@@ -2891,6 +3009,7 @@ export default function AdminServicePage() {
   const [icalUrl, setIcalUrl] = useState('');
   const [icalCopied, setIcalCopied] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
+  const [prefillLead, setPrefillLead] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -2966,10 +3085,11 @@ export default function AdminServicePage() {
       }}>
         <div style={{ display: 'flex', gap: 4 }}>
           {[
-            { key: 'requests', label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), badge: unreadCounts.total },
-            { key: 'plan',     label: 'Plan Route', badge: 0 },
-            { key: 'members',  label: 'Member Messages', badge: memberUnread },
-            { key: 'email',    label: 'Send Email', badge: 0 },
+            { key: 'requests',     label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), badge: unreadCounts.total },
+            { key: 'plan',         label: 'Plan Route', badge: 0 },
+            { key: 'members',      label: 'Member Messages', badge: memberUnread },
+            { key: 'phone_leads',  label: 'Phone Leads', badge: 0 },
+            { key: 'email',        label: 'Send Email', badge: 0 },
           ].map(t => (
             <button
               key={t.key}
@@ -3079,12 +3199,18 @@ export default function AdminServicePage() {
           <MemberMessagesView messages={memberMessages} onRefresh={load} onMarkRead={handleMemberMarkRead} />
         )}
         {activeTab === 'email' && <SendEmailView />}
+        {activeTab === 'phone_leads' && (
+          <PhoneLeadsView
+            onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
+          />
+        )}
       </div>
 
       {newBookingOpen && (
         <NewBookingModal
-          onClose={() => setNewBookingOpen(false)}
-          onCreated={() => { setNewBookingOpen(false); load(); }}
+          onClose={() => { setNewBookingOpen(false); setPrefillLead(null); }}
+          onCreated={() => { setNewBookingOpen(false); setPrefillLead(null); load(); }}
+          prefill={prefillLead}
         />
       )}
     </main>
