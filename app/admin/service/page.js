@@ -1598,12 +1598,21 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
           </a>
           {['complete', 'done', 'delivered'].includes(booking.status) && (
             paymentStatus === 'paid' ? (
-              <span style={{
-                padding: '5px 12px', background: '#f0fdf4', color: '#166534',
-                border: '1px solid #bbf7d0', borderRadius: 7, fontSize: 12, fontWeight: 700,
-              }}>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!window.confirm('Mark as unpaid?')) return;
+                  await save({ payment_status: 'unpaid' });
+                  setPaymentStatus('unpaid');
+                }}
+                style={{
+                  padding: '5px 12px', background: '#f0fdf4', color: '#166534',
+                  border: '1px solid #bbf7d0', borderRadius: 7, fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
                 Paid ✓
-              </span>
+              </button>
             ) : (
               <button
                 type="button"
