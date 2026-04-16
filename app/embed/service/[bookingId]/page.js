@@ -873,29 +873,21 @@ export default function EmbedBookingStatusPage({ params }) {
           <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
             {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
           </p>
-          {booking.payment_link ? (
-            <>
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '14px 16px', marginBottom: 10 }}>
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: '0 0 4px' }}>
-                  Pay at delivery
-                </p>
-                <p style={{ fontSize: 12, color: '#4b7c5e', margin: 0 }}>
-                  Cash or card. Easiest for everyone.
-                </p>
-              </div>
-              <a
-                href={booking.payment_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', padding: '10px 0', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, color: '#374151', textDecoration: 'none', background: '#fafaf7' }}
-              >
-                Prefer to pay ahead? Pay online →
-              </a>
-            </>
-          ) : (
-            <p style={{ fontSize: 14, color: '#374151', margin: 0 }}>
-              Pay at delivery — cash or card.
-            </p>
+          <p style={{ fontSize: 17, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+            Pay when we deliver
+          </p>
+          <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 14px' }}>
+            Cash or card at the door. Simple.
+          </p>
+          {booking.payment_link && (
+            <a
+              href={booking.payment_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 13, color: '#6b7280', textDecoration: 'underline' }}
+            >
+              Need to pay ahead? Pay online →
+            </a>
           )}
         </div>
       ))}
