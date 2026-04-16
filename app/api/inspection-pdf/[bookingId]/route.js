@@ -194,7 +194,7 @@ export async function GET(request, { params }) {
 <div class="page">
   <div class="header">
     <div class="brand">One Love Outdoors</div>
-    <div class="brand-sub">Mobile Bike Service — Inspection Report</div>
+    <div class="brand-sub">Bike Service — Inspection Report</div>
   </div>
   <div class="meta">
     <div class="meta-item"><div class="meta-label">Customer</div><div class="meta-value">${esc(booking.name)}</div></div>
