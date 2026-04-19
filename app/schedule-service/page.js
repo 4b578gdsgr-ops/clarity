@@ -72,27 +72,27 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-      <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, color: '#0f1a14', marginBottom: 20 }}>
-        Schedule a Service
-      </h1>
-
-      <div style={{ marginBottom: 12 }}>
-        <p style={{ fontSize: 17, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+    <div style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 24px' }}>
+      <div style={{ marginBottom: 10 }}>
+        <p style={{ fontSize: 20, fontWeight: 700, color: '#0f1a14', margin: '0 0 3px' }}>
           {'Where should we meet?'}
-          {pin && !outside && <span style={{ color: '#16a34a', marginLeft: 6 }}>✓</span>}
+          {pin && !outside && <span style={{ color: '#16a34a', marginLeft: 8, fontSize: 17 }}>✓</span>}
         </p>
         <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
           Home, office, trailhead — wherever works best for you.
         </p>
       </div>
 
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+      <div style={{ height: 340, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', marginBottom: 10, background: '#f3f4f6' }}>
+        <ServiceMap pin={pin} onMapClick={handleMapClick} showBoundary />
+      </div>
+
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
         <input
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Street address or intersection"
+          placeholder="Or search a street address"
           style={{
             flex: 1, padding: '10px 14px', borderRadius: 8, fontSize: 15, outline: 'none',
             border: pin && !outside ? '2px solid #16a34a' : '2px solid #d1d5db',
@@ -110,13 +110,9 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
       {searchErr && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{searchErr}</p>}
 
-      <div style={{ height: 340, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', marginBottom: 12 }}>
-        <ServiceMap pin={pin} onMapClick={handleMapClick} showBoundary />
-      </div>
-
       {!pin && (
-        <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 16 }}>
-          Search above or tap the map to drop a pin.
+        <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+          Tap the map to drop a pin, or search above.
         </p>
       )}
 
@@ -539,13 +535,6 @@ export default function ScheduleService() {
   if (step === 'done') {
     return (
       <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
-        <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '12px 20px' }}>
-          <a href="/" style={{ textDecoration: 'none' }}>
-            <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: '#0f1a14', fontStyle: 'italic' }}>
-              {'One Love Outdoors'}
-            </span>
-          </a>
-        </div>
         <DoneStep bookingId={bookingId} contactPreference={contactPreference} isAssembly={bookingIsAssembly} onReset={reset} />
       </main>
     );
@@ -553,14 +542,6 @@ export default function ScheduleService() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
-      <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '12px 20px' }}>
-        <a href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: '#0f1a14', fontStyle: 'italic' }}>
-            {'One Love Outdoors'}
-          </span>
-        </a>
-      </div>
-
       <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0 0', gap: 8 }}>
         {['location', 'form'].map(s => (
           <div key={s} style={{ width: 8, height: 8, borderRadius: '50%', background: step === s ? '#1a3328' : '#d1d5db' }} />
