@@ -2,33 +2,49 @@ import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import TopNav from './components/TopNav';
 import Footer from './components/Footer';
+import ServiceWorkerRegistrar from './components/ServiceWorkerRegistrar';
 
 export const metadata = {
-  metadataBase: new URL('https://loveovermoney.oneloveoutdoors.org'),
-  title: 'One Love Outdoors — Find Your Bike, Find Your Shop',
-  description: 'Find the right bike and a local shop that can help. A One Love Outdoors project.',
-  keywords: 'bike finder, local bike shop, ethical shopping, corporate transparency, karma score, outdoor industry',
+  metadataBase: new URL('https://service.oneloveoutdoors.org'),
+  title: 'One Love Outdoors — Mobile Bike Service',
+  description: 'Mobile bike service in Hartford and Tolland County, CT. We pick up, fix, and deliver.',
+  keywords: 'bike service, mobile bike repair, bicycle pickup, Hartford CT, Tolland CT',
   openGraph: {
-    title: 'One Love Outdoors',
-    description: 'Find the right bike and a local shop near you.',
+    title: 'One Love Outdoors — Mobile Bike Service',
+    description: 'Mobile bike service — we pick up, fix, and deliver.',
     type: 'website',
-    url: 'https://loveovermoney.oneloveoutdoors.org',
+    url: 'https://service.oneloveoutdoors.org',
     siteName: 'One Love Outdoors',
   },
   twitter: {
     card: 'summary',
     title: 'One Love Outdoors',
-    description: 'Find the right bike and a local shop near you.',
+    description: 'Mobile bike service — pickup, repair, delivery.',
   },
-  alternates: {
-    canonical: 'https://loveovermoney.oneloveoutdoors.org',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'One Love',
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'msapplication-TileColor': '#1a3328',
+  },
+};
+
+export const viewport = {
+  themeColor: '#1a3328',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon.svg" />
+      </head>
       <body className="min-h-screen">
+        <ServiceWorkerRegistrar />
         <TopNav />
         {children}
         <Footer />

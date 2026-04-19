@@ -4,6 +4,14 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Service worker: allow full scope
+        source: '/sw.js',
+        headers: [
+          { key: 'Service-Worker-Allowed', value: '/' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
+      {
         // Embed routes: allow framing from Squarespace + our own domain
         source: '/embed/:path*',
         headers: [

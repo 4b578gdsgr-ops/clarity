@@ -1,0 +1,32 @@
+{
+  "name": "One Love Outdoors",
+  "short_name": "One Love",
+  "description": "Mobile bike service — book, track, and message your mechanic.",
+  "start_url": "/schedule-service",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1a3328",
+  "background_color": "#1a3328",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book Service",
+      "url": "/schedule-service",
+      "description": "Schedule a bike pickup"
+    }
+  ]
+}
