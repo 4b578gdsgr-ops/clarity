@@ -2,11 +2,11 @@
 import { usePathname } from 'next/navigation';
 
 const NAV_LINKS = [
+  { label: 'Message Us',    href: '/messages' },
   { label: 'Service',       href: '/' },
   { label: 'Repair or Replace?', href: '/repair-or-replace' },
   { label: 'Custom Builds', href: '/custom-builds' },
   { label: 'Membership',    href: 'https://oneloveoutdoors.org/onelove-members-only', external: true },
-  { label: 'Messages',      href: '/messages' },
   { label: 'About',         href: '/about' },
 ];
 
