@@ -1,3 +1,5 @@
+'use client';
+
 // ─── Homepage ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
