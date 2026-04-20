@@ -527,7 +527,7 @@ async function uploadInspPhoto(file) {
 
 // ─── BookingCard ──────────────────────────────────────────────────────────────
 
-function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
+function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook }) {
   const [confirmDate, setConfirmDate] = useState(booking.confirmed_date || '');
   const [confirmTime, setConfirmTime] = useState(booking.confirmed_time || '');
   const [returnDate, setReturnDate] = useState(booking.return_date || (booking.confirmed_date ? pickupToReturn(booking.confirmed_date) : ''));
@@ -1697,6 +1697,18 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               </button>
             )
           )}
+          {onRebook && (
+            <button
+              onClick={() => onRebook(booking)}
+              style={{
+                padding: '5px 12px', background: 'none',
+                border: '1px solid #bfdbfe', borderRadius: 7, fontSize: 12,
+                color: '#1d4ed8', cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Rebook
+            </button>
+          )}
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -2257,8 +2269,15 @@ function PlanRouteView({ allBookings, onRefresh }) {
 
 // ─── All Requests view ────────────────────────────────────────────────────────
 
-function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead }) {
+const STATUS_LABELS = {
+  new: 'New', confirmed: 'Confirmed', in_progress: 'In Progress', picked_up: 'In Progress',
+  ready: 'Ready', out_for_delivery: 'Out for Delivery', complete: 'Complete',
+  cancelled: 'Cancelled', booked: 'Booked', done: 'Done', delivered: 'Delivered',
+};
+
+function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, onRebook }) {
   const [filter, setFilter] = useState('new');
+  const [search, setSearch] = useState('');
 
   const FILTERS = [
     { key: 'new',             label: 'New'             },
@@ -2275,6 +2294,57 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead })
     counts[b.status] = (counts[b.status] || 0) + 1;
   }
 
+  const query = search.trim().toLowerCase();
+
+  // Search mode: filter all bookings by name
+  if (query) {
+    const results = bookings.filter(b => (b.name || '').toLowerCase().includes(query));
+    return (
+      <div>
+        <input
+          autoFocus
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by customer name..."
+          style={{ width: '100%', padding: '10px 14px', border: '2px solid #1a3328', borderRadius: 10, fontSize: 15, outline: 'none', boxSizing: 'border-box', marginBottom: 16, fontFamily: 'inherit' }}
+        />
+        {results.length === 0 ? (
+          <p style={{ color: '#9ca3af', fontSize: 14 }}>No customers found matching &ldquo;{search}&rdquo;.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {results.map(b => {
+              const bike = b.bikes?.length > 0
+                ? [b.bikes[0].name, b.bikes[0].brand].filter(Boolean).join(' ')
+                : b.bike_brand || '';
+              const date = b.confirmed_date || (b.created_at ? b.created_at.slice(0, 10) : '');
+              const statusLabel = STATUS_LABELS[b.status] || b.status;
+              return (
+                <div key={b.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>{b.name || '—'}</span>
+                    {bike && <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 8 }}>{bike}</span>}
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
+                      {date && <span>{date} · </span>}
+                      <span>{statusLabel}</span>
+                    </div>
+                  </div>
+                  {onRebook && (
+                    <button
+                      onClick={() => onRebook(b)}
+                      style={{ padding: '6px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 7, fontSize: 12, color: '#1d4ed8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, whiteSpace: 'nowrap' }}
+                    >
+                      Rebook
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // picked_up is legacy — show under in_progress tab
   const filtered = filter === 'all'
     ? bookings
@@ -2284,6 +2354,12 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead })
 
   return (
     <div>
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Search by customer name..."
+        style={{ width: '100%', padding: '10px 14px', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 16, fontFamily: 'inherit' }}
+      />
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {FILTERS.map(f => {
           const count = f.key === 'all' ? bookings.length
@@ -2315,7 +2391,7 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead })
       )}
 
       {filtered.map(b => (
-        <BookingCard key={b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} />
+        <BookingCard key={b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} onRebook={onRebook} />
       ))}
     </div>
   );
@@ -2768,8 +2844,8 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
   const [address, setAddress] = useState(prefill?.address || '');
   const [bikes, setBikes] = useState([{ name: '', brand: '', issues: [], notes: '' }]);
   const [notes, setNotes] = useState(prefill?.notes || '');
-  const [contactPref, setContactPref] = useState('text');
-  const [isMember, setIsMember] = useState(false);
+  const [contactPref, setContactPref] = useState(prefill?.contact_preference || 'text');
+  const [isMember, setIsMember] = useState(prefill?.is_member || false);
   const [status, setStatus] = useState('new');
   const [pickupDate, setPickupDate] = useState('');
   const [pickupTime, setPickupTime] = useState('');
@@ -3079,6 +3155,18 @@ export default function AdminServicePage() {
   const [newBookingOpen, setNewBookingOpen] = useState(false);
   const [prefillLead, setPrefillLead] = useState(null);
 
+  function handleRebook(booking) {
+    setPrefillLead({
+      name: booking.name,
+      phone: booking.phone,
+      email: booking.email,
+      address: booking.address,
+      contact_preference: booking.contact_preference,
+      is_member: booking.is_member,
+    });
+    setNewBookingOpen(true);
+  }
+
   async function load() {
     setLoading(true);
     setError('');
@@ -3261,7 +3349,7 @@ export default function AdminServicePage() {
           <PlanRouteView allBookings={bookings} onRefresh={load} />
         )}
         {!loading && activeTab === 'requests' && (
-          <AllRequestsView bookings={bookings} onRefresh={load} unreadCounts={unreadCounts.counts} onMarkRead={handleMarkRead} />
+          <AllRequestsView bookings={bookings} onRefresh={load} unreadCounts={unreadCounts.counts} onMarkRead={handleMarkRead} onRebook={handleRebook} />
         )}
         {!loading && activeTab === 'members' && (
           <MemberMessagesView messages={memberMessages} onRefresh={load} onMarkRead={handleMemberMarkRead} />
