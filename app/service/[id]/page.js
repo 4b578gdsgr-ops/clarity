@@ -845,13 +845,9 @@ export default function BookingStatusPage({ params }) {
             <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px', lineHeight: 1.5 }}>
               This is a rough estimate based on what we know so far. If we find anything else once we&apos;re in there, we&apos;ll let you know before doing any additional work. No surprises.
             </p>
-            <a
-              href="#messages"
-              onClick={e => { e.preventDefault(); document.getElementById('messages')?.scrollIntoView({ behavior: 'smooth' }); }}
-              style={{ fontSize: 13, color: '#1a3328', textDecoration: 'underline', cursor: 'pointer' }}
-            >
-              Questions about this estimate?
-            </a>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+              Questions about this estimate? Message us below.
+            </p>
           </div>
         )}
 
