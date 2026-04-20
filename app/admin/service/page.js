@@ -542,7 +542,10 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
   const [copied, setCopied] = useState(false);
   const [estimateAmount, setEstimateAmount] = useState(booking.estimate_amount != null ? String(booking.estimate_amount) : '');
   const [estimateNotes, setEstimateNotes] = useState(booking.estimate_notes || '');
+  const [estimatePhoto, setEstimatePhoto] = useState(booking.estimate_photo || null);
+  const [estimatePhotoUploading, setEstimatePhotoUploading] = useState(false);
   const [quoteCopied, setQuoteCopied] = useState(false);
+  const estimatePhotoRef = useRef(null);
   const [invoiceAmount, setInvoiceAmount] = useState(booking.invoice_amount != null ? String(booking.invoice_amount) : '');
   const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
   const [address, setAddress] = useState(booking.address || '');
@@ -888,6 +891,28 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
       `Track here: ${link}`,
       `— One Love`,
     ].filter(Boolean).join(' ');
+  }
+
+  async function handleEstimatePhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setEstimatePhotoUploading(true);
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      const ext = file.type === 'image/png' ? 'png' : 'jpg';
+      const path = `estimate/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await client.storage.from('booking-photos').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+      if (error) throw error;
+      const url = client.storage.from('booking-photos').getPublicUrl(path).data.publicUrl;
+      setEstimatePhoto(url);
+      await save({ estimate_photo: url });
+    } catch (err) {
+      alert('Photo upload failed: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setEstimatePhotoUploading(false);
+    }
   }
 
   async function copyQuoteText() {
@@ -1333,7 +1358,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
                 style={{ width: '100%', padding: '6px 9px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={copyQuoteText}
@@ -1347,6 +1372,34 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead }) {
               >
                 {quoteCopied ? 'Copied ✓' : 'Copy quote text'}
               </button>
+              <input
+                ref={estimatePhotoRef}
+                type="file"
+                accept="image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic"
+                onChange={handleEstimatePhoto}
+                style={{ display: 'none' }}
+              />
+              {estimatePhoto ? (
+                <div style={{ position: 'relative', display: 'inline-flex' }}>
+                  <a href={estimatePhoto} target="_blank" rel="noopener noreferrer">
+                    <img src={estimatePhoto} alt="estimate" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb', display: 'block' }} />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => { setEstimatePhoto(null); save({ estimate_photo: null }); }}
+                    style={{ position: 'absolute', top: -6, right: -6, width: 16, height: 16, background: '#dc2626', color: '#fff', border: '1px solid #fff', borderRadius: '50%', fontSize: 11, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}
+                  >×</button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => estimatePhotoRef.current?.click()}
+                  disabled={estimatePhotoUploading}
+                  style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151' }}
+                >
+                  {estimatePhotoUploading ? 'Uploading...' : '📷 Add photo'}
+                </button>
+              )}
             </div>
           </div>
         </div>

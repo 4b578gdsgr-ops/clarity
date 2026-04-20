@@ -834,6 +834,15 @@ export default function BookingStatusPage({ params }) {
             <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Estimated Cost
             </p>
+            {booking.estimate_photo && (
+              <a href={booking.estimate_photo} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: 12 }}>
+                <img
+                  src={booking.estimate_photo}
+                  alt="Estimate photo"
+                  style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb', display: 'block' }}
+                />
+              </a>
+            )}
             <p style={{ fontSize: 20, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
               Around ${Math.round(Number(booking.estimate_amount))}
             </p>
