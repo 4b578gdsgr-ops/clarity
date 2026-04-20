@@ -111,3 +111,21 @@ export async function POST(request) {
 
   return Response.json({ message: data }, { status: 201 });
 }
+
+// DELETE /api/messages?booking_id=xxx — clears all messages for a booking
+export async function DELETE(request) {
+  if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+
+  const { searchParams } = new URL(request.url);
+  const booking_id = searchParams.get('booking_id');
+  if (!booking_id) return Response.json({ error: 'booking_id required' }, { status: 400 });
+
+  const { error } = await supabaseAdmin
+    .from('service_messages')
+    .delete()
+    .eq('booking_id', booking_id);
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  return Response.json({ ok: true });
+}

@@ -467,6 +467,21 @@ function MessageThread({ bookingId, onMarkRead }) {
           {sending ? '...' : 'Send'}
         </button>
       </form>
+      {msgs.length > 0 && (
+        <div style={{ padding: '4px 14px 8px', background: '#fff', textAlign: 'right' }}>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!window.confirm('Clear all messages for this booking?')) return;
+              await fetch('/api/messages?booking_id=' + bookingId, { method: 'DELETE' });
+              setMsgs([]);
+            }}
+            style={{ background: 'none', border: 'none', fontSize: 11, color: '#9ca3af', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+          >
+            Clear messages
+          </button>
+        </div>
+      )}
     </div>
   );
 }

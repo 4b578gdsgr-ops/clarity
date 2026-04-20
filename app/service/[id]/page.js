@@ -846,8 +846,9 @@ export default function BookingStatusPage({ params }) {
               This is a rough estimate based on what we know so far. If we find anything else once we&apos;re in there, we&apos;ll let you know before doing any additional work. No surprises.
             </p>
             <a
-              href={'#messages'}
-              style={{ fontSize: 13, color: '#1a3328', textDecoration: 'underline' }}
+              href="#messages"
+              onClick={e => { e.preventDefault(); document.getElementById('messages')?.scrollIntoView({ behavior: 'smooth' }); }}
+              style={{ fontSize: 13, color: '#1a3328', textDecoration: 'underline', cursor: 'pointer' }}
             >
               Questions about this estimate?
             </a>
@@ -884,7 +885,7 @@ export default function BookingStatusPage({ params }) {
         ))}
 
         {/* Message thread */}
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+        <div id="messages" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid #f3f4f6', background: '#fafaf7' }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Got questions? We're here.</span>
           </div>
