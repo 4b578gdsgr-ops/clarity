@@ -3259,30 +3259,84 @@ export default function AdminServicePage() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7', paddingBottom: 60 }}>
-      <div style={{
-        background: '#0f1a14', padding: '14px 20px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <div style={{ display: 'flex', gap: 4 }}>
+      <style>{`
+        .admin-header {
+          background: #0f1a14;
+          padding: 14px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
+        }
+        .admin-tab-bar {
+          display: flex;
+          gap: 4px;
+        }
+        .admin-tab-btn {
+          padding: 7px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          cursor: pointer;
+          border: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-family: inherit;
+          white-space: nowrap;
+        }
+        .tab-short { display: none; }
+        .admin-header-actions {
+          display: flex;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        @media (max-width: 767px) {
+          .admin-header {
+            flex-direction: column;
+            padding: 10px 12px;
+            gap: 6px;
+          }
+          .admin-tab-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            width: 100%;
+          }
+          .admin-tab-btn {
+            padding: 7px 4px;
+            font-size: 12px;
+            justify-content: center;
+            text-align: center;
+          }
+          .tab-full { display: none; }
+          .tab-short { display: inline; }
+          .admin-header-actions {
+            width: 100%;
+            justify-content: flex-end;
+          }
+        }
+      `}</style>
+      <div className="admin-header">
+        <div className="admin-tab-bar">
           {[
-            { key: 'requests',     label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), badge: unreadCounts.total },
-            { key: 'plan',         label: 'Plan Route', badge: 0 },
-            { key: 'members',      label: 'Member Messages', badge: memberUnread },
-            { key: 'phone_leads',  label: 'Phone Leads', badge: 0 },
-            { key: 'email',        label: 'Send Email', badge: 0 },
+            { key: 'requests',    label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), short: 'Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), badge: unreadCounts.total },
+            { key: 'plan',        label: 'Plan Route',       short: 'Route',    badge: 0 },
+            { key: 'members',     label: 'Member Messages',  short: 'Members',  badge: memberUnread },
+            { key: 'phone_leads', label: 'Phone Leads',      short: 'Leads',    badge: 0 },
+            { key: 'email',       label: 'Send Email',       short: 'Email',    badge: 0 },
           ].map(t => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
+              className="admin-tab-btn"
               style={{
-                padding: '7px 16px', borderRadius: 8, fontSize: 14, cursor: 'pointer',
                 background: activeTab === t.key ? '#4ade80' : 'transparent',
                 color: activeTab === t.key ? '#0f1a14' : '#9ca3af',
-                border: 'none', fontWeight: activeTab === t.key ? 700 : 400,
-                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontWeight: activeTab === t.key ? 700 : 400,
               }}
             >
-              {t.label}
+              <span className="tab-full">{t.label}</span>
+              <span className="tab-short">{t.short}</span>
               {t.badge > 0 && (
                 <span style={{
                   width: 8, height: 8, background: '#dc2626', borderRadius: '50%',
@@ -3292,10 +3346,10 @@ export default function AdminServicePage() {
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="admin-header-actions">
           <button
             onClick={() => setNewBookingOpen(true)}
-            style={{ background: '#4ade80', border: 'none', color: '#0f1a14', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+            style={{ background: '#4ade80', border: 'none', color: '#0f1a14', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             + New Booking
           </button>
@@ -3310,13 +3364,13 @@ export default function AdminServicePage() {
               }
               setIcalOpen(o => !o);
             }}
-            style={{ background: 'none', border: '1px solid #6b7280', color: '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}
+            style={{ background: 'none', border: '1px solid #6b7280', color: '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             📅 Subscribe to calendar
           </button>
           <button
             onClick={load}
-            style={{ background: 'none', border: '1px solid #4ade80', color: '#4ade80', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}
+            style={{ background: 'none', border: '1px solid #4ade80', color: '#4ade80', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Refresh
           </button>
