@@ -1,4 +1,4 @@
-const CACHE = 'olo-v1';
+const CACHE = 'olo-v2';
 
 // Shell assets to cache on install
 const PRECACHE = [
@@ -26,9 +26,10 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Never intercept API calls, Supabase, or external requests
+  // Never intercept API calls, admin pages, Supabase, or external requests
   if (
     url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/admin/') ||
     url.hostname !== self.location.hostname
   ) {
     return;
