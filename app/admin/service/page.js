@@ -1534,7 +1534,12 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 const val = e.target.value;
                 setReturnDate(val);
                 setSaving('return');
-                save({ return_date: val || null }).then(() => setSaving(''));
+                save({
+                  return_date: val || null,
+                  delivery_address: null,
+                  delivery_preferred_day: null,
+                  delivery_preferred_time: null,
+                }).then(() => setSaving(''));
               }}
               style={{
                 padding: '6px 9px', borderRadius: 6, fontSize: 13, outline: 'none', cursor: 'pointer',
@@ -1696,6 +1701,25 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 Mark paid
               </button>
             )
+          )}
+          {booking.delivery_address && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm('Reset delivery confirmation? The customer will be prompted to re-confirm their delivery address.')) return;
+                await save({
+                  delivery_address: null,
+                  delivery_preferred_day: null,
+                  delivery_preferred_time: null,
+                });
+              }}
+              style={{
+                padding: '5px 12px', background: 'none', border: '1px solid #fca5a5',
+                borderRadius: 7, fontSize: 12, color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Reset delivery
+            </button>
           )}
           {onRebook && (
             <button
