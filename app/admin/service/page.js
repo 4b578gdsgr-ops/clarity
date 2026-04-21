@@ -255,25 +255,31 @@ function fmtDate(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
+function bNoun(booking) {
+  return (booking.bikes?.length || 1) > 1 ? 'bikes' : 'bike';
+}
+function bVerb(booking) {
+  return (booking.bikes?.length || 1) > 1 ? 'are' : 'is';
+}
+
 function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
   const name = booking.name;
   const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled Monday') +
     (time ? ' around ' + fmtTime(time) : '');
   const returnWhen = returnDate ? fmtDate(returnDate) : 'Friday';
-  const issues = booking.bikes?.length > 0
-    ? booking.bikes.flatMap(b => b.issues || []).join(', ').toLowerCase() || 'your bike'
-    : (booking.issues?.length > 0 ? booking.issues.join(', ').toLowerCase() : 'your bike');
+  const noun = bNoun(booking);
+  const verb = bVerb(booking);
   switch (newStatus) {
     case 'confirmed':
       return 'Hi ' + name + ', your pickup is confirmed for ' + pickupWhen + '. Plan on having it back by ' + returnWhen + '. We\'ll reach out when we\'re on the way. — One Love';
     case 'in_progress':
-      return 'Hi ' + name + ', we\'ve got your bike and we\'re working on it. Plan on having it back by ' + returnWhen + '. We\'ll keep you posted. — One Love';
+      return 'Hi ' + name + ', we\'ve got your ' + noun + ' and we\'re working on it. Plan on having it back by ' + returnWhen + '. We\'ll keep you posted. — One Love';
     case 'done':
-      return 'Hi ' + name + ', your bike is ready! We\'ll deliver it on ' + returnWhen + '. — One Love';
+      return 'Hi ' + name + ', your ' + noun + ' ' + verb + ' ready! We\'ll deliver it on ' + returnWhen + '. — One Love';
     case 'ready':
-      return 'Hi ' + name + ', your bike is ready! We\'ll deliver it on ' + returnWhen + '. We\'ll confirm an exact time closer to the day. — One Love';
+      return 'Hi ' + name + ', your ' + noun + ' ' + verb + ' ready! We\'ll deliver it on ' + returnWhen + '. We\'ll confirm an exact time closer to the day. — One Love';
     case 'out_for_delivery':
-      return 'Hi ' + name + ', your bike is on its way back. See you today. — One Love';
+      return 'Hi ' + name + ', your ' + noun + ' ' + verb + ' on the way back. See you today. — One Love';
     case 'complete':
       return 'Hi ' + name + ', delivered. Thanks for riding with us. — One Love';
     default:
@@ -823,11 +829,11 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
       }
       case 'in_progress':
       case 'picked_up':
-        return 'Hi ' + name + ', your bike is with us. We\'ll let you know when it\'s ready: ' + link + ' — One Love';
+        return 'Hi ' + name + ', your ' + bNoun(booking) + ' ' + bVerb(booking) + ' with us. We\'ll let you know when it\'s ready: ' + link + ' — One Love';
       case 'ready':
-        return 'Hi ' + name + ', your bike is ready. Confirm delivery details here: ' + link + ' — One Love';
+        return 'Hi ' + name + ', your ' + bNoun(booking) + ' ' + bVerb(booking) + ' ready. Confirm delivery details here: ' + link + ' — One Love';
       case 'out_for_delivery':
-        return 'Hi ' + name + ', we\'re on the way with your bike: ' + link + ' — One Love';
+        return 'Hi ' + name + ', we\'re on the way with your ' + bNoun(booking) + ': ' + link + ' — One Love';
       case 'complete':
       case 'done':
       case 'delivered':

@@ -5,8 +5,17 @@ import { isInServiceArea } from '../../../lib/serviceArea';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
+function bikeNoun(booking) {
+  return (booking.bikes?.length || 1) > 1 ? 'bikes' : 'bike';
+}
+function bikeVerb(booking) {
+  return (booking.bikes?.length || 1) > 1 ? 'are' : 'is';
+}
+
 function getStatusHeading(booking) {
   const { status, confirmed_date, confirmed_time, return_date } = booking;
+  const noun = bikeNoun(booking);
+  const verb = bikeVerb(booking);
   switch (status) {
     case 'new':
     case 'booked':
@@ -21,12 +30,12 @@ function getStatusHeading(booking) {
     }
     case 'picked_up': // legacy
     case 'in_progress':
-      return "Your bike is with us. Working on it.";
+      return `Your ${noun} ${verb} with us. Working on it.`;
     case 'ready': {
       const ret = return_date ? fmtDate(return_date) : '';
       return ret
-        ? `Your bike is dialed and ready to roll. We'll have it back to you ${ret}.`
-        : "Your bike is dialed and ready to roll.";
+        ? `Your ${noun} ${verb} dialed and ready to roll. We'll have it back to you ${ret}.`
+        : `Your ${noun} ${verb} dialed and ready to roll.`;
     }
     case 'out_for_delivery':
       return "On our way to you now.";
@@ -184,7 +193,7 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   return (
     <div style={{ background: '#fff', border: '2px solid #0ea5e9', borderRadius: 12, padding: 20, marginBottom: 20 }}>
       <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 14px' }}>
-        Your bike is ready. Where should we bring it?
+        {(booking.bikes?.length || 1) > 1 ? 'Your bikes are ready.' : 'Your bike is ready.'} Where should we bring {(booking.bikes?.length || 1) > 1 ? 'them' : 'it'}?
       </p>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
