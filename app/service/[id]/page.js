@@ -5,17 +5,25 @@ import { isInServiceArea } from '../../../lib/serviceArea';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
-function bikeNoun(booking) {
-  return (booking.bikes?.length || 1) > 1 ? 'bikes' : 'bike';
-}
-function bikeVerb(booking) {
-  return (booking.bikes?.length || 1) > 1 ? 'are' : 'is';
+function itemNoun(booking) {
+  const items = booking.bikes;
+  if (!items || items.length === 0) return { noun: 'bike', verb: 'is', them: 'it' };
+  const types = [...new Set(items.map(b => b.type || 'bike'))];
+  const count = items.length;
+  const plural = count > 1;
+  if (types.length > 1) return { noun: 'everything', verb: 'is', them: 'everything' };
+  switch (types[0]) {
+    case 'wheelset': return plural ? { noun: 'wheelsets', verb: 'are', them: 'them' } : { noun: 'wheelset', verb: 'is', them: 'it' };
+    case 'fork':     return plural ? { noun: 'forks',     verb: 'are', them: 'them' } : { noun: 'fork',     verb: 'is', them: 'it' };
+    case 'shock':    return plural ? { noun: 'shocks',    verb: 'are', them: 'them' } : { noun: 'shock',    verb: 'is', them: 'it' };
+    case 'other':    return plural ? { noun: 'items',     verb: 'are', them: 'them' } : { noun: 'item',     verb: 'is', them: 'it' };
+    default:         return plural ? { noun: 'bikes',     verb: 'are', them: 'them' } : { noun: 'bike',     verb: 'is', them: 'it' };
+  }
 }
 
 function getStatusHeading(booking) {
   const { status, confirmed_date, confirmed_time, return_date } = booking;
-  const noun = bikeNoun(booking);
-  const verb = bikeVerb(booking);
+  const { noun, verb } = itemNoun(booking);
   switch (status) {
     case 'new':
     case 'booked':
@@ -193,7 +201,7 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   return (
     <div style={{ background: '#fff', border: '2px solid #0ea5e9', borderRadius: 12, padding: 20, marginBottom: 20 }}>
       <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 14px' }}>
-        {(booking.bikes?.length || 1) > 1 ? 'Your bikes are ready.' : 'Your bike is ready.'} Where should we bring {(booking.bikes?.length || 1) > 1 ? 'them' : 'it'}?
+        {(() => { const { noun, verb, them } = itemNoun(booking); return `Your ${noun} ${verb} ready. Where should we bring ${them}?`; })()}
       </p>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>

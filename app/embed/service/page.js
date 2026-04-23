@@ -17,6 +17,40 @@ const BIKE_BRANDS = [
 
 const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
 
+const ITEM_TYPES = [
+  { value: 'bike',     label: 'Bike' },
+  { value: 'wheelset', label: 'Wheel/Wheelset' },
+  { value: 'fork',     label: 'Fork' },
+  { value: 'shock',    label: 'Shock' },
+  { value: 'other',    label: 'Other' },
+];
+
+const ISSUE_OPTIONS_BY_TYPE = {
+  bike:     ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'],
+  wheelset: ['True', 'Hub service', 'Spoke tension', 'Tubeless setup', 'Bearing replacement'],
+  fork:     ['Service', 'Seals', 'Damper', 'Air spring'],
+  shock:    ['Service', 'Seals', 'Damper', 'Air spring'],
+  other:    [],
+};
+
+const BRAND_PLACEHOLDER = {
+  bike:     '',
+  wheelset: 'e.g. Industry Nine, DT Swiss, Mavic...',
+  fork:     'e.g. Fox, RockShox, Marzocchi...',
+  shock:    'e.g. Fox, RockShox, Cane Creek...',
+  other:    'Brand or make (optional)',
+};
+
+function itemDisplayLabel(type) {
+  switch (type) {
+    case 'wheelset': return 'Wheel';
+    case 'fork':     return 'Fork';
+    case 'shock':    return 'Shock';
+    case 'other':    return 'Item';
+    default:         return 'Bike';
+  }
+}
+
 function getEstimateText(issues) {
   if (!issues.length) return '';
 
@@ -75,7 +109,7 @@ export default function EmbedService() {
     contact_preference: '',
     preferred_day: '', time_slot: '', notes: '',
   });
-  const [bikes, setBikes] = useState([{ brand: '', issues: [], notes: '' }]);
+  const [bikes, setBikes] = useState([{ type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -156,15 +190,19 @@ export default function EmbedService() {
 
   function addBike() {
     if (bikes.length >= 5) return;
-    setBikes(prev => [...prev, { brand: '', issues: [], notes: '' }]);
+    setBikes(prev => [...prev, { type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
   }
   function removeBike(idx) {
     setBikes(prev => prev.filter((_, i) => i !== idx));
     setErrors(er => ({ ...er, issues: '' }));
   }
   function updateBike(idx, key, val) {
-    setBikes(prev => prev.map((b, i) => i === idx ? { ...b, [key]: val } : b));
-    if (key === 'issues') setErrors(er => ({ ...er, issues: '' }));
+    setBikes(prev => prev.map((b, i) => {
+      if (i !== idx) return b;
+      if (key === 'type') return { ...b, type: val, issues: [], otherDescription: '' };
+      return { ...b, [key]: val };
+    }));
+    if (key === 'issues' || key === 'otherDescription') setErrors(er => ({ ...er, issues: '' }));
   }
   function toggleBikeIssue(idx, issue) {
     setBikes(prev => prev.map((b, i) => {
@@ -230,7 +268,7 @@ export default function EmbedService() {
     setOutside(false);
     setAddrQuery('');
     setForm({ name: '', phone: '', email: '', contact_preference: '', preferred_day: '', time_slot: '', notes: '' });
-    setBikes([{ brand: '', issues: [], notes: '' }]);
+    setBikes([{ type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
     setErrors({});
     setSubmitErr('');
     setBookingId(null);
@@ -477,20 +515,24 @@ export default function EmbedService() {
           </div>
         )}
 
-        {/* ── Bikes ── */}
+        {/* ── Items ── */}
         <div style={{ marginBottom: 12 }}>
           {bikes.map((bike, bikeIdx) => {
-            const bikeIsAssembly = bike.issues.includes('New bike assembly');
-            const bikeEstimate = getEstimateText(bike.issues);
+            const itemType = bike.type || 'bike';
+            const bikeIsAssembly = itemType === 'bike' && bike.issues.includes('New bike assembly');
+            const bikeEstimate = itemType === 'bike' ? getEstimateText(bike.issues) : null;
+            const issueOpts = ISSUE_OPTIONS_BY_TYPE[itemType] || [];
+            const displayLabel = itemDisplayLabel(itemType);
+            const headerLabel = bikes.length > 1
+              ? displayLabel + ' ' + (bikeIdx + 1)
+              : 'Your ' + displayLabel.toLowerCase();
             return (
               <div key={bikeIdx} style={{
                 border: '1px solid var(--ol-border)', borderRadius: 'var(--ol-radius-md)',
                 padding: 14, marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0,
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ol-text)' }}>
-                    {bikes.length > 1 ? 'Bike ' + (bikeIdx + 1) : 'Your bike'}
-                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ol-text)' }}>{headerLabel}</span>
                   {bikeIdx > 0 && (
                     <button type="button" onClick={() => removeBike(bikeIdx)} style={{
                       background: 'none', border: 'none', color: 'var(--ol-text-hint)',
@@ -498,32 +540,62 @@ export default function EmbedService() {
                     }}>×</button>
                   )}
                 </div>
+                {/* Type selector */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+                  {ITEM_TYPES.map(t => (
+                    <button key={t.value} type="button" onClick={() => updateBike(bikeIdx, 'type', t.value)} style={{
+                      padding: '4px 10px', borderRadius: 14, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                      border: itemType === t.value ? '2px solid var(--ol-chip-selected-border)' : '1px solid var(--ol-chip-border)',
+                      background: itemType === t.value ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
+                      color: itemType === t.value ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
+                    }}>{t.label}</button>
+                  ))}
+                </div>
+                {/* Brand */}
                 <div style={{ marginBottom: 8 }}>
                   <label style={lbl}>Brand</label>
-                  <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
-                    style={{ ...inp, color: bike.brand ? 'var(--ol-text)' : '#a0aec0' }}>
-                    <option value="">Select (optional)</option>
-                    {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
+                  {itemType === 'bike' ? (
+                    <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
+                      style={{ ...inp, color: bike.brand ? 'var(--ol-text)' : '#a0aec0' }}>
+                      <option value="">Select (optional)</option>
+                      {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  ) : (
+                    <input type="text" value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
+                      placeholder={BRAND_PLACEHOLDER[itemType] || 'Brand (optional)'}
+                      style={inp} />
+                  )}
                 </div>
-                <div style={{ marginBottom: 8 }}>
-                  <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#e53e3e' : '#4a5568' }}>
-                    What needs attention? {bikeIdx === 0 ? '*' : ''}
-                  </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {ISSUE_OPTIONS.map(issue => {
-                      const on = bike.issues.includes(issue);
-                      return (
-                        <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
-                          padding: '6px 13px', borderRadius: '20px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                          border: on ? '2px solid var(--ol-chip-selected-border)' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? 'var(--ol-border-error)' : 'var(--ol-chip-border)')),
-                          background: on ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
-                          color: on ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
-                        }}>{issue}</button>
-                      );
-                    })}
+                {/* Issues / description */}
+                {itemType === 'other' ? (
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? 'var(--ol-border-error)' : '#4a5568' }}>
+                      Tell us what you've got {bikeIdx === 0 ? '*' : ''}
+                    </label>
+                    <input type="text" value={bike.otherDescription || ''} onChange={e => updateBike(bikeIdx, 'otherDescription', e.target.value)}
+                      placeholder="Describe the item and what it needs..."
+                      style={{ ...inp, borderColor: errors.issues && bikeIdx === 0 ? 'var(--ol-border-error)' : undefined }} />
                   </div>
-                </div>
+                ) : (
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#e53e3e' : '#4a5568' }}>
+                      What needs attention? {bikeIdx === 0 ? '*' : ''}
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {issueOpts.map(issue => {
+                        const on = bike.issues.includes(issue);
+                        return (
+                          <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
+                            padding: '6px 13px', borderRadius: '20px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                            border: on ? '2px solid var(--ol-chip-selected-border)' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? 'var(--ol-border-error)' : 'var(--ol-chip-border)')),
+                            background: on ? 'var(--ol-chip-selected-bg)' : 'var(--ol-chip-bg)',
+                            color: on ? 'var(--ol-chip-selected-text)' : 'var(--ol-text-muted)',
+                          }}>{issue}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {bikeIsAssembly && (
                   <div style={{ marginBottom: 8 }}>
                     <label style={lbl}>Tell us about the bike (optional)</label>
@@ -547,7 +619,7 @@ export default function EmbedService() {
               borderRadius: 'var(--ol-radius-md)', fontSize: 13, cursor: 'pointer',
               color: 'var(--ol-text-muted)', fontFamily: 'inherit', width: '100%',
             }}>
-              + Add another bike
+              + Add another item
             </button>
           )}
         </div>

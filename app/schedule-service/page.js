@@ -15,6 +15,40 @@ const BIKE_BRANDS = [
 
 const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
 
+const ITEM_TYPES = [
+  { value: 'bike',     label: 'Bike' },
+  { value: 'wheelset', label: 'Wheel/Wheelset' },
+  { value: 'fork',     label: 'Fork' },
+  { value: 'shock',    label: 'Shock' },
+  { value: 'other',    label: 'Other' },
+];
+
+const ISSUE_OPTIONS_BY_TYPE = {
+  bike:     ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'],
+  wheelset: ['True', 'Hub service', 'Spoke tension', 'Tubeless setup', 'Bearing replacement'],
+  fork:     ['Service', 'Seals', 'Damper', 'Air spring'],
+  shock:    ['Service', 'Seals', 'Damper', 'Air spring'],
+  other:    [],
+};
+
+const BRAND_PLACEHOLDER = {
+  bike:     '',
+  wheelset: 'e.g. Industry Nine, DT Swiss, Mavic...',
+  fork:     'e.g. Fox, RockShox, Marzocchi...',
+  shock:    'e.g. Fox, RockShox, Cane Creek...',
+  other:    'Brand or make (optional)',
+};
+
+function itemDisplayLabel(type) {
+  switch (type) {
+    case 'wheelset': return 'Wheel';
+    case 'fork':     return 'Fork';
+    case 'shock':    return 'Shock';
+    case 'other':    return 'Item';
+    default:         return 'Bike';
+  }
+}
+
 function getEstimateText(issues) {
   if (!issues.length) return '';
   if (issues.includes('New bike assembly')) {
@@ -168,7 +202,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
     address: address || '',
     preferred_day: '', time_slot: '', notes: '',
   });
-  const [bikes, setBikes] = useState([{ brand: '', issues: [], notes: '' }]);
+  const [bikes, setBikes] = useState([{ type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -181,15 +215,19 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
 
   function addBike() {
     if (bikes.length >= 5) return;
-    setBikes(prev => [...prev, { brand: '', issues: [], notes: '' }]);
+    setBikes(prev => [...prev, { type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
   }
   function removeBike(idx) {
     setBikes(prev => prev.filter((_, i) => i !== idx));
     setErrors(e => ({ ...e, issues: '' }));
   }
   function updateBike(idx, key, val) {
-    setBikes(prev => prev.map((b, i) => i === idx ? { ...b, [key]: val } : b));
-    if (key === 'issues') setErrors(e => ({ ...e, issues: '' }));
+    setBikes(prev => prev.map((b, i) => {
+      if (i !== idx) return b;
+      if (key === 'type') return { ...b, type: val, issues: [], otherDescription: '' };
+      return { ...b, [key]: val };
+    }));
+    if (key === 'issues' || key === 'otherDescription') setErrors(e => ({ ...e, issues: '' }));
   }
   function toggleBikeIssue(idx, issue) {
     setBikes(prev => prev.map((b, i) => {
@@ -316,17 +354,21 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
 
         <div style={{ marginBottom: 16 }}>
           {bikes.map((bike, bikeIdx) => {
-            const bikeIsAssembly = bike.issues.includes('New bike assembly');
-            const bikeEstimate = getEstimateText(bike.issues);
+            const itemType = bike.type || 'bike';
+            const bikeIsAssembly = itemType === 'bike' && bike.issues.includes('New bike assembly');
+            const bikeEstimate = itemType === 'bike' ? getEstimateText(bike.issues) : null;
+            const issueOpts = ISSUE_OPTIONS_BY_TYPE[itemType] || [];
+            const displayLabel = itemDisplayLabel(itemType);
+            const headerLabel = bikes.length > 1
+              ? displayLabel + ' ' + (bikeIdx + 1)
+              : 'Your ' + displayLabel.toLowerCase();
             return (
               <div key={bikeIdx} style={{
                 border: '1px solid #d1d5db', borderRadius: 10, padding: 14,
                 marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0,
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14' }}>
-                    {bikes.length > 1 ? 'Bike ' + (bikeIdx + 1) : 'Your bike'}
-                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14' }}>{headerLabel}</span>
                   {bikeIdx > 0 && (
                     <button type="button" onClick={() => removeBike(bikeIdx)} style={{
                       background: 'none', border: 'none', color: '#9ca3af',
@@ -334,32 +376,62 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
                     }}>×</button>
                   )}
                 </div>
+                {/* Type selector */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                  {ITEM_TYPES.map(t => (
+                    <button key={t.value} type="button" onClick={() => updateBike(bikeIdx, 'type', t.value)} style={{
+                      padding: '5px 12px', borderRadius: 16, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                      border: itemType === t.value ? '2px solid #1a3328' : '1px solid #d1d5db',
+                      background: itemType === t.value ? '#1a3328' : '#fff',
+                      color: itemType === t.value ? '#fff' : '#374151',
+                    }}>{t.label}</button>
+                  ))}
+                </div>
+                {/* Brand — dropdown for bikes, text input for everything else */}
                 <div style={{ marginBottom: 10 }}>
                   <label style={lbl}>Brand</label>
-                  <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
-                    style={{ ...inp, color: bike.brand ? '#111827' : '#9ca3af' }}>
-                    <option value="">Select (optional)</option>
-                    {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
+                  {itemType === 'bike' ? (
+                    <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
+                      style={{ ...inp, color: bike.brand ? '#111827' : '#9ca3af' }}>
+                      <option value="">Select (optional)</option>
+                      {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  ) : (
+                    <input type="text" value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
+                      placeholder={BRAND_PLACEHOLDER[itemType] || 'Brand (optional)'}
+                      style={inp} />
+                  )}
                 </div>
-                <div style={{ marginBottom: 8 }}>
-                  <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
-                    What needs attention? {bikeIdx === 0 ? '*' : ''}
-                  </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {ISSUE_OPTIONS.map(issue => {
-                      const on = bike.issues.includes(issue);
-                      return (
-                        <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
-                          padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                          border: on ? '2px solid #1a3328' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db')),
-                          background: on ? '#1a3328' : '#fff',
-                          color: on ? '#fff' : '#374151',
-                        }}>{issue}</button>
-                      );
-                    })}
+                {/* Issues / description */}
+                {itemType === 'other' ? (
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
+                      Tell us what you've got {bikeIdx === 0 ? '*' : ''}
+                    </label>
+                    <input type="text" value={bike.otherDescription || ''} onChange={e => updateBike(bikeIdx, 'otherDescription', e.target.value)}
+                      placeholder="Describe the item and what it needs..."
+                      style={{ ...inp, borderColor: errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db' }} />
                   </div>
-                </div>
+                ) : (
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
+                      What needs attention? {bikeIdx === 0 ? '*' : ''}
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {issueOpts.map(issue => {
+                        const on = bike.issues.includes(issue);
+                        return (
+                          <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
+                            padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                            border: on ? '2px solid #1a3328' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db')),
+                            background: on ? '#1a3328' : '#fff',
+                            color: on ? '#fff' : '#374151',
+                          }}>{issue}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {bikeIsAssembly && (
                   <div style={{ marginBottom: 8 }}>
                     <label style={lbl}>Tell us about the bike (optional)</label>
@@ -382,7 +454,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
               border: '1px dashed #d1d5db', borderRadius: 8, fontSize: 14, cursor: 'pointer',
               color: '#6b7280', fontFamily: 'inherit', width: '100%',
             }}>
-              + Add another bike
+              + Add another item
             </button>
           )}
         </div>

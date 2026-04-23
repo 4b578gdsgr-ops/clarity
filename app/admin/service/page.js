@@ -255,12 +255,23 @@ function fmtDate(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
-function bNoun(booking) {
-  return (booking.bikes?.length || 1) > 1 ? 'bikes' : 'bike';
+function itemNounAdmin(booking) {
+  const items = booking.bikes;
+  if (!items || items.length === 0) return { noun: 'bike', verb: 'is' };
+  const types = [...new Set(items.map(b => b.type || 'bike'))];
+  const count = items.length;
+  const plural = count > 1;
+  if (types.length > 1) return { noun: 'everything', verb: 'is' };
+  switch (types[0]) {
+    case 'wheelset': return plural ? { noun: 'wheelsets', verb: 'are' } : { noun: 'wheelset', verb: 'is' };
+    case 'fork':     return plural ? { noun: 'forks',     verb: 'are' } : { noun: 'fork',     verb: 'is' };
+    case 'shock':    return plural ? { noun: 'shocks',    verb: 'are' } : { noun: 'shock',    verb: 'is' };
+    case 'other':    return plural ? { noun: 'items',     verb: 'are' } : { noun: 'item',     verb: 'is' };
+    default:         return plural ? { noun: 'bikes',     verb: 'are' } : { noun: 'bike',     verb: 'is' };
+  }
 }
-function bVerb(booking) {
-  return (booking.bikes?.length || 1) > 1 ? 'are' : 'is';
-}
+function bNoun(booking) { return itemNounAdmin(booking).noun; }
+function bVerb(booking) { return itemNounAdmin(booking).verb; }
 
 function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
   const name = booking.name;
@@ -1166,27 +1177,48 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
 
         {bookingBikes !== null ? (
           <div style={{ marginBottom: 10 }}>
-            {bookingBikes.map((bike, i) => (
+            {bookingBikes.map((bike, i) => {
+              const itemType = bike.type || 'bike';
+              const issueOpts = ISSUE_OPTIONS_BY_TYPE[itemType] || ISSUE_OPTIONS;
+              return (
               <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', marginBottom: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Bike {i + 1}
+                    {itemTypeLabel(itemType)} {bookingBikes.length > 1 ? i + 1 : ''}
                   </span>
                   {bookingBikes.length > 1 && (
                     <button
                       type="button"
                       onClick={() => {
-                        if (!window.confirm('Remove this bike?')) return;
+                        if (!window.confirm('Remove this item?')) return;
                         const next = bookingBikes.filter((_, j) => j !== i);
                         setBookingBikes(next);
                         saveBikes(next);
                       }}
                       style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 14, lineHeight: 1, cursor: 'pointer', padding: '0 2px', fontFamily: 'inherit' }}
-                      title="Remove bike"
+                      title="Remove item"
                     >
                       ×
                     </button>
                   )}
+                </div>
+                {/* Type selector */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+                  {ADMIN_ITEM_TYPES.map(t => (
+                    <button key={t.value} type="button" onClick={() => {
+                      const next = bookingBikes.map((b, j) => j === i
+                        ? { ...b, type: t.value, issues: [], otherDescription: '' }
+                        : b);
+                      setBookingBikes(next);
+                      saveBikes(next);
+                    }} style={{
+                      padding: '2px 8px', borderRadius: 10, fontSize: 10, cursor: 'pointer', fontFamily: 'inherit',
+                      border: '1px solid ' + (itemType === t.value ? '#1a3328' : '#e5e7eb'),
+                      background: itemType === t.value ? '#1a3328' : '#f9fafb',
+                      color: itemType === t.value ? '#fff' : '#6b7280',
+                      fontWeight: itemType === t.value ? 600 : 400,
+                    }}>{t.label}</button>
+                  ))}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
                   <input
@@ -1204,51 +1236,62 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
                   />
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {ISSUE_OPTIONS.map(opt => {
-                    const active = (bike.issues || []).includes(opt);
-                    return (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => {
-                          const next = bookingBikes.map((b, j) => {
-                            if (j !== i) return b;
-                            const issues = active
-                              ? (b.issues || []).filter(x => x !== opt)
-                              : [...(b.issues || []), opt];
-                            return { ...b, issues };
-                          });
-                          setBookingBikes(next);
-                          saveBikes(next);
-                        }}
-                        style={{
-                          padding: '3px 10px', borderRadius: 12, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
-                          border: '1px solid ' + (active ? '#1a3328' : '#e5e7eb'),
-                          background: active ? '#1a3328' : '#f9fafb',
-                          color: active ? '#fff' : '#6b7280',
-                          fontWeight: active ? 600 : 400,
-                          transition: 'all 0.1s',
-                        }}
-                      >
-                        {opt}
-                      </button>
-                    );
-                  })}
-                </div>
+                {itemType === 'other' ? (
+                  <input
+                    placeholder="What is it? What does it need?"
+                    value={bike.otherDescription || ''}
+                    onChange={e => setBookingBikes(bookingBikes.map((b, j) => j === i ? { ...b, otherDescription: e.target.value } : b))}
+                    onBlur={() => saveBikes(bookingBikes)}
+                    style={{ width: '100%', padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                  />
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {issueOpts.map(opt => {
+                      const active = (bike.issues || []).includes(opt);
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            const next = bookingBikes.map((b, j) => {
+                              if (j !== i) return b;
+                              const issues = active
+                                ? (b.issues || []).filter(x => x !== opt)
+                                : [...(b.issues || []), opt];
+                              return { ...b, issues };
+                            });
+                            setBookingBikes(next);
+                            saveBikes(next);
+                          }}
+                          style={{
+                            padding: '3px 10px', borderRadius: 12, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                            border: '1px solid ' + (active ? '#1a3328' : '#e5e7eb'),
+                            background: active ? '#1a3328' : '#f9fafb',
+                            color: active ? '#fff' : '#6b7280',
+                            fontWeight: active ? 600 : 400,
+                            transition: 'all 0.1s',
+                          }}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 type="button"
                 onClick={() => {
-                  const next = [...bookingBikes, { name: '', brand: '', issues: [], notes: '' }];
+                  const next = [...bookingBikes, { type: 'bike', name: '', brand: '', issues: [], notes: '', otherDescription: '' }];
                   setBookingBikes(next);
                   saveBikes(next);
                 }}
                 style={{ fontSize: 12, color: '#6b7280', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                + Add bike
+                + Add item
               </button>
               {bikesSaving && <span style={{ fontSize: 11, color: '#9ca3af' }}>Saving...</span>}
               {bikesSaved && !bikesSaving && <span style={{ fontSize: 11, color: '#16a34a' }}>Saved ✓</span>}
@@ -1283,7 +1326,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
               }}
               style={{ fontSize: 12, color: '#6b7280', background: 'none', border: '1px dashed #d1d5db', borderRadius: 7, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              + Add bike
+              + Add item
             </button>
           </div>
         )}
@@ -2739,6 +2782,32 @@ const BIKE_BRANDS = [
 ];
 
 const ISSUE_OPTIONS = ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'];
+
+const ISSUE_OPTIONS_BY_TYPE = {
+  bike:     ['Shifting', 'Brakes', 'Wheels', 'Suspension', 'Drivetrain', 'Tune-up', 'New bike assembly', 'Other'],
+  wheelset: ['True', 'Hub service', 'Spoke tension', 'Tubeless setup', 'Bearing replacement'],
+  fork:     ['Service', 'Seals', 'Damper', 'Air spring'],
+  shock:    ['Service', 'Seals', 'Damper', 'Air spring'],
+  other:    [],
+};
+
+const ADMIN_ITEM_TYPES = [
+  { value: 'bike',     label: 'Bike' },
+  { value: 'wheelset', label: 'Wheel' },
+  { value: 'fork',     label: 'Fork' },
+  { value: 'shock',    label: 'Shock' },
+  { value: 'other',    label: 'Other' },
+];
+
+function itemTypeLabel(type) {
+  switch (type) {
+    case 'wheelset': return 'Wheel';
+    case 'fork':     return 'Fork';
+    case 'shock':    return 'Shock';
+    case 'other':    return 'Other';
+    default:         return 'Bike';
+  }
+}
 
 const ALL_STATUSES = [
   { value: 'new',             label: 'New'             },
