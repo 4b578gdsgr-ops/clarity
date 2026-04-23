@@ -1169,7 +1169,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
           {booking.delivery_address && (
             <span style={{ color: '#0369a1' }}>
               <strong>Delivery to: </strong>{booking.delivery_address}
-              {booking.delivery_preferred_day && ' — ' + booking.delivery_preferred_day}
+              {booking.delivery_preferred_day && ' — ' + (booking.delivery_preferred_day.includes('-') ? fmtDate(booking.delivery_preferred_day) : booking.delivery_preferred_day)}
               {booking.delivery_preferred_time && ' around ' + fmtTime(booking.delivery_preferred_time)}
             </span>
           )}
@@ -2127,7 +2127,14 @@ function PlanRouteView({ allBookings, onRefresh }) {
       .filter(b => b.confirmed_date === date && ['new', 'confirmed'].includes(b.status))
       .map(b => ({ ...b, _stopType: 'pickup' }));
     const deliveries = allBookings
-      .filter(b => b.return_date === date && ['ready', 'out_for_delivery'].includes(b.status))
+      .filter(b => ['ready', 'out_for_delivery'].includes(b.status))
+      .filter(b => {
+        // Prefer customer-confirmed delivery date; fall back to admin-set return date
+        const delivDate = (b.delivery_preferred_day && b.delivery_preferred_day.includes('-'))
+          ? b.delivery_preferred_day
+          : b.return_date;
+        return delivDate === date;
+      })
       .map(b => ({ ...b, _stopType: 'delivery' }));
     const dayBookings = [...pickups, ...deliveries];
     const t = {};

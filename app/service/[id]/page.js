@@ -99,6 +99,28 @@ function fmtDate(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
+// Returns the next occurrence of a named weekday as a YYYY-MM-DD string
+function nextOccurrence(dayName) {
+  const days = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6, Sunday: 0 };
+  const target = days[dayName];
+  if (target === undefined) return '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let diff = target - today.getDay();
+  if (diff <= 0) diff += 7;
+  const result = new Date(today);
+  result.setDate(today.getDate() + diff);
+  const mo = String(result.getMonth() + 1).padStart(2, '0');
+  const d = String(result.getDate()).padStart(2, '0');
+  return `${result.getFullYear()}-${mo}-${d}`;
+}
+
+// Pre-compute delivery date options so they're stable during a session
+const DELIVERY_DATE_OPTIONS = ['Monday', 'Wednesday', 'Friday'].map(day => ({
+  date: nextOccurrence(day),
+  label: fmtDate(nextOccurrence(day)),
+}));
+
 function fmtTime(timeStr) {
   if (!timeStr) return '';
   const [h, m] = timeStr.split(':').map(Number);
@@ -299,9 +321,9 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
               <label style={lbl}>Preferred day</label>
               <select value={deliveryDay} onChange={e => setDeliveryDay(e.target.value)} style={{ ...inp, color: deliveryDay ? '#111827' : '#9ca3af' }}>
                 <option value="">No preference</option>
-                <option value="Monday">Monday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Friday">Friday</option>
+                {DELIVERY_DATE_OPTIONS.map(opt => (
+                  <option key={opt.date} value={opt.date}>{opt.label}</option>
+                ))}
               </select>
             </div>
             <div>
