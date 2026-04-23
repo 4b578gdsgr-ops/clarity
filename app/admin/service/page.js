@@ -960,13 +960,15 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
       return;
     }
     setAdvancing(true);
-    await patch({
-      status: action.next,
-      confirmed_date: confirmDate || null,
-      confirmed_time: confirmTime || null,
-      return_date: returnDate || null,
-      delivery_time: deliveryTime || null,
-    });
+    const payload = { status: action.next };
+    if (action.next === 'confirmed') {
+      payload.confirmed_date = confirmDate || null;
+      payload.confirmed_time = confirmTime || null;
+      if (returnDate) payload.return_date = returnDate;
+    } else if (action.next === 'out_for_delivery') {
+      if (deliveryTime) payload.delivery_time = deliveryTime;
+    }
+    await patch(payload);
     setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime, returnDate));
     setCopied(false);
     setAdvancing(false);
@@ -1583,12 +1585,11 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 const val = e.target.value;
                 setReturnDate(val);
                 setSaving('return');
-                save({
-                  return_date: val || null,
-                  delivery_address: null,
-                  delivery_preferred_day: null,
-                  delivery_preferred_time: null,
-                }).then(() => setSaving(''));
+                // Only wipe delivery confirmation if none exists yet — use the explicit Reset button to clear an existing one
+                const wipeDelivery = !booking.delivery_address
+                  ? { delivery_address: null, delivery_preferred_day: null, delivery_preferred_time: null }
+                  : {};
+                save({ return_date: val || null, ...wipeDelivery }).then(() => setSaving(''));
               }}
               style={{
                 padding: '6px 9px', borderRadius: 6, fontSize: 13, outline: 'none', cursor: 'pointer',

@@ -52,7 +52,7 @@ export async function PATCH(request, { params }) {
     return Response.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
-  console.log('[PATCH /api/bookings/' + id + '] fields:', Object.keys(update), update.bikes !== undefined ? '| bikes:' + JSON.stringify(update.bikes) : '');
+  console.log('[PATCH /api/bookings/' + id + '] full payload:', JSON.stringify(update));
 
   const { data, error } = await supabaseAdmin
     .from('service_bookings')
