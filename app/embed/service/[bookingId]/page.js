@@ -134,6 +134,7 @@ const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 
 function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   const already = !!booking.delivery_address;
   const [mode, setMode] = useState(already ? 'same' : null); // null | 'same' | 'different'
+  const [sameAddr, setSameAddr] = useState(booking.delivery_address || booking.address || '');
   const [pin, setPin] = useState(null);
   const [pinAddress, setPinAddress] = useState('');
   const [pinOutside, setPinOutside] = useState(false);
@@ -146,7 +147,7 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   const [err, setErr] = useState('');
 
   const deliveryAddress = mode === 'same'
-    ? (booking.delivery_address || booking.address || '')
+    ? sameAddr
     : pinAddress || (pin ? `${Number(pin.lat).toFixed(5)}, ${Number(pin.lng).toFixed(5)}` : '');
 
   function applyPin(lat, lng, resolved) {
@@ -229,7 +230,7 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <button
           type="button"
-          onClick={() => { setMode('same'); setErr(''); }}
+          onClick={() => { setMode('same'); setSameAddr(booking.address || booking.delivery_address || ''); setErr(''); }}
           style={{
             flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
             border: mode === 'same' ? '2px solid #16a34a' : '1px solid #d1d5db',
