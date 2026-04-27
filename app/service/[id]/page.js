@@ -228,10 +228,18 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   }
 
   if (phase === 'confirmed') {
+    const day  = booking.delivery_preferred_day  || deliveryDay;
+    const time = booking.delivery_preferred_time || deliveryTime;
+    const dayFmt  = day  ? fmtDate(day)  : '';
+    const timeFmt = time ? fmtTime(time) : '';
+    const when = dayFmt && timeFmt ? `${dayFmt} around ${timeFmt}` : dayFmt || '';
     return (
       <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Delivery details confirmed.</p>
-        <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Got it. We'll confirm the exact time.</p>
+        {when
+          ? <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Delivery: {when}</p>
+          : <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Got it. We'll confirm the exact time.</p>
+        }
       </div>
     );
   }
