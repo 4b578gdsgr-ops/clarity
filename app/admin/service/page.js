@@ -1128,6 +1128,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
               </span>
             )}
             {booking.status === 'confirmed' && booking.confirmed_date && (() => {
+              console.log('[admin badge] booking', booking.id, '| confirmed_by_customer:', booking.confirmed_by_customer, '| customer_confirmed_at:', booking.customer_confirmed_at, '| confirmed_date:', booking.confirmed_date);
               if (booking.confirmed_by_customer) {
                 return (
                   <span style={{
@@ -1141,21 +1142,12 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                   </span>
                 );
               }
-              // Check if more than 24h since last_notified_status was set to confirmed
-              const isUnconfirmed = (() => {
-                if (!booking.customer_confirmed_at && booking.last_notified_status === 'confirmed') {
-                  // Use confirmed_date as a rough proxy — if pickup day is today or past, it's overdue
-                  if (booking.confirmed_date) {
-                    const [y, m, d] = booking.confirmed_date.split('-').map(Number);
-                    const pickup = new Date(y, m - 1, d);
-                    const now = new Date();
-                    now.setHours(0, 0, 0, 0);
-                    return pickup <= now;
-                  }
-                }
-                return false;
-              })();
-              if (isUnconfirmed) {
+              // Pickup is today or in the past — overdue for confirmation
+              const [y, m, d] = booking.confirmed_date.split('-').map(Number);
+              const pickup = new Date(y, m - 1, d);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              if (pickup <= today) {
                 return (
                   <span style={{
                     marginLeft: 8,
@@ -1168,20 +1160,18 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                   </span>
                 );
               }
-              if (booking.last_notified_status === 'confirmed') {
-                return (
-                  <span style={{
-                    marginLeft: 8,
-                    background: '#fff7ed', color: '#c2410c',
-                    border: '1px solid #fed7aa',
-                    borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
-                    textTransform: 'uppercase', letterSpacing: '0.06em',
-                  }}>
-                    Awaiting confirmation
-                  </span>
-                );
-              }
-              return null;
+              // Pickup is in the future — waiting for customer
+              return (
+                <span style={{
+                  marginLeft: 8,
+                  background: '#fff7ed', color: '#c2410c',
+                  border: '1px solid #fed7aa',
+                  borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>
+                  Awaiting confirmation
+                </span>
+              );
             })()}
             {reminderSent && (
               <span style={{
