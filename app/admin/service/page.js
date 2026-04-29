@@ -243,6 +243,7 @@ const STATUS_COLOR = {
   complete:        '#16a34a',
   done:            '#16a34a',
   cancelled:       '#9ca3af',
+  no_show:         '#dc2626',
   booked:          '#f59e0b',
   delivered:       '#16a34a',
 };
@@ -544,7 +545,7 @@ async function uploadInspPhoto(file) {
 
 // ─── BookingCard ──────────────────────────────────────────────────────────────
 
-function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook }) {
+function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook, previousNoShow }) {
   const [confirmDate, setConfirmDate] = useState(booking.confirmed_date || '');
   const [confirmTime, setConfirmTime] = useState(booking.confirmed_time || '');
   const [returnDate, setReturnDate] = useState(booking.return_date || (booking.confirmed_date ? pickupToReturn(booking.confirmed_date) : ''));
@@ -580,6 +581,8 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   const [inspSaved, setInspSaved] = useState(false);
   const [inspSaveErr, setInspSaveErr] = useState('');
   const [paymentStatus, setPaymentStatus] = useState(booking.payment_status || '');
+  const [reminderSent, setReminderSent] = useState(!!booking.reminder_sent);
+  const [reminding, setReminding] = useState(false);
   const [bookingBikes, setBookingBikes] = useState(booking.bikes?.length > 0 ? booking.bikes : null);
   const [bikesSaving, setBikesSaving] = useState(false);
   const [bikesSaved, setBikesSaved] = useState(false);
@@ -991,6 +994,26 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
     onRefresh();
   }
 
+  async function sendReminder() {
+    setReminding(true);
+    try {
+      const res = await fetch('/api/bookings/' + booking.id + '/remind', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'Failed to send reminder'); return; }
+      if (data.type === 'sms') {
+        navigator.clipboard.writeText(data.smsText).catch(() => {});
+        alert('SMS text copied to clipboard.');
+      }
+      setReminderSent(true);
+    } catch { alert('Network error — try again.'); }
+    finally { setReminding(false); }
+  }
+
+  async function handleNoShow() {
+    if (!window.confirm('Mark as no-show? This will record it for future reference.')) return;
+    await patch({ status: 'no_show' });
+  }
+
   const action = NEXT_ACTION[booking.status];
   const color = STATUS_COLOR[booking.status] || '#9ca3af';
 
@@ -1093,6 +1116,28 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 Awaiting delivery details
               </span>
             )}
+            {booking.status === 'no_show' && (
+              <span style={{
+                marginLeft: 8,
+                background: '#fef2f2', color: '#dc2626',
+                border: '1px solid #fecaca',
+                borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                No show
+              </span>
+            )}
+            {reminderSent && (
+              <span style={{
+                marginLeft: 8,
+                background: '#f0fdf4', color: '#166534',
+                border: '1px solid #bbf7d0',
+                borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Reminded ✓
+              </span>
+            )}
           </div>
           <span style={{
             background: color + '22', color, border: '1px solid ' + color + '55',
@@ -1101,6 +1146,12 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
             {booking.status}
           </span>
         </div>
+
+        {previousNoShow && (
+          <div style={{ background: '#fefce8', border: '1px solid #fde047', borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#854d0e' }}>
+            ⚠ Previous no-show on {previousNoShow.confirmed_date || previousNoShow.created_at?.slice(0, 10) || 'unknown date'}
+          </div>
+        )}
 
         <div style={{ fontSize: 13, color: '#374151', display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 12 }}>
           {booking.phone && (
@@ -1752,6 +1803,31 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
               </button>
             )
           )}
+          {booking.status === 'confirmed' && (
+            reminderSent ? (
+              <span style={{ padding: '5px 12px', fontSize: 12, color: '#9ca3af', border: '1px solid #e5e7eb', borderRadius: 7, background: '#f9fafb' }}>
+                Reminded ✓
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={sendReminder}
+                disabled={reminding}
+                style={{ padding: '5px 12px', background: 'none', border: '1px solid #bfdbfe', borderRadius: 7, fontSize: 12, color: '#1d4ed8', cursor: reminding ? 'default' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {reminding ? '...' : 'Send reminder'}
+              </button>
+            )
+          )}
+          {booking.status === 'confirmed' && (
+            <button
+              type="button"
+              onClick={handleNoShow}
+              style={{ padding: '5px 12px', background: 'none', border: '1px solid #fca5a5', borderRadius: 7, fontSize: 12, color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              No show
+            </button>
+          )}
           {booking.delivery_address && (
             <button
               type="button"
@@ -2367,8 +2443,17 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
     { key: 'ready',           label: 'Ready'           },
     { key: 'out_for_delivery',label: 'Out for Delivery'},
     { key: 'complete',        label: 'Complete'        },
+    { key: 'no_show',         label: 'No Show'         },
     { key: 'all',             label: 'All'             },
   ];
+
+  // Build a lookup: phone/email → earliest no-show booking for warning display
+  const noShowByContact = {};
+  for (const b of bookings) {
+    if (b.status !== 'no_show') continue;
+    if (b.phone) noShowByContact[b.phone] = noShowByContact[b.phone] || b;
+    if (b.email) noShowByContact[b.email] = noShowByContact[b.email] || b;
+  }
 
   const counts = {};
   for (const b of bookings) {
@@ -2427,11 +2512,14 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
   }
 
   // picked_up is legacy — show under in_progress tab
+  // no_show only shows in its own tab or 'all' — hide from other tabs
   const filtered = filter === 'all'
     ? bookings
     : filter === 'in_progress'
       ? bookings.filter(b => b.status === 'in_progress' || b.status === 'picked_up')
-      : bookings.filter(b => b.status === filter);
+      : filter === 'no_show'
+        ? bookings.filter(b => b.status === 'no_show')
+        : bookings.filter(b => b.status === filter && b.status !== 'no_show');
 
   return (
     <div>
@@ -2471,9 +2559,14 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
         </p>
       )}
 
-      {filtered.map(b => (
-        <BookingCard key={b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} onRebook={onRebook} />
-      ))}
+      {filtered.map(b => {
+        const prevNoShow = b.status !== 'no_show'
+          ? (noShowByContact[b.phone] || noShowByContact[b.email] || null)
+          : null;
+        return (
+          <BookingCard key={b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} onRebook={onRebook} previousNoShow={prevNoShow} />
+        );
+      })}
     </div>
   );
 }

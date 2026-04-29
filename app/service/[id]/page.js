@@ -51,6 +51,8 @@ function getStatusHeading(booking) {
     case 'done':
     case 'delivered':
       return "Delivered. You're golden.";
+    case 'no_show':
+      return "We came by but missed you. Reach out when you're ready to reschedule.";
     default:
       return "We got you. We'll reach out shortly to set up a time.";
   }
@@ -59,6 +61,7 @@ function getStatusHeading(booking) {
 const STATUS_LABEL = {
   new:             'Request received',
   confirmed:       'Confirmed',
+  no_show:         'Missed pickup',
   picked_up:       'Picked up',
   in_progress:     'In progress',
   ready:           'Ready for delivery',

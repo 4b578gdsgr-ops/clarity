@@ -2,7 +2,7 @@ import { supabaseAdmin } from '../../../../lib/supabase';
 import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
 
 const VALID_STATUSES = [
-  'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled',
+  'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled', 'no_show',
   // legacy values kept for backwards compat
   'booked', 'done', 'delivered',
 ];
@@ -38,7 +38,8 @@ export async function PATCH(request, { params }) {
                    'name', 'phone', 'email', 'last_notified_status',
                    'delivery_address', 'delivery_preferred_day', 'delivery_preferred_time',
                    'lat', 'lng', 'shop_photos', 'bikes', 'payment_status',
-                   'estimate_amount', 'estimate_notes', 'estimate_photo'];
+                   'estimate_amount', 'estimate_notes', 'estimate_photo',
+                   'reminder_sent'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];
