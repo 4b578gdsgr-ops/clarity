@@ -839,7 +839,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
       case 'confirmed': {
         const day = confirmDate ? fmtDate(confirmDate) : 'the scheduled day';
         const time = confirmTime ? ' around ' + fmtTime(confirmTime) : '';
-        return 'Hi ' + name + ', your pickup is confirmed for ' + day + time + '. Track here: ' + link + ' — One Love';
+        return 'Hi ' + name + ', we\'d like to pick up ' + day + time + '. Can you confirm here: ' + link + ' — One Love';
       }
       case 'in_progress':
       case 'picked_up':
@@ -1127,6 +1127,62 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 No show
               </span>
             )}
+            {booking.status === 'confirmed' && booking.confirmed_date && (() => {
+              if (booking.confirmed_by_customer) {
+                return (
+                  <span style={{
+                    marginLeft: 8,
+                    background: '#f0fdf4', color: '#166534',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                  }}>
+                    Customer confirmed ✓
+                  </span>
+                );
+              }
+              // Check if more than 24h since last_notified_status was set to confirmed
+              const isUnconfirmed = (() => {
+                if (!booking.customer_confirmed_at && booking.last_notified_status === 'confirmed') {
+                  // Use confirmed_date as a rough proxy — if pickup day is today or past, it's overdue
+                  if (booking.confirmed_date) {
+                    const [y, m, d] = booking.confirmed_date.split('-').map(Number);
+                    const pickup = new Date(y, m - 1, d);
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    return pickup <= now;
+                  }
+                }
+                return false;
+              })();
+              if (isUnconfirmed) {
+                return (
+                  <span style={{
+                    marginLeft: 8,
+                    background: '#fef2f2', color: '#dc2626',
+                    border: '1px solid #fecaca',
+                    borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                  }}>
+                    Unconfirmed
+                  </span>
+                );
+              }
+              if (booking.last_notified_status === 'confirmed') {
+                return (
+                  <span style={{
+                    marginLeft: 8,
+                    background: '#fff7ed', color: '#c2410c',
+                    border: '1px solid #fed7aa',
+                    borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                  }}>
+                    Awaiting confirmation
+                  </span>
+                );
+              }
+              return null;
+            })()}
             {reminderSent && (
               <span style={{
                 marginLeft: 8,

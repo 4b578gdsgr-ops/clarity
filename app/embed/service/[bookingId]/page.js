@@ -134,6 +134,68 @@ const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoor
 
 const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
 
+function PickupConfirmSection({ booking, bookingId, onUpdated, onOpenMessages }) {
+  const [confirmed, setConfirmed] = useState(!!booking.confirmed_by_customer);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const day  = booking.confirmed_date ? fmtDate(booking.confirmed_date) : 'the scheduled day';
+  const time = booking.confirmed_time ? ' around ' + fmtTime(booking.confirmed_time) : '';
+
+  async function handleConfirm() {
+    setSaving(true); setErr('');
+    try {
+      const res = await fetch('/api/bookings/' + bookingId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmed_by_customer: true,
+          customer_confirmed_at: new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || 'Save failed.'); return; }
+      setConfirmed(true);
+      onUpdated();
+    } catch { setErr('Network error — try again.'); }
+    finally { setSaving(false); }
+  }
+
+  if (confirmed) {
+    return (
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Confirmed.</p>
+        <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>See you {day}{time}.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '2px solid #3b82f6', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+      <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 6px' }}>
+        {`We'd like to pick up on ${day}${time}. Does that work?`}
+      </p>
+      {err && <p style={{ fontSize: 13, color: '#dc2626', margin: '0 0 10px' }}>{err}</p>}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={saving}
+          style={{ flex: 1, padding: '11px 14px', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit' }}
+        >
+          {saving ? 'Saving...' : "Confirm — I'll be there"}
+        </button>
+        <button
+          type="button"
+          onClick={onOpenMessages}
+          style={{ flex: 1, padding: '11px 14px', background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Request different time
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   // phase: 'select' | 'map' | 'daytime' | 'confirmed'
   const [phase, setPhase] = useState(booking.delivery_address ? 'confirmed' : 'select');
@@ -653,6 +715,18 @@ export default function EmbedBookingStatusPage({ params }) {
         )}
       </div>
 
+      {booking.status === 'confirmed' && booking.confirmed_date && (
+        <PickupConfirmSection
+          booking={booking}
+          bookingId={bookingId}
+          onUpdated={loadData}
+          onOpenMessages={() => {
+            document.getElementById('embed-messages')?.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('embed-message-input')?.focus();
+          }}
+        />
+      )}
+
       <UpdateInfoSection booking={booking} bookingId={bookingId} onUpdated={loadData} />
 
       {booking.status === 'ready' && (
@@ -949,7 +1023,7 @@ export default function EmbedBookingStatusPage({ params }) {
       ))}
 
       {/* Message thread */}
-      <div id="messages" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+      <div id="embed-messages" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
         <div style={{ padding: '10px 16px', borderBottom: '1px solid #f3f4f6', background: '#fafaf7' }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Got questions? We're here.</span>
         </div>
@@ -981,6 +1055,7 @@ export default function EmbedBookingStatusPage({ params }) {
         )}
         <form onSubmit={sendMessage} style={{ padding: 12, borderTop: '1px solid #f3f4f6', display: 'flex', gap: 8 }}>
           <input
+            id="embed-message-input"
             type="text"
             value={msgText}
             onChange={e => setMsgText(e.target.value)}

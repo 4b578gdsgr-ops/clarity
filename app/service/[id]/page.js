@@ -134,6 +134,68 @@ function fmtTime(timeStr) {
 
 const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
 
+function PickupConfirmSection({ booking, bookingId, onUpdated, onOpenMessages }) {
+  const [confirmed, setConfirmed] = useState(!!booking.confirmed_by_customer);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const day  = booking.confirmed_date ? fmtDate(booking.confirmed_date) : 'the scheduled day';
+  const time = booking.confirmed_time ? ' around ' + fmtTime(booking.confirmed_time) : '';
+
+  async function handleConfirm() {
+    setSaving(true); setErr('');
+    try {
+      const res = await fetch('/api/bookings/' + bookingId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmed_by_customer: true,
+          customer_confirmed_at: new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || 'Save failed.'); return; }
+      setConfirmed(true);
+      onUpdated();
+    } catch { setErr('Network error — try again.'); }
+    finally { setSaving(false); }
+  }
+
+  if (confirmed) {
+    return (
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Confirmed.</p>
+        <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>See you {day}{time}.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '2px solid #3b82f6', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 6px' }}>
+        {`We'd like to pick up on ${day}${time}. Does that work?`}
+      </p>
+      {err && <p style={{ fontSize: 13, color: '#dc2626', margin: '0 0 10px' }}>{err}</p>}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={saving}
+          style={{ flex: 1, padding: '11px 14px', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit' }}
+        >
+          {saving ? 'Saving...' : "Confirm — I'll be there"}
+        </button>
+        <button
+          type="button"
+          onClick={onOpenMessages}
+          style={{ flex: 1, padding: '11px 14px', background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Request different time
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   // phase: 'select' | 'map' | 'daytime' | 'confirmed'
   const [phase, setPhase] = useState(booking.delivery_address ? 'confirmed' : 'select');
@@ -644,6 +706,18 @@ export default function BookingStatusPage({ params }) {
           )}
         </div>
 
+        {booking.status === 'confirmed' && booking.confirmed_date && (
+          <PickupConfirmSection
+            booking={booking}
+            bookingId={id}
+            onUpdated={loadData}
+            onOpenMessages={() => {
+              document.getElementById('messages')?.scrollIntoView({ behavior: 'smooth' });
+              document.getElementById('message-input')?.focus();
+            }}
+          />
+        )}
+
         <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
 
         {booking.status === 'ready' && (
@@ -972,6 +1046,7 @@ export default function BookingStatusPage({ params }) {
           )}
           <form onSubmit={sendMessage} style={{ padding: 12, borderTop: '1px solid #f3f4f6', display: 'flex', gap: 8 }}>
             <input
+              id="message-input"
               type="text"
               value={msgText}
               onChange={e => setMsgText(e.target.value)}

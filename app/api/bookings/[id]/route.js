@@ -39,7 +39,7 @@ export async function PATCH(request, { params }) {
                    'delivery_address', 'delivery_preferred_day', 'delivery_preferred_time',
                    'lat', 'lng', 'shop_photos', 'bikes', 'payment_status',
                    'estimate_amount', 'estimate_notes', 'estimate_photo',
-                   'reminder_sent'];
+                   'reminder_sent', 'confirmed_by_customer', 'customer_confirmed_at'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];
