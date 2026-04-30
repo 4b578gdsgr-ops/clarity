@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
+import { sendCancellationNotification } from '../../../../lib/email';
 
 const VALID_STATUSES = [
   'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled', 'no_show',
@@ -91,6 +92,13 @@ export async function PATCH(request, { params }) {
       data.last_notified_status = update.status;
     }
     // text/phone: no auto-notification — admin sees NEEDS TEXT badge and copies manually
+  }
+
+  // Notify admin when customer cancels
+  if (update.status === 'cancelled' && !skip_notification) {
+    sendCancellationNotification(data).catch(err =>
+      console.error('[bookings/[id]] cancellation notification failed:', err?.message || err)
+    );
   }
 
   return Response.json({ booking: data });

@@ -419,6 +419,81 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   );
 }
 
+function CancelSection({ booking, bookingId, onUpdated, onOpenMessages }) {
+  const [step, setStep] = useState('link'); // 'link' | 'confirm' | 'done'
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  if (step === 'done') {
+    return (
+      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+        <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>Cancelled. No worries — book again anytime.</p>
+        <a href="/schedule-service" style={{ fontSize: 14, color: '#1a3328', textDecoration: 'underline' }}>Book a new service →</a>
+      </div>
+    );
+  }
+
+  if (step === 'confirm') {
+    return (
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14', margin: '0 0 4px' }}>Are you sure?</p>
+        <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 14px' }}>We can also reschedule if that works better.</p>
+        {err && <p style={{ fontSize: 13, color: '#dc2626', margin: '0 0 10px' }}>{err}</p>}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={async () => {
+              setSaving(true); setErr('');
+              try {
+                const res = await fetch('/api/bookings/' + bookingId, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ status: 'cancelled' }),
+                });
+                if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || 'Failed. Try again.'); return; }
+                setStep('done');
+                onUpdated();
+              } catch { setErr('Network error — try again.'); }
+              finally { setSaving(false); }
+            }}
+            disabled={saving}
+            style={{ flex: 1, padding: '10px 14px', background: saving ? '#9ca3af' : '#fff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 8, fontSize: 13, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit' }}
+          >
+            {saving ? 'Cancelling...' : 'Cancel booking'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setStep('link'); onOpenMessages(); }}
+            style={{ flex: 1, padding: '10px 14px', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            Message us to reschedule
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => setStep('link')}
+          style={{ marginTop: 10, background: 'none', border: 'none', color: '#9ca3af', fontSize: 12, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+        >
+          Nevermind
+        </button>
+      </div>
+    );
+  }
+
+  // step === 'link'
+  return (
+    <p style={{ fontSize: 12, textAlign: 'center', marginTop: 16, marginBottom: 0 }}>
+      <button
+        type="button"
+        onClick={() => setStep('confirm')}
+        style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 12, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+      >
+        Need to cancel?
+      </button>
+    </p>
+  );
+}
+
 function UpdateInfoSection({ booking, bookingId, onUpdated }) {
   const locked = !EDITABLE_STATUSES.has(booking.status);
   const [name, setName] = useState(booking.name || '');
@@ -1068,6 +1143,13 @@ export default function BookingStatusPage({ params }) {
             </button>
           </form>
         </div>
+
+        {['new', 'confirmed'].includes(booking.status) && (
+          <CancelSection booking={booking} bookingId={id} onUpdated={loadData} onOpenMessages={() => {
+            document.getElementById('messages')?.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('message-input')?.focus();
+          }} />
+        )}
 
         <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', marginTop: 20 }}>
           {'Bookmark this page to check your status anytime.'}

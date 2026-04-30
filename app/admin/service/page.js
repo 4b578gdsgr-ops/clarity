@@ -2490,6 +2490,7 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
     { key: 'out_for_delivery',label: 'Out for Delivery'},
     { key: 'complete',        label: 'Complete'        },
     { key: 'no_show',         label: 'No Show'         },
+    { key: 'cancelled',       label: 'Cancelled'       },
     { key: 'all',             label: 'All'             },
   ];
 
@@ -2558,14 +2559,21 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
   }
 
   // picked_up is legacy — show under in_progress tab
-  // no_show only shows in its own tab or 'all' — hide from other tabs
+  // no_show/cancelled only show in their own tabs or 'all' — hide from other tabs
+  // In 'all' view, cancelled bookings sort to the bottom
   const filtered = filter === 'all'
-    ? bookings
+    ? [...bookings].sort((a, b) => {
+        const aC = a.status === 'cancelled' ? 1 : 0;
+        const bC = b.status === 'cancelled' ? 1 : 0;
+        return aC - bC;
+      })
     : filter === 'in_progress'
       ? bookings.filter(b => b.status === 'in_progress' || b.status === 'picked_up')
       : filter === 'no_show'
         ? bookings.filter(b => b.status === 'no_show')
-        : bookings.filter(b => b.status === filter && b.status !== 'no_show');
+        : filter === 'cancelled'
+          ? bookings.filter(b => b.status === 'cancelled')
+          : bookings.filter(b => b.status === filter && b.status !== 'no_show' && b.status !== 'cancelled');
 
   return (
     <div>
