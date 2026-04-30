@@ -565,11 +565,11 @@ function CancelSection({ booking, bookingId, onUpdated, onOpenMessages }) {
 
   // step === 'link'
   return (
-    <p style={{ fontSize: 12, textAlign: 'center', marginTop: 16, marginBottom: 0 }}>
+    <p style={{ fontSize: 13, textAlign: 'center', marginTop: 20, marginBottom: 8, color: '#6b7280' }}>
       <button
         type="button"
         onClick={() => setStep('confirm')}
-        style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 12, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+        style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
       >
         Need to cancel?
       </button>
@@ -694,6 +694,8 @@ export default function EmbedBookingStatusPage({ params }) {
   const displayStatus = booking.status === 'picked_up' ? 'in_progress' : booking.status;
   const currentStep = STATUS_STEPS.indexOf(displayStatus);
   const color = STATUS_COLOR[booking.status] || '#9ca3af';
+
+  console.log('[embed/service render] status:', booking.status, '| showCancel:', ['new','confirmed'].includes(booking.status));
 
   return (
     <div style={containerStyle}>
