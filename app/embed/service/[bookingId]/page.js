@@ -45,8 +45,10 @@ function getStatusHeading(booking) {
         ? `Your ${noun} ${verb} dialed and ready to roll. We'll have it back to you ${ret}.`
         : `Your ${noun} ${verb} dialed and ready to roll.`;
     }
-    case 'out_for_delivery':
-      return "On our way to you now.";
+    case 'out_for_delivery': {
+      const t = booking.delivery_time ? fmtTime(booking.delivery_time) : '';
+      return t ? `On our way. See you around ${t}.` : 'On our way to you now.';
+    }
     case 'complete':
     case 'done':
     case 'delivered':
@@ -305,17 +307,31 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   }
 
   if (phase === 'confirmed') {
-    const day  = booking.delivery_preferred_day  || deliveryDay;
-    const time = booking.delivery_preferred_time || deliveryTime;
-    const dayFmt  = day  ? fmtDate(day)  : '';
-    const timeFmt = time ? fmtTime(time) : '';
+    const adminTime = booking.delivery_time;
+    const prefDay   = booking.delivery_preferred_day  || deliveryDay;
+    const prefTime  = booking.delivery_preferred_time || deliveryTime;
+
+    if (adminTime) {
+      const dayFmt  = booking.return_date ? fmtDate(booking.return_date) : (prefDay ? fmtDate(prefDay) : '');
+      const timeFmt = fmtTime(adminTime);
+      const when    = dayFmt ? `${dayFmt} around ${timeFmt}` : `around ${timeFmt}`;
+      return (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Delivery confirmed.</p>
+          <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Delivery: {when}</p>
+        </div>
+      );
+    }
+
+    const dayFmt  = prefDay  ? fmtDate(prefDay)  : '';
+    const timeFmt = prefTime ? fmtTime(prefTime) : '';
     const when = dayFmt && timeFmt ? `${dayFmt} around ${timeFmt}` : dayFmt || '';
     return (
       <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Delivery details confirmed.</p>
         {when
-          ? <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Delivery: {when}</p>
-          : <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Got it. We'll confirm the exact time.</p>
+          ? <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Requested: {when}. We'll confirm the exact time.</p>
+          : <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>We'll confirm the exact time.</p>
         }
       </div>
     );
