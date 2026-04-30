@@ -52,7 +52,9 @@ function getStatusHeading(booking) {
     case 'delivered':
       return "Delivered. You're golden.";
     case 'no_show':
-      return "We came by but missed you. Reach out when you're ready to reschedule.";
+      return "We stopped by but missed you. No worries — reach out when you're ready.";
+    case 'cancelled':
+      return "This booking was cancelled. No worries — we're here when you need us.";
     default:
       return "We got you. We'll reach out shortly to set up a time.";
   }
@@ -419,6 +421,34 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   );
 }
 
+function RebookSection({ onOpenMessages }) {
+  return (
+    <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+      <a
+        href="https://oneloveoutdoors.org/schedule-service-app"
+        style={{
+          flex: 1, minWidth: 130, padding: '11px 14px', background: '#1a3328', color: '#fff',
+          border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, textAlign: 'center',
+          textDecoration: 'none', cursor: 'pointer', fontFamily: 'inherit', boxSizing: 'border-box',
+        }}
+      >
+        Book again
+      </a>
+      <button
+        type="button"
+        onClick={onOpenMessages}
+        style={{
+          flex: 1, minWidth: 130, padding: '11px 14px', background: '#fff', color: '#1a3328',
+          border: '1px solid #1a3328', borderRadius: 8, fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        Message us
+      </button>
+    </div>
+  );
+}
+
 function CancelSection({ booking, bookingId, onUpdated, onOpenMessages }) {
   const [step, setStep] = useState('link'); // 'link' | 'confirm' | 'done'
   const [saving, setSaving] = useState(false);
@@ -692,9 +722,11 @@ export default function BookingStatusPage({ params }) {
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, color: '#0f1a14', marginBottom: 4 }}>
           {getStatusHeading(booking)}
         </h1>
-        <p style={{ color: '#9ca3af', fontSize: 14, marginBottom: 24 }}>
-          {'Check back here for updates. You can message us below.'}
-        </p>
+        {!['no_show', 'cancelled'].includes(booking.status) && (
+          <p style={{ color: '#9ca3af', fontSize: 14, marginBottom: 24 }}>
+            {'Check back here for updates. You can message us below.'}
+          </p>
+        )}
 
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -707,16 +739,18 @@ export default function BookingStatusPage({ params }) {
             </span>
           </div>
 
-          {/* Progress bar */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-            {STATUS_STEPS.map((s, i) => (
-              <div key={s} style={{
-                flex: 1, height: 4, borderRadius: 2,
-                background: i <= currentStep ? color : '#e5e7eb',
-                transition: 'background 0.3s',
-              }} />
-            ))}
-          </div>
+          {/* Progress bar — hide for terminal statuses */}
+          {!['no_show', 'cancelled'].includes(booking.status) && (
+            <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+              {STATUS_STEPS.map((s, i) => (
+                <div key={s} style={{
+                  flex: 1, height: 4, borderRadius: 2,
+                  background: i <= currentStep ? color : '#e5e7eb',
+                  transition: 'background 0.3s',
+                }} />
+              ))}
+            </div>
+          )}
 
           {booking.is_member && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '3px 10px' }}>
@@ -783,6 +817,13 @@ export default function BookingStatusPage({ params }) {
           )}
         </div>
 
+        {['no_show', 'cancelled'].includes(booking.status) && (
+          <RebookSection onOpenMessages={() => {
+            document.getElementById('messages')?.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('message-input')?.focus();
+          }} />
+        )}
+
         {booking.status === 'confirmed' && booking.confirmed_date && (
           <PickupConfirmSection
             booking={booking}
@@ -795,7 +836,9 @@ export default function BookingStatusPage({ params }) {
           />
         )}
 
-        <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
+        {!['no_show', 'cancelled'].includes(booking.status) && (
+          <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
+        )}
 
         {booking.status === 'ready' && (
           <DeliveryConfirmSection booking={booking} bookingId={id} onUpdated={loadData} />
