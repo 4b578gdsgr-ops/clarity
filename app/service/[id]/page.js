@@ -136,6 +136,16 @@ function fmtTime(timeStr) {
 
 const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
 
+function renderWithLinks(text) {
+  if (!text) return null;
+  const parts = text.split(/(https?:\/\/[^\s]+)/g);
+  return parts.map((part, i) =>
+    /^https?:\/\//.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3328', textDecoration: 'underline' }}>{part}</a>
+      : part
+  );
+}
+
 function PickupConfirmSection({ booking, bookingId, onUpdated, onOpenMessages }) {
   const [confirmed, setConfirmed] = useState(!!booking.confirmed_by_customer);
   const [saving, setSaving] = useState(false);
@@ -1092,7 +1102,7 @@ export default function BookingStatusPage({ params }) {
             </p>
             {booking.estimate_notes && (
               <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.5 }}>
-                {booking.estimate_notes}
+                {renderWithLinks(booking.estimate_notes)}
               </p>
             )}
             <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px', lineHeight: 1.5 }}>
@@ -1104,34 +1114,33 @@ export default function BookingStatusPage({ params }) {
           </div>
         )}
 
-        {/* Payment section */}
-        {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (booking.payment_status === 'paid' ? (
+        {/* Payment section — shown any time invoice_amount or payment_link is set */}
+        {booking.payment_status === 'paid' ? (
           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid. Thanks!</p>
           </div>
-        ) : (booking.invoice_amount != null || booking.payment_link) && (
+        ) : (booking.invoice_amount != null || booking.payment_link) ? (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
-              {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
-            </p>
+            {booking.invoice_amount != null && (
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
+                {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
+              </p>
+            )}
             <p style={{ fontSize: 18, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
-              Pay when we deliver
-            </p>
-            <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 14px' }}>
-              Cash or card at the door. Simple.
+              Pay when we deliver — cash or card at the door. Simple.
             </p>
             {booking.payment_link && (
               <a
                 href={booking.payment_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ fontSize: 13, color: '#6b7280', textDecoration: 'underline' }}
+                style={{ display: 'inline-block', marginTop: 12, fontSize: 14, color: '#1a3328', textDecoration: 'underline', fontWeight: 600 }}
               >
                 Need to pay ahead? Pay online →
               </a>
             )}
           </div>
-        ))}
+        ) : null}
 
         {/* Message thread */}
         <div id="messages" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
