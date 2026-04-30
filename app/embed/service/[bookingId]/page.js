@@ -431,8 +431,11 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   );
 }
 
+const ADDRESS_LOCKED_STATUSES = new Set(['in_progress', 'picked_up', 'ready', 'out_for_delivery', 'complete', 'done', 'delivered', 'no_show', 'cancelled']);
+
 function UpdateInfoSection({ booking, bookingId, onUpdated }) {
-  const locked = !EDITABLE_STATUSES.has(booking.status);
+  const addressLocked = ADDRESS_LOCKED_STATUSES.has(booking.status);
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState(booking.name || '');
   const [phone, setPhone] = useState(booking.phone || '');
   const [email, setEmail] = useState(booking.email || '');
@@ -447,19 +450,16 @@ function UpdateInfoSection({ booking, bookingId, onUpdated }) {
     setSaving(true);
     setErr('');
     try {
+      const body = { name: name.trim(), phone: phone.trim(), email: email.trim() || null };
+      if (!addressLocked) body.address = address.trim() || null;
       const res = await fetch('/api/bookings/' + bookingId, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          phone: phone.trim(),
-          email: email.trim() || null,
-          address: address.trim() || null,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error || 'Save failed.'); return; }
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => { setSaved(false); setOpen(false); }, 2000);
       onUpdated();
     } catch { setErr('Network error — try again.'); }
     finally { setSaving(false); }
@@ -468,48 +468,64 @@ function UpdateInfoSection({ booking, bookingId, onUpdated }) {
   const inputStyle = {
     width: '100%', padding: '8px 11px', border: '1px solid #d1d5db',
     borderRadius: 7, fontSize: 14, outline: 'none', boxSizing: 'border-box',
-    fontFamily: 'inherit', color: locked ? '#9ca3af' : '#111827',
-    background: locked ? '#f9fafb' : '#fff',
+    fontFamily: 'inherit', color: '#111827', background: '#fff',
   };
+  const lockedInputStyle = { ...inputStyle, color: '#9ca3af', background: '#f9fafb' };
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-      <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 14px' }}>
-        {locked ? 'Your info is locked once we have your bike.' : 'Missing something? Update your info here.'}
+    <div style={{ marginBottom: 16 }}>
+      <p style={{ fontSize: 13, textAlign: 'center', margin: 0 }}>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+        >
+          {open ? 'Close' : 'Update contact info'}
+        </button>
       </p>
-      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</label>
-            <input value={name} onChange={e => setName(e.target.value)} disabled={locked} style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Phone</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} disabled={locked} type="tel" style={inputStyle} />
-          </div>
+      {open && (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginTop: 10 }}>
+          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</label>
+                <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Phone</label>
+                <input value={phone} onChange={e => setPhone(e.target.value)} type="tel" style={inputStyle} />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Email</label>
+              <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="Add one to get email updates" style={inputStyle} />
+            </div>
+            {!addressLocked && (
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Address</label>
+                <input value={address} onChange={e => setAddress(e.target.value)} style={inputStyle} />
+              </div>
+            )}
+            {addressLocked && booking.address && (
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Address</label>
+                <input value={address} disabled style={lockedInputStyle} />
+              </div>
+            )}
+            {err && <p style={{ margin: 0, fontSize: 13, color: '#dc2626' }}>{err}</p>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{ padding: '8px 22px', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 7, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer' }}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              {saved && <span style={{ fontSize: 13, color: '#16a34a', fontWeight: 600 }}>Updated</span>}
+            </div>
+          </form>
         </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Email</label>
-          <input value={email} onChange={e => setEmail(e.target.value)} disabled={locked} type="email" placeholder={locked ? '' : 'Add one to get email updates'} style={inputStyle} />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Address</label>
-          <input value={address} onChange={e => setAddress(e.target.value)} disabled={locked} style={inputStyle} />
-        </div>
-        {err && <p style={{ margin: 0, fontSize: 13, color: '#dc2626' }}>{err}</p>}
-        {!locked && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{ padding: '8px 22px', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 7, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer' }}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-            {saved && <span style={{ fontSize: 13, color: '#16a34a', fontWeight: 600 }}>Updated</span>}
-          </div>
-        )}
-      </form>
+      )}
     </div>
   );
 }
@@ -856,10 +872,6 @@ export default function EmbedBookingStatusPage({ params }) {
             document.getElementById('embed-message-input')?.focus();
           }}
         />
-      )}
-
-      {!['no_show', 'cancelled'].includes(booking.status) && (
-        <UpdateInfoSection booking={booking} bookingId={bookingId} onUpdated={loadData} />
       )}
 
       {booking.status === 'ready' && (
@@ -1217,6 +1229,19 @@ export default function EmbedBookingStatusPage({ params }) {
           document.getElementById('embed-messages')?.scrollIntoView({ behavior: 'smooth' });
           document.getElementById('embed-message-input')?.focus();
         }} />
+      )}
+
+      {!['no_show', 'cancelled'].includes(booking.status) && (
+        <UpdateInfoSection booking={booking} bookingId={bookingId} onUpdated={loadData} />
+      )}
+
+      {['complete', 'done', 'delivered'].includes(booking.status) && !booking.is_member && (
+        <p style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', marginBottom: 16 }}>
+          {'Liked the experience? Members get priority scheduling and preferred pricing on every service. '}
+          <a href="https://oneloveoutdoors.org/membership" target="_blank" rel="noreferrer" style={{ color: '#1a3328', textDecoration: 'underline' }}>
+            Learn more →
+          </a>
+        </p>
       )}
 
       <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
