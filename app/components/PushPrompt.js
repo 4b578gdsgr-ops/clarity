@@ -11,8 +11,12 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 async function getOrCreateSubscription() {
+  // VAPID key required for actual push subscription — missing = no-op
   const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  if (!key) return null;
+  if (!key) {
+    console.warn('[PushPrompt] NEXT_PUBLIC_VAPID_PUBLIC_KEY not set — permission will be requested but no push subscription will be saved');
+    return null;
+  }
   const reg = await navigator.serviceWorker.ready;
   let sub = await reg.pushManager.getSubscription();
   if (!sub) {
@@ -36,30 +40,41 @@ export default function PushPrompt({ bookingId }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (
-      !('Notification' in window) ||
-      !('serviceWorker' in navigator) ||
-      !('PushManager' in window) ||
-      !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-    ) return;
+    const notifSupported = 'Notification' in window;
+    const swSupported = 'serviceWorker' in navigator;
+    const pushSupported = 'PushManager' in window;
+    let dismissed = false;
+    try { dismissed = localStorage.getItem('push_dismissed') === '1'; } catch {}
+
+    console.log('[PushPrompt]', {
+      notifSupported,
+      swSupported,
+      pushSupported,
+      vapidKeySet: !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      permission: notifSupported ? Notification.permission : 'n/a',
+      dismissed,
+      bookingId: bookingId || null,
+    });
+
+    if (!notifSupported || !swSupported || !pushSupported) return;
 
     const perm = Notification.permission;
 
     if (perm === 'granted' && bookingId) {
+      // Already have permission — silently subscribe for this booking
       (async () => {
         try {
           const sub = await getOrCreateSubscription();
           if (sub) await saveSubscription(bookingId, sub);
-        } catch {}
+        } catch (err) {
+          console.error('[PushPrompt] silent subscribe error:', err?.message);
+        }
       })();
       return;
     }
 
-    if (perm !== 'default') return;
-
-    try {
-      if (localStorage.getItem('push_dismissed') === '1') return;
-    } catch {}
+    if (perm !== 'default') return; // denied — don't ask again
+    if (dismissed) return;
 
     setShow(true);
   }, [bookingId]);
@@ -68,12 +83,15 @@ export default function PushPrompt({ bookingId }) {
     setShow(false);
     try {
       const perm = await Notification.requestPermission();
+      console.log('[PushPrompt] permission result:', perm);
       if (perm !== 'granted') return;
       if (bookingId) {
         const sub = await getOrCreateSubscription();
         if (sub) await saveSubscription(bookingId, sub);
       }
-    } catch {}
+    } catch (err) {
+      console.error('[PushPrompt] enable error:', err?.message);
+    }
   }
 
   function handleDismiss() {

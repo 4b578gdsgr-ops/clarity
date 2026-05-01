@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../../lib/serviceArea';
+import PushPrompt from '../../../components/PushPrompt';
 
 const ServiceMap = dynamic(() => import('../../../components/ServiceMap'), { ssr: false });
 
@@ -777,10 +778,12 @@ export default function EmbedBookingStatusPage({ params }) {
         {getStatusHeading(booking)}
       </h2>
       {!['no_show', 'cancelled'].includes(booking.status) && (
-        <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 20 }}>
+        <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 12 }}>
           {'Check back here for updates. You can message us below.'}
         </p>
       )}
+
+      <PushPrompt bookingId={bookingId} />
 
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
