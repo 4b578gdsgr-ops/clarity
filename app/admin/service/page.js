@@ -3393,6 +3393,190 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
   );
 }
 
+// ─── Rides admin ──────────────────────────────────────────────────────────────
+
+function fmtRideDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function fmtRideTime(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const sfx = h >= 12 ? 'PM' : 'AM';
+  return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + sfx;
+}
+
+function RidesAdminView() {
+  const [rides, setRides] = useState([]);
+  const [loadingRides, setLoadingRides] = useState(true);
+  const [form, setForm] = useState({ title: '', date: '', time: '', location: '', description: '' });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function loadRides() {
+    setLoadingRides(true);
+    try {
+      const res = await fetch('/api/rides?all=1');
+      const data = await res.json();
+      setRides(data.rides || []);
+    } catch {
+      setErr('Failed to load rides');
+    } finally {
+      setLoadingRides(false);
+    }
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!form.title || !form.date || !form.time || !form.location) {
+      setErr('Title, date, time, and location are required.');
+      return;
+    }
+    setSaving(true);
+    setErr('');
+    try {
+      const res = await fetch('/api/rides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error || 'Failed to create ride'); return; }
+      setForm({ title: '', date: '', time: '', location: '', description: '' });
+      await loadRides();
+    } catch {
+      setErr('Network error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Delete this ride?')) return;
+    try {
+      await fetch('/api/rides/' + id, { method: 'DELETE' });
+      setRides(prev => prev.filter(r => r.id !== id));
+    } catch {
+      setErr('Delete failed');
+    }
+  }
+
+  useEffect(() => { loadRides(); }, []);
+
+  const inp = {
+    width: '100%', padding: '8px 12px', border: '1px solid #374151', borderRadius: 7,
+    fontSize: 14, background: '#1a2b22', color: '#e5e7eb', fontFamily: 'inherit', boxSizing: 'border-box',
+  };
+  const lbl = { display: 'block', fontSize: 12, color: '#9ca3af', marginBottom: 4 };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 32 }}>
+        <h3 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Post a ride</h3>
+        {err && <p style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{err}</p>}
+        <form onSubmit={handleCreate}>
+          <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
+            <div>
+              <label style={lbl}>Title *</label>
+              <input
+                value={form.title}
+                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="Saturday Morning Ride"
+                style={inp}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={lbl}>Date *</label>
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                  style={inp}
+                />
+              </div>
+              <div>
+                <label style={lbl}>Time *</label>
+                <input
+                  type="time"
+                  value={form.time}
+                  onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                  style={inp}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={lbl}>Meeting spot *</label>
+              <input
+                value={form.location}
+                onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+                placeholder="e.g. Winding Trails parking lot"
+                style={inp}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Description</label>
+              <textarea
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="All levels welcome. 20 miles, moderate pace. Coffee after."
+                rows={3}
+                style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            style={{
+              padding: '9px 20px', background: saving ? '#2d4a38' : '#4ade80', color: '#0f1a14',
+              border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700,
+              cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {saving ? 'Saving...' : 'Post Ride'}
+          </button>
+        </form>
+      </div>
+
+      <div>
+        <h3 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Upcoming rides</h3>
+        {loadingRides && <p style={{ color: '#9ca3af', fontSize: 14 }}>Loading...</p>}
+        {!loadingRides && rides.length === 0 && (
+          <p style={{ color: '#9ca3af', fontSize: 14 }}>No upcoming rides posted.</p>
+        )}
+        {rides.map(r => (
+          <div
+            key={r.id}
+            style={{
+              background: '#1a2b22', border: '1px solid #2d4a38', borderRadius: 10,
+              padding: '14px 16px', marginBottom: 10,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+            }}
+          >
+            <div>
+              <p style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 15, margin: '0 0 2px' }}>{r.title}</p>
+              <p style={{ color: '#9ca3af', fontSize: 13, margin: '0 0 2px' }}>
+                {fmtRideDate(r.date)} at {fmtRideTime(r.time)}
+              </p>
+              <p style={{ color: '#9ca3af', fontSize: 13, margin: 0 }}>{r.location}</p>
+            </div>
+            <button
+              onClick={() => handleDelete(r.id)}
+              style={{
+                background: 'none', border: '1px solid #4b5563', color: '#9ca3af',
+                borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+                flexShrink: 0, fontFamily: 'inherit',
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AdminServicePage() {
@@ -3554,6 +3738,7 @@ export default function AdminServicePage() {
             { key: 'members',     label: 'Member Messages',  short: 'Members',  badge: memberUnread },
             { key: 'phone_leads', label: 'Phone Leads',      short: 'Leads',    badge: 0 },
             { key: 'email',       label: 'Send Email',       short: 'Email',    badge: 0 },
+            { key: 'rides',       label: 'Rides',            short: 'Rides',    badge: 0 },
           ].map(t => (
             <button
               key={t.key}
@@ -3668,6 +3853,7 @@ export default function AdminServicePage() {
             onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
           />
         )}
+        {activeTab === 'rides' && <RidesAdminView />}
       </div>
 
       {newBookingOpen && (

@@ -7,6 +7,8 @@ import PhotoUpload from '../components/PhotoUpload';
 
 const ServiceMap = dynamic(() => import('../components/ServiceMap'), { ssr: false });
 
+const LS_KEY = 'ol_returning_user';
+
 const BIKE_BRANDS = [
   'Trek', 'Specialized', 'Giant', 'Cannondale', 'Santa Cruz', 'Yeti',
   'Pivot', 'Ibis', 'Marin', 'Kona', 'Canyon', 'Scott', 'GT',
@@ -193,12 +195,14 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
 // ─── Step 2: Form ─────────────────────────────────────────────────────────────
 
-function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
+function FormStep({ address, pin, onBack, onDone, initialMember = false, initialForm = null }) {
   const formRef = useRef(null);
   const [isMember, setIsMember] = useState(initialMember);
   const [form, setForm] = useState({
-    name: '', phone: '', email: '',
-    contact_preference: '',
+    name: initialForm?.name || '',
+    phone: initialForm?.phone || '',
+    email: initialForm?.email || '',
+    contact_preference: initialForm?.contact_preference || '',
     address: address || '',
     preferred_day: '', time_slot: '', notes: '',
   });
@@ -262,6 +266,14 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false }) {
       });
       const data = await res.json();
       if (!res.ok) { setSubmitErr(data.error || 'Something went wrong.'); return; }
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify({
+          name: form.name, phone: form.phone, email: form.email,
+          address: address || form.address,
+          contact_preference: form.contact_preference,
+          lat: pin?.lat ?? null, lng: pin?.lng ?? null,
+        }));
+      } catch {}
       onDone(data.booking.id, form.contact_preference, isAssembly);
     } catch {
       setSubmitErr('Network error. Please try again.');
@@ -571,10 +583,55 @@ function DoneStep({ bookingId, contactPreference, isAssembly, onReset }) {
   );
 }
 
+// ─── Welcome Back ─────────────────────────────────────────────────────────────
+
+function WelcomeBackStep({ savedUser, onSameSpot, onDifferentLocation, onNotMe }) {
+  const displayAddress = savedUser.address
+    ? savedUser.address.split(',').slice(0, 2).join(',').trim()
+    : 'your saved location';
+  return (
+    <div style={{ maxWidth: 500, margin: '80px auto', padding: '0 16px' }}>
+      <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, color: '#0f1a14', marginBottom: 10 }}>
+        Hey {savedUser.name}.
+      </h2>
+      <p style={{ color: '#4b5563', fontSize: 18, marginBottom: 32, fontWeight: 500 }}>Same spot?</p>
+      <button
+        onClick={onSameSpot}
+        style={{
+          display: 'block', width: '100%', padding: '14px 20px', marginBottom: 12,
+          background: '#1a3328', color: '#fff', border: 'none', borderRadius: 10,
+          fontSize: 15, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', fontWeight: 600,
+        }}
+      >
+        Same spot &mdash; {displayAddress}
+      </button>
+      <button
+        onClick={onDifferentLocation}
+        style={{
+          display: 'block', width: '100%', padding: '14px 20px',
+          background: '#fff', color: '#1a3328', border: '2px solid #1a3328', borderRadius: 10,
+          fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+        }}
+      >
+        Different location
+      </button>
+      <div style={{ textAlign: 'center', marginTop: 20 }}>
+        <button
+          onClick={onNotMe}
+          style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 13, textDecoration: 'underline', fontFamily: 'inherit' }}
+        >
+          Not {savedUser.name}?
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function ScheduleService() {
-  const [step, setStep] = useState('location');
+  const [step, setStep] = useState(null);
+  const [returningUser, setReturningUser] = useState(null);
   const [pin, setPin] = useState(null);
   const [address, setAddress] = useState('');
   const [outside, setOutside] = useState(false);
@@ -586,12 +643,43 @@ export default function ScheduleService() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('member') === 'true') setInitialMember(true);
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      const user = raw ? JSON.parse(raw) : null;
+      if (user?.name) {
+        setReturningUser(user);
+        setStep('welcome-back');
+      } else {
+        setStep('location');
+      }
+    } catch {
+      setStep('location');
+    }
   }, []);
 
   function handlePin(lat, lng) {
     if (lat === null) { setPin(null); setOutside(false); return; }
     setPin({ lat, lng });
     setOutside(!isInServiceArea(lat, lng));
+  }
+
+  function handleSameSpot() {
+    if (returningUser.lat && returningUser.lng) {
+      setPin({ lat: returningUser.lat, lng: returningUser.lng });
+      setOutside(!isInServiceArea(returningUser.lat, returningUser.lng));
+    }
+    setAddress(returningUser.address || '');
+    setStep('form');
+  }
+
+  function handleDifferentLocation() {
+    setStep('location');
+  }
+
+  function handleNotMe() {
+    try { localStorage.removeItem(LS_KEY); } catch {}
+    setReturningUser(null);
+    setStep('location');
   }
 
   function reset() {
@@ -604,6 +692,8 @@ export default function ScheduleService() {
     setBookingIsAssembly(false);
   }
 
+  if (step === null) return null;
+
   if (step === 'done') {
     return (
       <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
@@ -614,11 +704,22 @@ export default function ScheduleService() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0 0', gap: 8 }}>
-        {['location', 'form'].map(s => (
-          <div key={s} style={{ width: 8, height: 8, borderRadius: '50%', background: step === s ? '#1a3328' : '#d1d5db' }} />
-        ))}
-      </div>
+      {step !== 'welcome-back' && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0 0', gap: 8 }}>
+          {['location', 'form'].map(s => (
+            <div key={s} style={{ width: 8, height: 8, borderRadius: '50%', background: step === s ? '#1a3328' : '#d1d5db' }} />
+          ))}
+        </div>
+      )}
+
+      {step === 'welcome-back' && (
+        <WelcomeBackStep
+          savedUser={returningUser}
+          onSameSpot={handleSameSpot}
+          onDifferentLocation={handleDifferentLocation}
+          onNotMe={handleNotMe}
+        />
+      )}
 
       {step === 'location' && (
         <LocationStep
@@ -636,6 +737,7 @@ export default function ScheduleService() {
           address={address}
           pin={pin}
           initialMember={initialMember}
+          initialForm={returningUser}
           onBack={() => setStep('location')}
           onDone={(id, pref, assembly) => { setBookingId(id); setContactPreference(pref); setBookingIsAssembly(!!assembly); setStep('done'); }}
         />
