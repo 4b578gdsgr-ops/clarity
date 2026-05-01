@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { sendAdminMessageNotification } from '../../../lib/email';
 import { notifyCustomerMessage } from '../../../lib/notify';
+import { pushToBooking } from '../../../lib/push';
 
 // GET /api/messages?booking_id=xxx
 export async function GET(request) {
@@ -91,6 +92,15 @@ export async function POST(request) {
     } else if (booking) {
       notifyCustomerMessage(booking, message.trim()).catch(err =>
         console.error('[messages] POST customer notification failed:', err?.message || err)
+      );
+      const preview = message.trim().length > 80 ? message.trim().slice(0, 77) + '...' : message.trim();
+      pushToBooking(booking_id, {
+        title: 'New message from One Love Outdoors',
+        body: preview,
+        url: '/service/' + booking_id,
+        tag: 'olo-message',
+      }).catch(err =>
+        console.error('[messages] POST push failed:', err?.message || err)
       );
     }
   } else if (sender === 'customer') {

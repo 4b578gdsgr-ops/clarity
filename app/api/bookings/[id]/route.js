@@ -1,6 +1,22 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
 import { sendCancellationNotification } from '../../../../lib/email';
+import { pushToBooking } from '../../../../lib/push';
+
+const PUSH_PAYLOADS = {
+  confirmed: {
+    title: 'Booking confirmed',
+    body: "We've got your request. We'll be in touch to set up pickup.",
+  },
+  ready: {
+    title: 'Your bike is ready',
+    body: "All done. We'll have it back to you soon.",
+  },
+  out_for_delivery: {
+    title: 'On its way',
+    body: 'Your bike is heading back to you.',
+  },
+};
 
 const VALID_STATUSES = [
   'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled', 'no_show',
@@ -92,6 +108,15 @@ export async function PATCH(request, { params }) {
       data.last_notified_status = update.status;
     }
     // text/phone: no auto-notification — admin sees NEEDS TEXT badge and copies manually
+  }
+
+  // Push notification for key status changes (sent regardless of contact_preference)
+  const PUSH_STATUSES = new Set(['confirmed', 'ready', 'out_for_delivery']);
+  if (update.status && PUSH_STATUSES.has(update.status) && !skip_notification) {
+    const push = PUSH_PAYLOADS[update.status];
+    pushToBooking(id, { ...push, url: '/service/' + id, tag: 'olo-status' }).catch(err =>
+      console.error('[bookings/[id]] push failed for', update.status, ':', err?.message || err)
+    );
   }
 
   // Notify admin when customer cancels

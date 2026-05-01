@@ -1,4 +1,5 @@
 'use client';
+import PushPrompt from './components/PushPrompt';
 
 // ─── Homepage ─────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,8 @@ export default function HomePage() {
             Pickup Monday. Back by Friday. We handle the rest.
           </p>
         </div>
+
+        <PushPrompt />
 
         {/* ── BOOK CTA ── */}
         <div className="mb-8">
