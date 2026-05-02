@@ -85,16 +85,31 @@ export default function RidesPage() {
                 {ride.description}
               </p>
             )}
-            <button
-              onClick={() => downloadIcs(ride)}
-              style={{
-                marginTop: 24, padding: '10px 20px', background: '#1a3328', color: '#fff',
-                border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer',
-                fontWeight: 600, fontFamily: 'inherit',
-              }}
-            >
-              Add to calendar
-            </button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => downloadIcs(ride)}
+                style={{
+                  padding: '10px 20px', background: '#1a3328', color: '#fff',
+                  border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer',
+                  fontWeight: 600, fontFamily: 'inherit',
+                }}
+              >
+                Add to calendar
+              </button>
+              {ride.gpx_url && (
+                <a
+                  href={ride.gpx_url}
+                  download
+                  style={{
+                    padding: '10px 20px', background: '#fff', color: '#1a3328',
+                    border: '2px solid #1a3328', borderRadius: 8, fontSize: 14,
+                    fontWeight: 600, textDecoration: 'none', display: 'inline-block',
+                  }}
+                >
+                  Download GPX
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>

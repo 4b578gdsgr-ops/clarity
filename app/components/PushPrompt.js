@@ -11,35 +11,54 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 async function getOrCreateSubscription() {
-  // VAPID key required for actual push subscription — missing = no-op
   const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!key) {
-    console.warn('[PushPrompt] NEXT_PUBLIC_VAPID_PUBLIC_KEY not set — permission will be requested but no push subscription will be saved');
+    console.warn('[PushPrompt] NEXT_PUBLIC_VAPID_PUBLIC_KEY not set — cannot create push subscription');
     return null;
   }
   const reg = await navigator.serviceWorker.ready;
+  console.log('[PushPrompt] SW ready, getting existing subscription...');
   let sub = await reg.pushManager.getSubscription();
-  if (!sub) {
+  if (sub) {
+    console.log('[PushPrompt] existing subscription found:', sub.endpoint.slice(0, 70) + '...');
+  } else {
+    console.log('[PushPrompt] no existing subscription, creating new one...');
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(key),
     });
+    console.log('[PushPrompt] new subscription created:', sub.endpoint.slice(0, 70) + '...');
   }
   return sub;
 }
 
 async function saveSubscription(bookingId, sub) {
-  await fetch('/api/push/subscribe', {
+  const subJson = sub.toJSON();
+  console.log('[PushPrompt] saving subscription to Supabase', {
+    bookingId,
+    endpoint: subJson.endpoint?.slice(0, 70) + '...',
+    hasP256dh: !!subJson.keys?.p256dh,
+    hasAuth: !!subJson.keys?.auth,
+  });
+  const res = await fetch('/api/push/subscribe', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ booking_id: bookingId, subscription: sub.toJSON() }),
+    body: JSON.stringify({ booking_id: bookingId, subscription: subJson }),
   });
+  const data = await res.json();
+  console.log('[PushPrompt] save response:', res.status, data);
+  if (!res.ok) throw new Error(data.error || 'Save failed');
 }
 
 export default function PushPrompt({ bookingId }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    // Only show in standalone PWA mode — not in regular browser or iframe
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
     const notifSupported = 'Notification' in window;
     const swSupported = 'serviceWorker' in navigator;
     const pushSupported = 'PushManager' in window;
@@ -47,6 +66,7 @@ export default function PushPrompt({ bookingId }) {
     try { dismissed = localStorage.getItem('push_dismissed') === '1'; } catch {}
 
     console.log('[PushPrompt]', {
+      isStandalone,
       notifSupported,
       swSupported,
       pushSupported,
@@ -56,6 +76,8 @@ export default function PushPrompt({ bookingId }) {
       bookingId: bookingId || null,
     });
 
+    // Only proceed in PWA standalone mode
+    if (!isStandalone) return;
     if (!notifSupported || !swSupported || !pushSupported) return;
 
     const perm = Notification.permission;
@@ -82,6 +104,7 @@ export default function PushPrompt({ bookingId }) {
   async function handleEnable() {
     setShow(false);
     try {
+      console.log('[PushPrompt] requesting notification permission...');
       const perm = await Notification.requestPermission();
       console.log('[PushPrompt] permission result:', perm);
       if (perm !== 'granted') return;

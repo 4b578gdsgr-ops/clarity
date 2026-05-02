@@ -3409,6 +3409,9 @@ function RidesAdminView() {
   const [rides, setRides] = useState([]);
   const [loadingRides, setLoadingRides] = useState(true);
   const [form, setForm] = useState({ title: '', date: '', time: '', location: '', description: '' });
+  const [gpxFile, setGpxFile] = useState(null);
+  const [gpxUploading, setGpxUploading] = useState(false);
+  const [gpxUrl, setGpxUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -3425,6 +3428,30 @@ function RidesAdminView() {
     }
   }
 
+  async function handleGpxChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.gpx')) { setErr('File must be a .gpx file'); return; }
+    setGpxFile(file);
+    setGpxUrl('');
+    setGpxUploading(true);
+    setErr('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/rides/upload-gpx', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error || 'GPX upload failed'); setGpxFile(null); return; }
+      setGpxUrl(data.url);
+    } catch {
+      setErr('GPX upload failed');
+      setGpxFile(null);
+    } finally {
+      setGpxUploading(false);
+    }
+  }
+
   async function handleCreate(e) {
     e.preventDefault();
     if (!form.title || !form.date || !form.time || !form.location) {
@@ -3437,11 +3464,13 @@ function RidesAdminView() {
       const res = await fetch('/api/rides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, gpx_url: gpxUrl || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setErr(data.error || 'Failed to create ride'); return; }
       setForm({ title: '', date: '', time: '', location: '', description: '' });
+      setGpxFile(null);
+      setGpxUrl('');
       await loadRides();
     } catch {
       setErr('Network error');
@@ -3523,10 +3552,35 @@ function RidesAdminView() {
                 style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
               />
             </div>
+            <div>
+              <label style={lbl}>GPX file (optional)</label>
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+                padding: '8px 12px', border: '1px solid #374151', borderRadius: 7,
+                background: '#1a2b22', fontSize: 14, color: gpxFile ? '#4ade80' : '#9ca3af',
+              }}>
+                <input
+                  type="file"
+                  accept=".gpx"
+                  onChange={handleGpxChange}
+                  style={{ display: 'none' }}
+                />
+                {gpxUploading
+                  ? 'Uploading...'
+                  : gpxFile
+                    ? (gpxUrl ? gpxFile.name + ' — uploaded' : gpxFile.name + ' — uploading...')
+                    : 'Choose .gpx file'}
+              </label>
+              {gpxUrl && (
+                <p style={{ color: '#4ade80', fontSize: 12, margin: '4px 0 0' }}>
+                  Uploaded. Will attach to this ride.
+                </p>
+              )}
+            </div>
           </div>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || gpxUploading}
             style={{
               padding: '9px 20px', background: saving ? '#2d4a38' : '#4ade80', color: '#0f1a14',
               border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700,
@@ -3559,6 +3613,9 @@ function RidesAdminView() {
                 {fmtRideDate(r.date)} at {fmtRideTime(r.time)}
               </p>
               <p style={{ color: '#9ca3af', fontSize: 13, margin: 0 }}>{r.location}</p>
+              {r.gpx_url && (
+                <p style={{ color: '#4ade80', fontSize: 12, margin: '3px 0 0' }}>GPX attached</p>
+              )}
             </div>
             <button
               onClick={() => handleDelete(r.id)}

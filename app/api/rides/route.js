@@ -15,10 +15,10 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const { title, date, time, location, description } = await req.json();
+  const { title, date, time, location, description, gpx_url } = await req.json();
   const { data, error } = await supabaseAdmin
     .from('group_rides')
-    .insert({ title, date, time, location, description })
+    .insert({ title, date, time, location, description, ...(gpx_url ? { gpx_url } : {}) })
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });

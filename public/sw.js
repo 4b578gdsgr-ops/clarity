@@ -1,4 +1,4 @@
-const CACHE = 'olo-v2';
+const CACHE = 'olo-v3';
 
 // Shell assets to cache on install
 const PRECACHE = [
@@ -58,9 +58,15 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('push', event => {
+  console.log('[SW] push event received —', event.data ? 'has data' : 'NO DATA');
   if (!event.data) return;
   let data = {};
-  try { data = event.data.json(); } catch {}
+  try {
+    data = event.data.json();
+    console.log('[SW] push data:', JSON.stringify(data).slice(0, 200));
+  } catch (e) {
+    console.error('[SW] failed to parse push data:', e.message, 'raw:', event.data.text());
+  }
   const title = data.title || 'One Love Outdoors';
   const options = {
     body: data.body || '',
@@ -70,6 +76,7 @@ self.addEventListener('push', event => {
     tag: data.tag || 'olo-update',
     renotify: true,
   };
+  console.log('[SW] showing notification:', title, options.body);
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
