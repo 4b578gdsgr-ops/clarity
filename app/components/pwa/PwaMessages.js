@@ -35,7 +35,7 @@ export default function PwaMessages({ profile, onBack }) {
 
   useEffect(() => {
     load();
-    pollRef.current = setInterval(load, 20000);
+    pollRef.current = setInterval(load, 10000);
     return () => clearInterval(pollRef.current);
   }, []);
 

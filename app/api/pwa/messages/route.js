@@ -23,12 +23,22 @@ export async function GET(req) {
   const digits = normalizePhone(phone);
   if (digits.length < 7) return Response.json({ error: 'invalid phone' }, { status: 400 });
 
+  // Resolve thread for this phone
+  const thread_id = await getThreadIdForPhone(digits);
+  console.log('[pwa/messages] GET phone:', digits, '| thread_id:', thread_id);
+
+  if (!thread_id) {
+    return Response.json({ messages: [], canMessage: true });
+  }
+
+  // Fetch all messages in the thread — including admin replies (which have phone=null)
   const { data: messages, error } = await supabaseAdmin
     .from('member_messages')
     .select('*')
-    .eq('phone', digits)
+    .eq('thread_id', thread_id)
     .order('created_at', { ascending: true });
 
+  console.log('[pwa/messages] GET returned', messages?.length, 'messages for thread', thread_id);
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ messages: messages || [], canMessage: true });
 }
@@ -41,7 +51,9 @@ export async function POST(req) {
 
   const digits = normalizePhone(phone);
   let thread_id = await getThreadIdForPhone(digits);
+  const isNew = !thread_id;
   if (!thread_id) thread_id = crypto.randomUUID();
+  console.log('[pwa/messages] POST phone:', digits, '| thread_id:', thread_id, '| new thread:', isNew);
 
   const { data, error } = await supabaseAdmin
     .from('member_messages')
