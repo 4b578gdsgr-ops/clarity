@@ -78,6 +78,8 @@ export async function PATCH(request, { params }) {
     return Response.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
+  update.updated_at = new Date().toISOString();
+
   console.log('[PATCH /api/bookings/' + id + '] full payload:', JSON.stringify(update));
 
   const { data, error } = await supabaseAdmin
