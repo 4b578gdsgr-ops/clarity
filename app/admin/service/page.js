@@ -3651,6 +3651,7 @@ export default function AdminServicePage() {
   const [prefillLead, setPrefillLead] = useState(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [isPwa, setIsPwa] = useState(false);
 
   function handleRebook(booking) {
     setPrefillLead({
@@ -3728,7 +3729,11 @@ export default function AdminServicePage() {
 
   useEffect(() => {
     load();
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    setIsPwa(standalone);
+    if (standalone && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       setPushEnabled(true);
     }
   }, []);
@@ -3880,7 +3885,7 @@ export default function AdminServicePage() {
           >
             📅 Subscribe to calendar
           </button>
-          {!pushEnabled && (
+          {isPwa && !pushEnabled && (
             <button
               onClick={handleEnablePush}
               disabled={pushLoading}
