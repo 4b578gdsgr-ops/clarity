@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { getSavedBookingIds } from '../../../lib/pwaBookings';
 
 const STATUS = {
   new:              { label: 'Submitted',       bg: '#fef3c7', color: '#92400e' },
@@ -29,72 +30,80 @@ function BikeLabel({ booking }) {
   return <span>{booking.bike_brand ? booking.bike_brand + ' — ' : ''}{(booking.issues || []).slice(0, 2).join(', ') || 'Service'}</span>;
 }
 
-export default function PwaBookings({ profile, onBack }) {
+function BookingCard({ b }) {
+  const st = STATUS[b.status] || { label: b.status, bg: '#f3f4f6', color: '#374151' };
+  const pickupDate = b.confirmed_date ? formatDate(b.confirmed_date) : null;
+  const returnDate = b.return_date ? formatDate(b.return_date) : null;
+
+  return (
+    <a
+      href={'/service/' + b.id}
+      style={{
+        display: 'block', textDecoration: 'none',
+        background: '#fff', border: '1px solid #e5e7eb',
+        borderRadius: 12, padding: '14px 16px', marginBottom: 10,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14', flex: 1, marginRight: 10 }}>
+          <BikeLabel booking={b} />
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 600, background: st.bg, color: st.color, borderRadius: 6, padding: '3px 8px', whiteSpace: 'nowrap' }}>
+          {st.label}
+        </span>
+      </div>
+      {(pickupDate || returnDate) && (
+        <div style={{ fontSize: 13, color: '#6b7280' }}>
+          {pickupDate && <span>Pickup {pickupDate}</span>}
+          {pickupDate && returnDate && <span> &rarr; </span>}
+          {returnDate && <span>Back {returnDate}</span>}
+        </div>
+      )}
+      {!pickupDate && (
+        <div style={{ fontSize: 13, color: '#9ca3af' }}>
+          Submitted {new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </div>
+      )}
+      <div style={{ fontSize: 12, color: '#2d8653', marginTop: 6, fontWeight: 600 }}>
+        View details &rarr;
+      </div>
+    </a>
+  );
+}
+
+export default function PwaBookings({ profile }) {
   const [bookings, setBookings] = useState(null);
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    fetch('/api/pwa/bookings?phone=' + encodeURIComponent(profile.phone))
+    const ids = getSavedBookingIds();
+    const params = new URLSearchParams();
+    if (profile?.phone) params.set('phone', profile.phone);
+    if (ids.length) params.set('ids', ids.join(','));
+
+    if (!params.toString()) { setBookings([]); return; }
+
+    fetch('/api/my-bookings?' + params.toString())
       .then(r => r.json())
       .then(d => { if (d.bookings) setBookings(d.bookings); else setErr(d.error || 'Failed to load'); })
       .catch(() => setErr('Network error'));
-  }, []);
+  }, [profile?.phone]);
 
   const active = (bookings || []).filter(b => ACTIVE.has(b.status));
-  const past = (bookings || []).filter(b => !ACTIVE.has(b.status));
-
-  function BookingCard({ b }) {
-    const st = STATUS[b.status] || { label: b.status, bg: '#f3f4f6', color: '#374151' };
-    const pickupDate = b.confirmed_date ? formatDate(b.confirmed_date) : null;
-    const returnDate = b.return_date ? formatDate(b.return_date) : null;
-
-    return (
-      <a
-        href={'/service/' + b.id}
-        style={{
-          display: 'block', textDecoration: 'none',
-          background: '#fff', border: '1px solid #e5e7eb',
-          borderRadius: 12, padding: '14px 16px', marginBottom: 10,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14', flex: 1, marginRight: 10 }}>
-            <BikeLabel booking={b} />
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 600, background: st.bg, color: st.color, borderRadius: 6, padding: '3px 8px', whiteSpace: 'nowrap' }}>
-            {st.label}
-          </span>
-        </div>
-        {(pickupDate || returnDate) && (
-          <div style={{ fontSize: 13, color: '#6b7280' }}>
-            {pickupDate && <span>Pickup {pickupDate}</span>}
-            {pickupDate && returnDate && <span> &rarr; </span>}
-            {returnDate && <span>Back {returnDate}</span>}
-          </div>
-        )}
-        {!pickupDate && (
-          <div style={{ fontSize: 13, color: '#9ca3af' }}>
-            Submitted {new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          </div>
-        )}
-        <div style={{ fontSize: 12, color: '#2d8653', marginTop: 6, fontWeight: 600 }}>
-          View details &rarr;
-        </div>
-      </a>
-    );
-  }
+  const past   = (bookings || []).filter(b => !ACTIVE.has(b.status));
+  const hasAny = bookings !== null && bookings.length > 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#fafaf7' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fafaf7' }}>
       {/* Header */}
-      <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px 4px 0', color: '#2d8653', fontSize: 15, fontFamily: 'inherit' }}
+      <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 18, color: '#0f1a14' }}>My Bookings</div>
+        <a
+          href="/schedule-service"
+          style={{ fontSize: 13, fontWeight: 600, color: '#2d8653', textDecoration: 'none', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '6px 12px' }}
         >
-          Back
-        </button>
-        <div style={{ fontWeight: 700, fontSize: 16, color: '#0f1a14' }}>My Bookings</div>
+          + Book service
+        </a>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
@@ -105,10 +114,10 @@ export default function PwaBookings({ profile, onBack }) {
           <p style={{ color: '#dc2626', fontSize: 14, textAlign: 'center', marginTop: 40 }}>{err}</p>
         )}
 
-        {bookings !== null && bookings.length === 0 && (
+        {bookings !== null && !hasAny && (
           <div style={{ textAlign: 'center', marginTop: 60, padding: '0 24px' }}>
             <p style={{ color: '#374151', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>No bookings yet.</p>
-            <p style={{ color: '#9ca3af', fontSize: 14 }}>Book a service to get started.</p>
+            <p style={{ color: '#9ca3af', fontSize: 14, marginBottom: 24 }}>Use the Book tab to schedule your first service.</p>
           </div>
         )}
 

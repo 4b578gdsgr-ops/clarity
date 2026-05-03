@@ -13,7 +13,7 @@ const STATUS_COLORS = {
   no_show: { bg: '#fee2e2', color: '#991b1b', label: 'No show' },
 };
 
-export default function PwaMessages({ profile, onBack }) {
+export default function PwaMessages({ profile }) {
   const [messages, setMessages] = useState(null);
   const [canMessage, setCanMessage] = useState(false);
   const [text, setText] = useState('');
@@ -76,17 +76,11 @@ export default function PwaMessages({ profile, onBack }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#fafaf7' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fafaf7' }}>
       {/* Header */}
-      <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px 4px 0', color: '#2d8653', fontSize: 15, fontFamily: 'inherit' }}
-        >
-          Back
-        </button>
+      <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e5e7eb', background: '#fff' }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 16, color: '#0f1a14' }}>Messages</div>
+          <div style={{ fontWeight: 700, fontSize: 18, fontFamily: 'Playfair Display, serif', color: '#0f1a14' }}>Messages</div>
           <div style={{ fontSize: 12, color: '#9ca3af' }}>One Love Outdoors</div>
         </div>
       </div>

@@ -63,16 +63,10 @@ export default function PwaSettings({ profile, onDone, onResetProfile }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#fafaf7' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fafaf7' }}>
       {/* Header */}
-      <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={onDone}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px 4px 0', color: '#2d8653', fontSize: 15, fontFamily: 'inherit' }}
-        >
-          Back
-        </button>
-        <div style={{ fontWeight: 700, fontSize: 16, color: '#0f1a14' }}>Settings</div>
+      <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e5e7eb', background: '#fff' }}>
+        <div style={{ fontWeight: 700, fontSize: 18, fontFamily: 'Playfair Display, serif', color: '#0f1a14' }}>Settings</div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>

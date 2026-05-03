@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../lib/serviceArea';
 import { validateBooking, isFormValid } from '../../lib/bookingValidation';
 import { getProfile } from '../../lib/pwaProfile';
+import { saveBookingId } from '../../lib/pwaBookings';
 import PhotoUpload from '../components/PhotoUpload';
 
 const ServiceMap = dynamic(() => import('../components/ServiceMap'), { ssr: false });
@@ -276,6 +277,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
           lat: pin?.lat ?? null, lng: pin?.lng ?? null,
         }));
       } catch {}
+      saveBookingId(data.booking.id);
       onDone(data.booking.id, form.contact_preference, isAssembly);
     } catch {
       setSubmitErr('Network error. Please try again.');
