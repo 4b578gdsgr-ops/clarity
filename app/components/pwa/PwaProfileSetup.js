@@ -10,8 +10,8 @@ const inp = { width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', 
 const lbl = { display: 'block', fontSize: 14, color: '#374151', marginBottom: 4, fontWeight: 500 };
 
 export default function PwaProfileSetup({ onDone }) {
-  const [step, setStep] = useState('info'); // 'info' | 'location'
-  const [form, setForm] = useState({ name: '', phone: '', email: '', contact_preference: 'text' });
+  const [step, setStep] = useState('info');
+  const [form, setForm] = useState({ name: '', phone: '', is_member: false });
   const [errors, setErrors] = useState({});
   const [pin, setPin] = useState(null);
   const [address, setAddress] = useState('');
@@ -25,17 +25,11 @@ export default function PwaProfileSetup({ onDone }) {
     setErrors(e => ({ ...e, [k]: '' }));
   }
 
-  function validateInfo() {
+  function handleInfoNext(e) {
+    e.preventDefault();
     const errs = {};
     if (!form.name.trim()) errs.name = 'Name is required';
     if (!form.phone.trim()) errs.phone = 'Phone is required';
-    if (form.contact_preference === 'email' && !form.email.trim()) errs.email = 'Email is required';
-    return errs;
-  }
-
-  function handleInfoNext(e) {
-    e.preventDefault();
-    const errs = validateInfo();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setStep('location');
   }
@@ -75,33 +69,33 @@ export default function PwaProfileSetup({ onDone }) {
     setSearchErr('');
   }
 
-  function handleSave() {
+  function finish(withLocation) {
     saveProfile({
       name: form.name.trim(),
       phone: form.phone.trim(),
-      email: form.email.trim(),
-      contact_preference: form.contact_preference,
-      address: address || '',
-      lat: pin?.lat || null,
-      lng: pin?.lng || null,
+      is_member: form.is_member,
+      contact_preference: 'text',
+      address: withLocation ? (address || '') : '',
+      lat: withLocation ? (pin?.lat || null) : null,
+      lng: withLocation ? (pin?.lng || null) : null,
     });
     onDone();
   }
 
   if (step === 'info') {
     return (
-      <div style={{ minHeight: '100vh', background: '#fafaf7', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ maxWidth: 480, margin: '0 auto', padding: '40px 20px' }}>
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, color: '#1a3328', marginBottom: 8, lineHeight: 1.2 }}>
+      <div style={{ minHeight: '100dvh', background: '#fafaf7', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ maxWidth: 440, margin: '0 auto', padding: '40px 24px' }}>
+          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', fontWeight: 900, color: '#1a3328', marginBottom: 6, lineHeight: 1.2 }}>
             Welcome to One Love Outdoors.
           </h1>
           <p style={{ color: '#636e72', fontSize: 15, lineHeight: 1.6, marginBottom: 32 }}>
-            Let's get you set up.
+            Let's get you set up so we know who you are.
           </p>
 
           <form onSubmit={handleInfoNext}>
             <div style={{ marginBottom: 16 }}>
-              <label style={lbl}>Your name *</label>
+              <label style={lbl}>Name *</label>
               <input
                 type="text"
                 value={form.name}
@@ -113,7 +107,7 @@ export default function PwaProfileSetup({ onDone }) {
               {errors.name && <p style={{ fontSize: 13, color: '#dc2626', marginTop: 3 }}>{errors.name}</p>}
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 24 }}>
               <label style={lbl}>Phone *</label>
               <input
                 type="tel"
@@ -125,41 +119,19 @@ export default function PwaProfileSetup({ onDone }) {
               {errors.phone && <p style={{ fontSize: 13, color: '#dc2626', marginTop: 3 }}>{errors.phone}</p>}
             </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={lbl}>Email (optional)</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={e => setField('email', e.target.value)}
-                placeholder="you@example.com"
-                style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }}
-              />
-              {errors.email && <p style={{ fontSize: 13, color: '#dc2626', marginTop: 3 }}>{errors.email}</p>}
-            </div>
-
-            <div style={{ marginBottom: 28 }}>
-              <label style={lbl}>How should we reach you? *</label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {['text', 'email'].map(opt => {
-                  const sel = form.contact_preference === opt;
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setField('contact_preference', opt)}
-                      style={{
-                        flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                        border: sel ? '2px solid #1a3328' : '1px solid #d1d5db',
-                        background: sel ? '#1a3328' : '#fff',
-                        color: sel ? '#fff' : '#374151',
-                        fontWeight: sel ? 600 : 400,
-                      }}
-                    >
-                      {opt === 'text' ? 'Text me' : 'Email me'}
-                    </button>
-                  );
-                })}
-              </div>
+            <div style={{ marginBottom: 28, padding: '12px 14px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={form.is_member}
+                  onChange={e => setField('is_member', e.target.checked)}
+                  style={{ width: 17, height: 17, accentColor: '#1a3328', cursor: 'pointer', flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 14, color: '#166534', fontWeight: 600 }}>I'm a One Love member</span>
+              </label>
+              <p style={{ fontSize: 12, color: '#15803d', margin: '5px 0 0 27px' }}>
+                Members get free pickup, priority service, and preferred pricing.
+              </p>
             </div>
 
             <button
@@ -175,8 +147,8 @@ export default function PwaProfileSetup({ onDone }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafaf7', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '32px 20px 20px', width: '100%' }}>
+    <div style={{ minHeight: '100dvh', background: '#fafaf7', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '24px 20px 20px', width: '100%' }}>
         <button
           type="button"
           onClick={() => setStep('info')}
@@ -184,14 +156,14 @@ export default function PwaProfileSetup({ onDone }) {
         >
           Back
         </button>
-        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', fontWeight: 900, color: '#1a3328', marginBottom: 6 }}>
+        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', fontWeight: 900, color: '#1a3328', marginBottom: 4 }}>
           Where should we usually meet?
         </h2>
-        <p style={{ color: '#636e72', fontSize: 14, marginBottom: 16 }}>
+        <p style={{ color: '#636e72', fontSize: 14, marginBottom: 14 }}>
           Home, office, trailhead — wherever works. You can change this any time.
         </p>
 
-        <div style={{ height: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', marginBottom: 10, background: '#f3f4f6' }}>
+        <div style={{ height: 280, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', marginBottom: 10, background: '#f3f4f6' }}>
           <ServiceMap pin={pin} onMapClick={handleMapClick} showBoundary />
         </div>
 
@@ -215,40 +187,37 @@ export default function PwaProfileSetup({ onDone }) {
         {searchErr && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{searchErr}</p>}
 
         {pin && outside && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <p style={{ color: '#dc2626', fontSize: 14, margin: 0, fontWeight: 600 }}>
-              That location is outside our service area — Hartford and Tolland counties, CT.
-            </p>
-          </div>
+          <p style={{ color: '#dc2626', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+            Outside our service area (Hartford and Tolland counties, CT).
+          </p>
         )}
 
         {pin && !outside && (
-          <p style={{ fontSize: 13, color: '#166534', marginBottom: 12 }}>
+          <p style={{ fontSize: 13, color: '#166534', marginBottom: 8 }}>
             Location set: <strong>{address || (pin.lat.toFixed(4) + ', ' + pin.lng.toFixed(4))}</strong>
           </p>
         )}
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!pin || outside}
-            style={{
-              flex: 1, padding: '14px 0', background: (!pin || outside) ? '#9ca3af' : '#1a3328',
-              color: '#fff', border: 'none', borderRadius: 10, fontSize: 16,
-              cursor: (!pin || outside) ? 'default' : 'pointer', fontWeight: 600, fontFamily: 'inherit',
-            }}
-          >
-            Save and continue
-          </button>
-          <button
-            type="button"
-            onClick={() => { saveProfile({ name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), contact_preference: form.contact_preference, address: '', lat: null, lng: null }); onDone(); }}
-            style={{ padding: '14px 16px', background: '#fff', border: '1px solid #d1d5db', borderRadius: 10, fontSize: 14, cursor: 'pointer', color: '#6b7280', fontFamily: 'inherit' }}
-          >
-            Skip
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => finish(true)}
+          disabled={!pin || outside}
+          style={{
+            width: '100%', padding: '14px 0', marginTop: 8,
+            background: (!pin || outside) ? '#9ca3af' : '#1a3328',
+            color: '#fff', border: 'none', borderRadius: 10, fontSize: 16,
+            cursor: (!pin || outside) ? 'default' : 'pointer', fontWeight: 600, fontFamily: 'inherit',
+          }}
+        >
+          Get started
+        </button>
+        <button
+          type="button"
+          onClick={() => finish(false)}
+          style={{ width: '100%', padding: '12px 0', marginTop: 10, background: 'none', border: 'none', fontSize: 14, cursor: 'pointer', color: '#9ca3af', fontFamily: 'inherit' }}
+        >
+          Skip — I'll add my address later
+        </button>
       </div>
     </div>
   );

@@ -71,7 +71,7 @@ function BookingCard({ b }) {
   );
 }
 
-export default function PwaBookings({ profile }) {
+export default function PwaBookings({ profile, onBack }) {
   const [bookings, setBookings] = useState(null);
   const [err, setErr] = useState('');
 
@@ -96,13 +96,23 @@ export default function PwaBookings({ profile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fafaf7' }}>
       {/* Header */}
-      <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 18, color: '#0f1a14' }}>My Bookings</div>
+      <div style={{
+        padding: '16px 20px 14px', paddingTop: 'calc(16px + env(safe-area-inset-top))',
+        borderBottom: '1px solid #e5e7eb', background: '#fff',
+        display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8,
+      }}>
+        <button
+          onClick={onBack}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#2d8653', fontWeight: 600, padding: 0 }}
+        >
+          &larr; Home
+        </button>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 18, color: '#0f1a14', textAlign: 'center' }}>My Bookings</div>
         <a
           href="/schedule-service"
-          style={{ fontSize: 13, fontWeight: 600, color: '#2d8653', textDecoration: 'none', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '6px 12px' }}
+          style={{ fontSize: 13, fontWeight: 600, color: '#2d8653', textDecoration: 'none', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '6px 10px', whiteSpace: 'nowrap' }}
         >
-          + Book service
+          + Book
         </a>
       </div>
 

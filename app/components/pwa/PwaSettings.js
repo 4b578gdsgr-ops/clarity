@@ -65,8 +65,19 @@ export default function PwaSettings({ profile, onDone, onResetProfile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fafaf7' }}>
       {/* Header */}
-      <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e5e7eb', background: '#fff' }}>
-        <div style={{ fontWeight: 700, fontSize: 18, fontFamily: 'Playfair Display, serif', color: '#0f1a14' }}>Settings</div>
+      <div style={{
+        padding: '16px 20px 12px', paddingTop: 'calc(16px + env(safe-area-inset-top))',
+        borderBottom: '1px solid #e5e7eb', background: '#fff',
+        display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8,
+      }}>
+        <button
+          onClick={onDone}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#2d8653', fontWeight: 600, padding: 0 }}
+        >
+          &larr; Home
+        </button>
+        <div style={{ fontWeight: 700, fontSize: 18, fontFamily: 'Playfair Display, serif', color: '#0f1a14', textAlign: 'center' }}>Settings</div>
+        <div />
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>

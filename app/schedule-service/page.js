@@ -688,6 +688,7 @@ export default function ScheduleService() {
     if (standalone && pwaProf?.name && pwaProf?.phone) {
       // PWA with profile: skip location and contact steps entirely
       setPwaProfile(pwaProf);
+      setInitialMember(pwaProf.is_member || false);
       if (pwaProf.lat && pwaProf.lng) setPin({ lat: pwaProf.lat, lng: pwaProf.lng });
       setAddress(pwaProf.address || '');
       setStep('form');
