@@ -10,6 +10,7 @@ function sanitize(b) {
     id: b.id,
     status: b.status,
     created_at: b.created_at,
+    updated_at: b.updated_at || b.created_at,
     confirmed_date: b.confirmed_date || null,
     return_date: b.return_date || null,
     bike_brand: b.bike_brand || null,
@@ -33,7 +34,7 @@ export async function GET(req) {
 
   const { data, error } = await supabaseAdmin
     .from('service_bookings')
-    .select('id, status, created_at, confirmed_date, return_date, bike_brand, issues, bikes, address, phone')
+    .select('id, status, created_at, updated_at, confirmed_date, return_date, bike_brand, issues, bikes, address, phone')
     .order('created_at', { ascending: false });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });

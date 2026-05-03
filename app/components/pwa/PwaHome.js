@@ -1,8 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getProfile } from '../../../lib/pwaProfile';
 import { getSavedBookingIds } from '../../../lib/pwaBookings';
-import { getBookingSeen, markBookingsSeen, getMessagesSeenAt, markMessagesSeen } from '../../../lib/pwaBadges';
+import {
+  markBookingsViewed, markMessagesSeen,
+  countUnreadBookings, countUnreadMessages,
+} from '../../../lib/pwaBadges';
 import dynamic from 'next/dynamic';
 
 const PwaBookings = dynamic(() => import('./PwaBookings'));
@@ -30,7 +33,7 @@ function GearIcon() {
 }
 
 function Badge({ count }) {
-  if (!count) return null;
+  if (!count || count < 1) return null;
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -117,7 +120,6 @@ function PushPrompt({ phone, onDone }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ booking_id: digits, subscription: sub.toJSON() }),
         });
-        console.log('[push] customer subscribed with phone', digits);
       }
     } catch (err) {
       console.error('[push] subscription failed:', err);
@@ -170,105 +172,93 @@ function PushPrompt({ phone, onDone }) {
   );
 }
 
-function setAppBadge(total) {
-  if (!('setAppBadge' in navigator)) return;
-  if (total > 0) navigator.setAppBadge(total).catch(() => {});
-  else navigator.clearAppBadge().catch(() => {});
-}
-
 export default function PwaHome({ onResetProfile }) {
   const profile = getProfile();
   const [view, setView] = useState('home');
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [bookingBadge, setBookingBadge] = useState(0);
   const [messageBadge, setMessageBadge] = useState(0);
-  const [fetchedBookings, setFetchedBookings] = useState(null);
+  // Track current view in a ref so the poll callback always sees the latest value
+  const viewRef = useRef('home');
+  const profileRef = useRef(profile);
 
-  // Keep app icon badge in sync
-  useEffect(() => {
-    setAppBadge(bookingBadge + messageBadge);
-  }, [bookingBadge, messageBadge]);
+  function updateView(v) {
+    viewRef.current = v;
+    setView(v);
+  }
 
-  // On mount: handle deep-link + fetch badge counts
+  // Fetch both badge counts and update state (skips if that tab is already open)
+  const refreshBadges = useCallback(async () => {
+    const p = profileRef.current;
+    const ids = getSavedBookingIds();
+    const bParams = new URLSearchParams();
+    if (p?.phone) bParams.set('phone', p.phone);
+    if (ids.length) bParams.set('ids', ids.join(','));
+
+    if (bParams.toString()) {
+      try {
+        const res = await fetch('/api/my-bookings?' + bParams.toString());
+        const d = await res.json();
+        if (d.bookings) {
+          const count = viewRef.current === 'bookings' ? 0 : countUnreadBookings(d.bookings);
+          setBookingBadge(count);
+        }
+      } catch {}
+    }
+
+    if (p?.phone) {
+      try {
+        const res = await fetch('/api/pwa/messages?phone=' + encodeURIComponent(p.phone));
+        const d = await res.json();
+        if (d.messages) {
+          const count = viewRef.current === 'messages' ? 0 : countUnreadMessages(d.messages);
+          setMessageBadge(count);
+        }
+      } catch {}
+    }
+  }, []);
+
+  // Mount: handle deep-link, initial badge fetch, 30s poll
   useEffect(() => {
-    console.log('[PWA] PwaHome mounted — profile:', profile?.name, '| savedIds:', getSavedBookingIds());
+    profileRef.current = profile;
 
     // Handle ?openTab= deep-link from push notification
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('openTab');
     if (tab && ['bookings', 'messages', 'rides', 'settings'].includes(tab)) {
       window.history.replaceState({}, '', window.location.pathname);
-      openView(tab);
+      openTab(tab);
     }
 
-    // Fetch bookings badge
-    const ids = getSavedBookingIds();
-    const bParams = new URLSearchParams();
-    if (profile?.phone) bParams.set('phone', profile.phone);
-    if (ids.length) bParams.set('ids', ids.join(','));
-
-    if (bParams.toString()) {
-      fetch('/api/my-bookings?' + bParams.toString())
-        .then(r => r.json())
-        .then(d => {
-          if (!d.bookings) return;
-          setFetchedBookings(d.bookings);
-          const seen = getBookingSeen();
-          const unread = d.bookings.filter(b => seen[b.id] !== b.status).length;
-          setBookingBadge(unread);
-        })
-        .catch(() => {});
-    }
-
-    // Fetch messages badge
-    if (profile?.phone) {
-      fetch('/api/pwa/messages?phone=' + encodeURIComponent(profile.phone))
-        .then(r => r.json())
-        .then(d => {
-          if (!d.messages) return;
-          const seenAt = getMessagesSeenAt();
-          const seenTs = seenAt ? new Date(seenAt).getTime() : 0;
-          const unread = d.messages.filter(m => m.sender === 'admin' && new Date(m.created_at).getTime() > seenTs).length;
-          setMessageBadge(unread);
-        })
-        .catch(() => {});
-    }
+    refreshBadges();
+    const interval = setInterval(refreshBadges, 30000);
+    return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // If bookings view is open when fetch completes, mark seen immediately
-  useEffect(() => {
-    if (view === 'bookings' && fetchedBookings) {
-      markBookingsSeen(fetchedBookings);
-      setBookingBadge(0);
-    }
-  }, [fetchedBookings, view]);
-
-  // Push prompt: show after 800ms delay when back on home, if eligible
+  // Push prompt: show 800ms after returning to home, if eligible
   useEffect(() => {
     if (view !== 'home') return;
     if (!('Notification' in window) || !VAPID_PUBLIC_KEY) return;
     if (Notification.permission !== 'default') return;
     if (!profile?.phone) return;
-
     let state = {};
     try { state = JSON.parse(localStorage.getItem('ol_push_prompt') || '{}'); } catch {}
     if ((state.dismissals || 0) >= 2) return;
     if (Date.now() < (state.nextPrompt || 0)) return;
-
     const t = setTimeout(() => setShowPushPrompt(true), 800);
     return () => clearTimeout(t);
   }, [view, profile?.phone]);
 
-  function openView(tab) {
+  function openTab(tab) {
     if (tab === 'bookings') {
-      markBookingsSeen(fetchedBookings || []);
+      markBookingsViewed();
       setBookingBadge(0);
     } else if (tab === 'messages') {
       markMessagesSeen();
       setMessageBadge(0);
     }
-    setView(tab);
+    updateView(tab);
   }
 
   return (
@@ -282,7 +272,7 @@ export default function PwaHome({ onResetProfile }) {
             background: '#fafaf7',
           }}>
             <button
-              onClick={() => openView('settings')}
+              onClick={() => openTab('settings')}
               aria-label="Settings"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9ca3af', lineHeight: 1 }}
             >
@@ -320,7 +310,7 @@ export default function PwaHome({ onResetProfile }) {
 
                 <button
                   type="button"
-                  onClick={() => openView('bookings')}
+                  onClick={() => openTab('bookings')}
                   style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
@@ -339,7 +329,7 @@ export default function PwaHome({ onResetProfile }) {
 
                 <button
                   type="button"
-                  onClick={() => openView('messages')}
+                  onClick={() => openTab('messages')}
                   style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
@@ -358,7 +348,7 @@ export default function PwaHome({ onResetProfile }) {
 
                 <button
                   type="button"
-                  onClick={() => openView('rides')}
+                  onClick={() => openTab('rides')}
                   style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
@@ -379,10 +369,10 @@ export default function PwaHome({ onResetProfile }) {
 
       {view !== 'home' && (
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          {view === 'bookings' && <PwaBookings profile={profile} onBack={() => setView('home')} />}
-          {view === 'messages' && <PwaMessages profile={profile} onBack={() => setView('home')} />}
-          {view === 'rides'    && <PwaRides onBack={() => setView('home')} />}
-          {view === 'settings' && <PwaSettings profile={profile} onDone={() => setView('home')} onResetProfile={onResetProfile} />}
+          {view === 'bookings' && <PwaBookings profile={profile} onBack={() => updateView('home')} />}
+          {view === 'messages' && <PwaMessages profile={profile} onBack={() => updateView('home')} />}
+          {view === 'rides'    && <PwaRides onBack={() => updateView('home')} />}
+          {view === 'settings' && <PwaSettings profile={profile} onDone={() => updateView('home')} onResetProfile={onResetProfile} />}
         </div>
       )}
     </div>
