@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { sendAdminMessageNotification } from '../../../lib/email';
 import { notifyCustomerMessage } from '../../../lib/notify';
-import { pushToBooking } from '../../../lib/push';
+import { pushToBooking, pushToAdmin } from '../../../lib/push';
 
 // GET /api/messages?booking_id=xxx
 export async function GET(request) {
@@ -116,6 +116,7 @@ export async function POST(request) {
       sendAdminMessageNotification(booking, message.trim()).catch(err =>
         console.error('[messages] POST admin email failed:', err?.message || err)
       );
+      pushToAdmin({ title: 'Message from ' + (booking.name || 'customer'), body: message.trim().slice(0, 80), url: '/admin/service', tag: 'olo-admin-msg' }).catch(() => {});
     }
   }
 

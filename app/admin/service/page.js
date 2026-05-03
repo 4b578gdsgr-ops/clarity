@@ -3649,6 +3649,8 @@ export default function AdminServicePage() {
   const [icalCopied, setIcalCopied] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
   const [prefillLead, setPrefillLead] = useState(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
 
   function handleRebook(booking) {
     setPrefillLead({
@@ -3724,7 +3726,45 @@ export default function AdminServicePage() {
     setMemberUnread(prev => Math.max(0, prev - 1));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      setPushEnabled(true);
+    }
+  }, []);
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  }
+
+  async function handleEnablePush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    setPushLoading(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') { setPushLoading(false); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) { setPushLoading(false); return; }
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: 'admin', subscription: sub.toJSON() }),
+      });
+      setPushEnabled(true);
+    } catch (err) {
+      console.error('[admin push]', err);
+    } finally {
+      setPushLoading(false);
+    }
+  }
 
   const newCount = bookings.filter(b => b.status === 'new').length;
 
@@ -3840,6 +3880,15 @@ export default function AdminServicePage() {
           >
             📅 Subscribe to calendar
           </button>
+          {!pushEnabled && (
+            <button
+              onClick={handleEnablePush}
+              disabled={pushLoading}
+              style={{ background: 'none', border: '1px solid #6b7280', color: '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              {pushLoading ? 'Enabling...' : 'Enable notifications'}
+            </button>
+          )}
           <button
             onClick={load}
             style={{ background: 'none', border: '1px solid #4ade80', color: '#4ade80', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}

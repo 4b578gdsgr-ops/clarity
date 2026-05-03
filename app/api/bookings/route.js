@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { notifyCustomer } from '../../../lib/notify';
+import { pushToAdmin } from '../../../lib/push';
 
 // GET /api/bookings?status=new
 export async function GET(request) {
@@ -111,6 +112,8 @@ export async function POST(request) {
   } catch (err) {
     console.error('[bookings] ADMIN EMAIL FAILED:', JSON.stringify(err));
   }
+
+  pushToAdmin({ title: 'New booking — ' + (data.name || 'Unknown'), body: data.address || '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
 
   // Fire-and-forget webhook
   const webhookUrl = process.env.BOOKING_WEBHOOK_URL;

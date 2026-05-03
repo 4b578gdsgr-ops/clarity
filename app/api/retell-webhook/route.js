@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { Resend } from 'resend';
+import { pushToAdmin } from '../../../lib/push';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const ADMIN_EMAIL = 'service@oneloveoutdoors.org';
@@ -85,5 +86,6 @@ export async function POST(request) {
   }
 
   console.log('[retell-webhook] lead saved — type:', callType || 'service');
+  pushToAdmin({ title: 'New phone lead — ' + (name || 'Unknown'), body: phone || '', url: '/admin/service', tag: 'olo-admin-lead' }).catch(() => {});
   return Response.json({ ok: true, action: 'saved' });
 }

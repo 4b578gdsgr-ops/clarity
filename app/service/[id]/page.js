@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
-import PushPrompt from '../../components/PushPrompt';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
@@ -775,7 +774,7 @@ export default function BookingStatusPage({ params }) {
           </p>
         )}
 
-        <PushPrompt bookingId={id} />
+
 
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

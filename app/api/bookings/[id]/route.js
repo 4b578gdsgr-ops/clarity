@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
 import { sendCancellationNotification } from '../../../../lib/email';
-import { pushToBooking } from '../../../../lib/push';
+import { pushToBooking, pushToAdmin } from '../../../../lib/push';
 
 const PUSH_PAYLOADS = {
   confirmed: {
@@ -124,6 +124,17 @@ export async function PATCH(request, { params }) {
     sendCancellationNotification(data).catch(err =>
       console.error('[bookings/[id]] cancellation notification failed:', err?.message || err)
     );
+    pushToAdmin({ title: (data.name || 'Customer') + ' cancelled', body: '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
+  }
+
+  // Push admin when customer confirms pickup
+  if (update.confirmed_by_customer === true) {
+    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed pickup', body: '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
+  }
+
+  // Push admin when customer sets delivery address
+  if (update.delivery_address !== undefined) {
+    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery', body: update.delivery_address || '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
   }
 
   return Response.json({ booking: data });

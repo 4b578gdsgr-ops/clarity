@@ -1,7 +1,14 @@
-// Suppress PWA manifest on all admin pages so /admin/* URLs are not captured
-// by the PWA install and open as normal browser pages.
+// Admin pages need standalone PWA mode for the admin home screen shortcut.
 export const metadata = {
-  manifest: null,
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'One Love Admin',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function AdminLayout({ children }) {
