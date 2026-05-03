@@ -305,7 +305,7 @@ export default function PwaHome({ onResetProfile }) {
                 >
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 2 }}>Messages</div>
-                    <div style={{ fontSize: 13, color: '#6b7280' }}>Talk to your mechanic.</div>
+                    <div style={{ fontSize: 13, color: '#6b7280' }}>Talk to your bicycologist.</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Badge count={messageBadge} />
@@ -358,7 +358,7 @@ export default function PwaHome({ onResetProfile }) {
                 >
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Book service</div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Pickup Monday. Back by Friday.</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Your bike will thank you.</div>
                   </div>
                   <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 22 }}>&rsaquo;</div>
                 </a>
