@@ -1,4 +1,4 @@
-const CACHE = 'olo-v3';
+const CACHE = 'olo-v4';
 
 // Shell assets to cache on install
 const PRECACHE = [
@@ -38,7 +38,7 @@ self.addEventListener('fetch', event => {
   // Navigation requests: network-first, fall back to cached shell
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/schedule-service'))
+      fetch(request).catch(() => caches.match('/'))
     );
     return;
   }

@@ -684,14 +684,32 @@ export default function ScheduleService() {
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
 
-    const pwaProf = getProfile();
-    if (standalone && pwaProf?.name && pwaProf?.phone) {
-      // PWA with profile: skip location and contact steps entirely
-      setPwaProfile(pwaProf);
-      setInitialMember(pwaProf.is_member || false);
-      if (pwaProf.lat && pwaProf.lng) setPin({ lat: pwaProf.lat, lng: pwaProf.lng });
-      setAddress(pwaProf.address || '');
-      setStep('form');
+    if (standalone) {
+      // If this page is the PWA entry point (old install with start_url=/schedule-service),
+      // redirect to home. Only skip the redirect when the user explicitly navigated here
+      // from within the app (referrer is same origin).
+      let cameFromApp = false;
+      try {
+        cameFromApp = document.referrer !== '' &&
+          new URL(document.referrer).hostname === window.location.hostname;
+      } catch {}
+
+      if (!cameFromApp) {
+        window.location.replace('/');
+        return;
+      }
+
+      const pwaProf = getProfile();
+      if (pwaProf?.name && pwaProf?.phone) {
+        setPwaProfile(pwaProf);
+        setInitialMember(pwaProf.is_member || false);
+        if (pwaProf.lat && pwaProf.lng) setPin({ lat: pwaProf.lat, lng: pwaProf.lng });
+        setAddress(pwaProf.address || '');
+        setStep('form');
+        return;
+      }
+      // No profile — shouldn't happen if navigating from home, but redirect cleanly
+      window.location.replace('/');
       return;
     }
 
