@@ -1,8 +1,14 @@
 'use client';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { getProfile } from '../lib/pwaProfile';
 
-// ─── Homepage ─────────────────────────────────────────────────────────────────
+const PwaProfileSetup = dynamic(() => import('./components/pwa/PwaProfileSetup'), { ssr: false });
+const PwaHome = dynamic(() => import('./components/pwa/PwaHome'), { ssr: false });
 
-export default function HomePage() {
+// ─── Regular homepage (browser / embed) ───────────────────────────────────────
+
+function HomeContent() {
   return (
     <div className="min-h-screen relative">
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, #e8f5ee, #faf9f6 70%)' }} />
@@ -101,4 +107,29 @@ export default function HomePage() {
       </div>
     </div>
   );
+}
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
+export default function HomePage() {
+  const [mode, setMode] = useState(null); // null=detecting, 'web', 'setup', 'pwa'
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    if (!standalone) {
+      setMode('web');
+      return;
+    }
+
+    const profile = getProfile();
+    setMode(profile?.name && profile?.phone ? 'pwa' : 'setup');
+  }, []);
+
+  if (mode === null) return null;
+  if (mode === 'web') return <HomeContent />;
+  if (mode === 'setup') return <PwaProfileSetup onDone={() => setMode('pwa')} />;
+  return <PwaHome onResetProfile={() => setMode('setup')} />;
 }

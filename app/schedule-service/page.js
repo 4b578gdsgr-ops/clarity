@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../lib/serviceArea';
 import { validateBooking, isFormValid } from '../../lib/bookingValidation';
+import { getProfile } from '../../lib/pwaProfile';
 import PhotoUpload from '../components/PhotoUpload';
 
 const ServiceMap = dynamic(() => import('../components/ServiceMap'), { ssr: false });
@@ -195,15 +196,16 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
 
 // ─── Step 2: Form ─────────────────────────────────────────────────────────────
 
-function FormStep({ address, pin, onBack, onDone, initialMember = false, initialForm = null }) {
+function FormStep({ address, pin, onBack, onDone, initialMember = false, initialForm = null, pwaProfile = null }) {
   const formRef = useRef(null);
   const [isMember, setIsMember] = useState(initialMember);
+  const prefill = pwaProfile || initialForm;
   const [form, setForm] = useState({
-    name: initialForm?.name || '',
-    phone: initialForm?.phone || '',
-    email: initialForm?.email || '',
-    contact_preference: initialForm?.contact_preference || '',
-    address: address || '',
+    name: prefill?.name || '',
+    phone: prefill?.phone || '',
+    email: prefill?.email || '',
+    contact_preference: prefill?.contact_preference || '',
+    address: address || prefill?.address || '',
     preferred_day: '', time_slot: '', notes: '',
   });
   const [bikes, setBikes] = useState([{ type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
@@ -288,12 +290,26 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-      <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, color: '#0f1a14', marginBottom: 6 }}>
-        About you and your bike
-      </h2>
-      <p style={{ color: '#4b5563', marginBottom: 24, fontSize: 15 }}>
-        {'We\'ll reach out to confirm a time.'}
-      </p>
+      {pwaProfile ? (
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, color: '#0f1a14', marginBottom: 4 }}>
+            What needs work?
+          </h2>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+            Booking for <strong>{pwaProfile.name}</strong>
+            {pwaProfile.address ? <> &mdash; {pwaProfile.address.split(',').slice(0, 2).join(',').trim()}</> : null}
+          </p>
+        </div>
+      ) : (
+        <>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, color: '#0f1a14', marginBottom: 6 }}>
+            About you and your bike
+          </h2>
+          <p style={{ color: '#4b5563', marginBottom: 24, fontSize: 15 }}>
+            {'We\'ll reach out to confirm a time.'}
+          </p>
+        </>
+      )}
 
       {submitErr && (
         <p style={{ color: '#dc2626', fontSize: 14, background: '#fef2f2', padding: '10px 14px', borderRadius: 8, marginBottom: 16 }}>
@@ -302,67 +318,71 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
       )}
 
       <form ref={formRef} onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ ...lbl, color: errors.contact_preference ? '#dc2626' : '#374151' }}>
-            How should we reach you? *
-          </label>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {['text', 'email'].map(opt => {
-              const sel = form.contact_preference === opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setField('contact_preference', opt)}
-                  style={{
-                    flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                    border: sel ? '2px solid #1a3328' : ('1px solid ' + (errors.contact_preference ? '#dc2626' : '#d1d5db')),
-                    background: sel ? '#1a3328' : '#fff',
-                    color: sel ? '#fff' : '#374151',
-                    fontWeight: sel ? 600 : 400,
-                  }}
-                >
-                  {opt === 'text' ? 'Text' : 'Email'}
-                </button>
-              );
-            })}
-          </div>
-          {errors.contact_preference && <p data-field-error style={errStyle}>{errors.contact_preference}</p>}
-        </div>
+        {!pwaProfile && (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ ...lbl, color: errors.contact_preference ? '#dc2626' : '#374151' }}>
+                How should we reach you? *
+              </label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {['text', 'email'].map(opt => {
+                  const sel = form.contact_preference === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setField('contact_preference', opt)}
+                      style={{
+                        flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                        border: sel ? '2px solid #1a3328' : ('1px solid ' + (errors.contact_preference ? '#dc2626' : '#d1d5db')),
+                        background: sel ? '#1a3328' : '#fff',
+                        color: sel ? '#fff' : '#374151',
+                        fontWeight: sel ? 600 : 400,
+                      }}
+                    >
+                      {opt === 'text' ? 'Text' : 'Email'}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.contact_preference && <p data-field-error style={errStyle}>{errors.contact_preference}</p>}
+            </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>Name *</label>
-          <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#dc2626' : '#d1d5db' }} />
-          {errors.name && <p data-field-error style={errStyle}>{errors.name}</p>}
-        </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}>Name *</label>
+              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#dc2626' : '#d1d5db' }} />
+              {errors.name && <p data-field-error style={errStyle}>{errors.name}</p>}
+            </div>
 
-        {form.contact_preference === 'text' && (
-          <div style={{ marginBottom: 16 }}>
-            <label style={lbl}>Phone *</label>
-            <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#dc2626' : '#d1d5db' }} />
-            {errors.phone && <p data-field-error style={errStyle}>{errors.phone}</p>}
-          </div>
+            {form.contact_preference === 'text' && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={lbl}>Phone *</label>
+                <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#dc2626' : '#d1d5db' }} />
+                {errors.phone && <p data-field-error style={errStyle}>{errors.phone}</p>}
+              </div>
+            )}
+
+            {form.contact_preference === 'email' && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={lbl}>Email *</label>
+                <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }} />
+                {errors.email && <p data-field-error style={errStyle}>{errors.email}</p>}
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ ...lbl, color: errors.address ? '#dc2626' : '#374151' }}>Your address *</label>
+              <input
+                type="text"
+                value={form.address}
+                onChange={e => setField('address', e.target.value)}
+                placeholder="Street address"
+                style={{ ...inp, borderColor: errors.address ? '#dc2626' : '#d1d5db' }}
+              />
+              {errors.address && <p data-field-error style={errStyle}>{errors.address}</p>}
+            </div>
+          </>
         )}
-
-        {form.contact_preference === 'email' && (
-          <div style={{ marginBottom: 16 }}>
-            <label style={lbl}>Email *</label>
-            <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }} />
-            {errors.email && <p data-field-error style={errStyle}>{errors.email}</p>}
-          </div>
-        )}
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ ...lbl, color: errors.address ? '#dc2626' : '#374151' }}>Your address *</label>
-          <input
-            type="text"
-            value={form.address}
-            onChange={e => setField('address', e.target.value)}
-            placeholder="Street address"
-            style={{ ...inp, borderColor: errors.address ? '#dc2626' : '#d1d5db' }}
-          />
-          {errors.address && <p data-field-error style={errStyle}>{errors.address}</p>}
-        </div>
 
         <div style={{ marginBottom: 16 }}>
           {bikes.map((bike, bikeIdx) => {
@@ -534,22 +554,24 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
         </button>
       </form>
 
-      <div style={{ textAlign: 'center', marginTop: 16 }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}
-        >
-          Back: change location
-        </button>
-      </div>
+      {!pwaProfile && (
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}
+          >
+            Back: change location
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Step 3: Done ─────────────────────────────────────────────────────────────
 
-function DoneStep({ bookingId, contactPreference, isAssembly, onReset }) {
+function DoneStep({ bookingId, contactPreference, isAssembly, onReset, pwaMode = false }) {
   const via = contactPreference === 'email' ? 'email' : 'text';
   return (
     <div style={{ maxWidth: 540, margin: '80px auto', padding: '0 16px', textAlign: 'center' }}>
@@ -561,9 +583,11 @@ function DoneStep({ bookingId, contactPreference, isAssembly, onReset }) {
           ? "Got it. We'll review the details and send you a quote before scheduling pickup."
           : 'We\'ll ' + via + ' you to confirm a time. Usually within a day.'}
       </p>
-      <p style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, marginBottom: 28 }}>
-        {'Check your email (and spam folder) for a confirmation from service@oneloveoutdoors.org. Adding us to your contacts helps make sure you get our updates.'}
-      </p>
+      {!pwaMode && (
+        <p style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, marginBottom: 28 }}>
+          {'Check your email (and spam folder) for a confirmation from service@oneloveoutdoors.org. Adding us to your contacts helps make sure you get our updates.'}
+        </p>
+      )}
       {bookingId && (
         <a
           href={'/service/' + bookingId}
@@ -572,13 +596,22 @@ function DoneStep({ bookingId, contactPreference, isAssembly, onReset }) {
           {'Track your booking \u2192'}
         </a>
       )}
-      <button
-        type="button"
-        onClick={onReset}
-        style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}
-      >
-        Book another service
-      </button>
+      {pwaMode ? (
+        <a
+          href="/"
+          style={{ display: 'block', padding: '12px 0', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, color: '#374151', fontSize: 14, textDecoration: 'none' }}
+        >
+          Back to home
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={onReset}
+          style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}
+        >
+          Book another service
+        </button>
+      )}
     </div>
   );
 }
@@ -632,6 +665,7 @@ function WelcomeBackStep({ savedUser, onSameSpot, onDifferentLocation, onNotMe }
 export default function ScheduleService() {
   const [step, setStep] = useState(null);
   const [returningUser, setReturningUser] = useState(null);
+  const [pwaProfile, setPwaProfile] = useState(null);
   const [pin, setPin] = useState(null);
   const [address, setAddress] = useState('');
   const [outside, setOutside] = useState(false);
@@ -643,6 +677,21 @@ export default function ScheduleService() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('member') === 'true') setInitialMember(true);
+
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    const pwaProf = getProfile();
+    if (standalone && pwaProf?.name && pwaProf?.phone) {
+      // PWA with profile: skip location and contact steps entirely
+      setPwaProfile(pwaProf);
+      if (pwaProf.lat && pwaProf.lng) setPin({ lat: pwaProf.lat, lng: pwaProf.lng });
+      setAddress(pwaProf.address || '');
+      setStep('form');
+      return;
+    }
+
     try {
       const raw = localStorage.getItem(LS_KEY);
       const user = raw ? JSON.parse(raw) : null;
@@ -697,14 +746,14 @@ export default function ScheduleService() {
   if (step === 'done') {
     return (
       <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
-        <DoneStep bookingId={bookingId} contactPreference={contactPreference} isAssembly={bookingIsAssembly} onReset={reset} />
+        <DoneStep bookingId={bookingId} contactPreference={contactPreference} isAssembly={bookingIsAssembly} onReset={reset} pwaMode={!!pwaProfile} />
       </main>
     );
   }
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
-      {step !== 'welcome-back' && (
+      {step !== 'welcome-back' && !pwaProfile && (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0 0', gap: 8 }}>
           {['location', 'form'].map(s => (
             <div key={s} style={{ width: 8, height: 8, borderRadius: '50%', background: step === s ? '#1a3328' : '#d1d5db' }} />
@@ -738,6 +787,7 @@ export default function ScheduleService() {
           pin={pin}
           initialMember={initialMember}
           initialForm={returningUser}
+          pwaProfile={pwaProfile}
           onBack={() => setStep('location')}
           onDone={(id, pref, assembly) => { setBookingId(id); setContactPreference(pref); setBookingIsAssembly(!!assembly); setStep('done'); }}
         />
