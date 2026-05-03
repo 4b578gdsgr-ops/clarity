@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { getProfile } from '../../../lib/pwaProfile';
 import { getSavedBookingIds } from '../../../lib/pwaBookings';
+import { getBookingSeen, markBookingsSeen, getMessagesSeenAt, markMessagesSeen } from '../../../lib/pwaBadges';
 import dynamic from 'next/dynamic';
 
 const PwaBookings = dynamic(() => import('./PwaBookings'));
@@ -25,6 +26,20 @@ function GearIcon() {
       <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
+  );
+}
+
+function Badge({ count }) {
+  if (!count) return null;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      minWidth: 20, height: 20, padding: '0 6px', boxSizing: 'border-box',
+      background: '#dc2626', color: '#fff', borderRadius: 10,
+      fontSize: 11, fontWeight: 700, lineHeight: '20px', flexShrink: 0,
+    }}>
+      {count > 99 ? '99+' : count}
+    </span>
   );
 }
 
@@ -155,11 +170,26 @@ function PushPrompt({ phone, onDone }) {
   );
 }
 
+function setAppBadge(total) {
+  if (!('setAppBadge' in navigator)) return;
+  if (total > 0) navigator.setAppBadge(total).catch(() => {});
+  else navigator.clearAppBadge().catch(() => {});
+}
+
 export default function PwaHome({ onResetProfile }) {
   const profile = getProfile();
   const [view, setView] = useState('home');
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [bookingBadge, setBookingBadge] = useState(0);
+  const [messageBadge, setMessageBadge] = useState(0);
+  const [fetchedBookings, setFetchedBookings] = useState(null);
 
+  // Keep app icon badge in sync
+  useEffect(() => {
+    setAppBadge(bookingBadge + messageBadge);
+  }, [bookingBadge, messageBadge]);
+
+  // On mount: handle deep-link + fetch badge counts
   useEffect(() => {
     console.log('[PWA] PwaHome mounted — profile:', profile?.name, '| savedIds:', getSavedBookingIds());
 
@@ -167,11 +197,54 @@ export default function PwaHome({ onResetProfile }) {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('openTab');
     if (tab && ['bookings', 'messages', 'rides', 'settings'].includes(tab)) {
-      setView(tab);
       window.history.replaceState({}, '', window.location.pathname);
+      openView(tab);
     }
+
+    // Fetch bookings badge
+    const ids = getSavedBookingIds();
+    const bParams = new URLSearchParams();
+    if (profile?.phone) bParams.set('phone', profile.phone);
+    if (ids.length) bParams.set('ids', ids.join(','));
+
+    if (bParams.toString()) {
+      fetch('/api/my-bookings?' + bParams.toString())
+        .then(r => r.json())
+        .then(d => {
+          if (!d.bookings) return;
+          setFetchedBookings(d.bookings);
+          const seen = getBookingSeen();
+          const unread = d.bookings.filter(b => seen[b.id] !== b.status).length;
+          setBookingBadge(unread);
+        })
+        .catch(() => {});
+    }
+
+    // Fetch messages badge
+    if (profile?.phone) {
+      fetch('/api/pwa/messages?phone=' + encodeURIComponent(profile.phone))
+        .then(r => r.json())
+        .then(d => {
+          if (!d.messages) return;
+          const seenAt = getMessagesSeenAt();
+          const seenTs = seenAt ? new Date(seenAt).getTime() : 0;
+          const unread = d.messages.filter(m => m.sender === 'admin' && new Date(m.created_at).getTime() > seenTs).length;
+          setMessageBadge(unread);
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // If bookings view is open when fetch completes, mark seen immediately
+  useEffect(() => {
+    if (view === 'bookings' && fetchedBookings) {
+      markBookingsSeen(fetchedBookings);
+      setBookingBadge(0);
+    }
+  }, [fetchedBookings, view]);
+
+  // Push prompt: show after 800ms delay when back on home, if eligible
   useEffect(() => {
     if (view !== 'home') return;
     if (!('Notification' in window) || !VAPID_PUBLIC_KEY) return;
@@ -187,6 +260,17 @@ export default function PwaHome({ onResetProfile }) {
     return () => clearTimeout(t);
   }, [view, profile?.phone]);
 
+  function openView(tab) {
+    if (tab === 'bookings') {
+      markBookingsSeen(fetchedBookings || []);
+      setBookingBadge(0);
+    } else if (tab === 'messages') {
+      markMessagesSeen();
+      setMessageBadge(0);
+    }
+    setView(tab);
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#fafaf7' }}>
       {view === 'home' && (
@@ -198,7 +282,7 @@ export default function PwaHome({ onResetProfile }) {
             background: '#fafaf7',
           }}>
             <button
-              onClick={() => setView('settings')}
+              onClick={() => openView('settings')}
               aria-label="Settings"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9ca3af', lineHeight: 1 }}
             >
@@ -236,7 +320,7 @@ export default function PwaHome({ onResetProfile }) {
 
                 <button
                   type="button"
-                  onClick={() => setView('bookings')}
+                  onClick={() => openView('bookings')}
                   style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
@@ -247,12 +331,15 @@ export default function PwaHome({ onResetProfile }) {
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 2 }}>My bookings</div>
                     <div style={{ fontSize: 13, color: '#6b7280' }}>View past and active services.</div>
                   </div>
-                  <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Badge count={bookingBadge} />
+                    <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setView('messages')}
+                  onClick={() => openView('messages')}
                   style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
@@ -263,12 +350,15 @@ export default function PwaHome({ onResetProfile }) {
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 2 }}>Messages</div>
                     <div style={{ fontSize: 13, color: '#6b7280' }}>Talk to your mechanic.</div>
                   </div>
-                  <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Badge count={messageBadge} />
+                    <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setView('rides')}
+                  onClick={() => openView('rides')}
                   style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
