@@ -294,40 +294,6 @@ export default function PwaHome({ onResetProfile }) {
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <a
-                  href="/schedule-service"
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: 'linear-gradient(135deg, #2d8653, #1a6e3f)',
-                    borderRadius: 14, padding: '18px 20px', textDecoration: 'none',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Book service</div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Pickup Monday. Back by Friday.</div>
-                  </div>
-                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 22 }}>&rsaquo;</div>
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => openTab('bookings')}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
-                    padding: '18px 20px', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 2 }}>My bookings</div>
-                    <div style={{ fontSize: 13, color: '#6b7280' }}>View past and active services.</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Badge count={bookingBadge} />
-                    <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
-                  </div>
-                </button>
-
                 <button
                   type="button"
                   onClick={() => openTab('messages')}
@@ -362,6 +328,40 @@ export default function PwaHome({ onResetProfile }) {
                   </div>
                   <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => openTab('bookings')}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
+                    padding: '18px 20px', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 2 }}>My bookings</div>
+                    <div style={{ fontSize: 13, color: '#6b7280' }}>View past and active services.</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Badge count={bookingBadge} />
+                    <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
+                  </div>
+                </button>
+
+                <a
+                  href="/schedule-service"
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: 'linear-gradient(135deg, #2d8653, #1a6e3f)',
+                    borderRadius: 14, padding: '18px 20px', textDecoration: 'none',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Book service</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Pickup Monday. Back by Friday.</div>
+                  </div>
+                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 22 }}>&rsaquo;</div>
+                </a>
 
                 <button
                   type="button"

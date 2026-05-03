@@ -1,7 +1,11 @@
 'use client';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { getProfile } from '../../../lib/pwaProfile';
 import { saveBookingId } from '../../../lib/pwaBookings';
+import { isInServiceArea } from '../../../lib/serviceArea';
+
+const ServiceMap = dynamic(() => import('../ServiceMap'), { ssr: false });
 
 const ISSUE_OPTIONS = [
   'Shifting', 'Brakes', 'Wheels', 'Suspension',
@@ -80,12 +84,56 @@ export default function PwaBookForFriend({ onBack }) {
   const profile = getProfile();
   const [friendName, setFriendName] = useState('');
   const [friendPhone, setFriendPhone] = useState('');
-  const [address, setAddress] = useState('');
+  const [pin, setPin] = useState(null);
+  const [outside, setOutside] = useState(false);
+  const [addressLabel, setAddressLabel] = useState('');
+  const [query, setQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchErr, setSearchErr] = useState('');
   const [issues, setIssues] = useState([]);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
   const [done, setDone] = useState(null);
+
+  function handlePin(lat, lng) {
+    if (lat === null) { setPin(null); setOutside(false); return; }
+    setPin({ lat, lng });
+    setOutside(!isInServiceArea(lat, lng));
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setSearching(true);
+    setSearchErr('');
+    try {
+      const res = await fetch(
+        'https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=1&q=' +
+        encodeURIComponent(query),
+        { headers: { 'User-Agent': 'OneLoveOutdoors/1.0 (service.oneloveoutdoors.org)' } }
+      );
+      const results = await res.json();
+      if (results[0]) {
+        const lat = parseFloat(results[0].lat);
+        const lng = parseFloat(results[0].lon);
+        handlePin(lat, lng);
+        setAddressLabel(results[0].display_name.split(',').slice(0, 3).join(',').trim());
+      } else {
+        setSearchErr('Address not found. Try tapping the map directly.');
+      }
+    } catch {
+      setSearchErr('Search failed. Try tapping the map directly.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function handleMapClick(lat, lng) {
+    handlePin(lat, lng);
+    setAddressLabel('');
+    setSearchErr('');
+  }
 
   function toggleIssue(iss) {
     setIssues(prev => prev.includes(iss) ? prev.filter(x => x !== iss) : [...prev, iss]);
@@ -96,6 +144,7 @@ export default function PwaBookForFriend({ onBack }) {
     setErr('');
     if (!friendName.trim()) { setErr("Enter your friend's name."); return; }
     if (!friendPhone.trim()) { setErr("Enter your friend's phone number."); return; }
+    if (!pin || outside) { setErr('Drop a pin inside our service area first.'); return; }
     if (issues.length === 0) { setErr('Select at least one issue.'); return; }
 
     setSubmitting(true);
@@ -110,7 +159,9 @@ export default function PwaBookForFriend({ onBack }) {
         body: JSON.stringify({
           name: friendName.trim(),
           phone: friendPhone.trim(),
-          address: address.trim() || null,
+          address: addressLabel || null,
+          lat: pin.lat,
+          lng: pin.lng,
           issues,
           notes: notes.trim() || null,
           contact_preference: 'text',
@@ -186,14 +237,72 @@ export default function PwaBookForFriend({ onBack }) {
           </div>
 
           <div style={section}>
-            <label style={lbl}>Their address <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span></label>
-            <input
-              type="text"
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              placeholder="123 Main St, Anytown CT"
-              style={inp}
-            />
+            <label style={lbl}>Their pickup location</label>
+            <div style={{ height: 280, borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', marginBottom: 8, background: '#f3f4f6' }}>
+              <ServiceMap pin={pin} onMapClick={handleMapClick} showBoundary />
+            </div>
+
+            <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search an address"
+                style={{
+                  flex: 1, padding: '10px 13px', borderRadius: 8, fontSize: 14, outline: 'none',
+                  border: pin && !outside ? '2px solid #16a34a' : '2px solid #d1d5db',
+                  background: pin && !outside ? '#f0fdf4' : '#fff',
+                  fontFamily: 'inherit', boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={searching}
+                style={{ padding: '10px 16px', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+              >
+                {searching ? '...' : 'Find'}
+              </button>
+            </form>
+
+            {searchErr && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 6 }}>{searchErr}</p>}
+
+            {!pin && (
+              <p style={{ fontSize: 13, color: '#9ca3af' }}>
+                Tap the map to drop a pin, or search above.
+              </p>
+            )}
+
+            {pin && outside && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '12px 14px' }}>
+                <p style={{ fontWeight: 600, color: '#dc2626', marginBottom: 4, fontSize: 14 }}>
+                  We're not in your area yet.
+                </p>
+                <p style={{ color: '#7f1d1d', fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                  Reach out and we'll see what we can do:{' '}
+                  <a href="mailto:service@oneloveoutdoors.org" style={{ color: '#dc2626', fontWeight: 600 }}>
+                    service@oneloveoutdoors.org
+                  </a>
+                </p>
+              </div>
+            )}
+
+            {pin && !outside && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ fontSize: 13, color: '#166534', margin: 0 }}>
+                  We can meet you there.{' '}
+                  <span style={{ fontWeight: 600 }}>
+                    {addressLabel || (Number(pin.lat).toFixed(4) + ', ' + Number(pin.lng).toFixed(4))}
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { handlePin(null); setAddressLabel(''); }}
+                  style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 13, textDecoration: 'underline', fontFamily: 'inherit', marginLeft: 8, whiteSpace: 'nowrap' }}
+                >
+                  change
+                </button>
+              </div>
+            )}
           </div>
 
           <div style={section}>
