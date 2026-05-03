@@ -12,6 +12,7 @@ const PwaBookings = dynamic(() => import('./PwaBookings'));
 const PwaMessages = dynamic(() => import('./PwaMessages'));
 const PwaSettings = dynamic(() => import('./PwaSettings'));
 const PwaRides = dynamic(() => import('./PwaRides'));
+const PwaBookForFriend = dynamic(() => import('./PwaBookForFriend'));
 
 const ACTIVE_STATUSES = new Set(['new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery']);
 const STATUS_VERB = {
@@ -361,6 +362,22 @@ export default function PwaHome({ onResetProfile }) {
                   </div>
                   <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => openTab('friend')}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
+                    padding: '18px 20px', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 2 }}>Book for a friend</div>
+                    <div style={{ fontSize: 13, color: '#6b7280' }}>Get their bike fixed — no app needed.</div>
+                  </div>
+                  <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
+                </button>
               </div>
             </div>
           </div>
@@ -373,6 +390,7 @@ export default function PwaHome({ onResetProfile }) {
           {view === 'messages' && <PwaMessages profile={profile} onBack={() => updateView('home')} />}
           {view === 'rides'    && <PwaRides onBack={() => updateView('home')} />}
           {view === 'settings' && <PwaSettings profile={profile} onDone={() => updateView('home')} onResetProfile={onResetProfile} />}
+          {view === 'friend'   && <PwaBookForFriend onBack={() => updateView('home')} />}
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { notifyCustomer } from '../../../lib/notify';
 import { pushToAdmin } from '../../../lib/push';
+import { sendSMS } from '../../../lib/sms';
 
 // GET /api/bookings?status=new
 export async function GET(request) {
@@ -35,7 +36,8 @@ export async function POST(request) {
           bike_brand, issues, bike_details, notes,
           preferred_day, time_slot, contact_preference, is_member,
           photos, status, confirmed_date, confirmed_time, return_date,
-          admin_created, bikes } = body;
+          admin_created, bikes,
+          referred_by, booker_phone, booker_name } = body;
   console.log('[bookings] new booking from:', name, '| email present:', !!email);
   console.log('[bookings] lat/lng from body:', lat, lng);
 
@@ -66,12 +68,24 @@ export async function POST(request) {
       confirmed_time: confirmed_time || null,
       return_date: return_date || null,
       bikes: Array.isArray(bikes) && bikes.length > 0 ? bikes : null,
+      referred_by: referred_by || null,
+      booker_phone: booker_phone || null,
+      booker_name: booker_name || null,
     }])
     .select()
     .single();
 
   if (error) { console.error('[bookings] insert error:', error.message); return Response.json({ error: error.message }, { status: 500 }); }
   console.log('[bookings] inserted lat/lng:', data?.lat, data?.lng);
+
+  // Send SMS confirmation to the person who booked for their friend
+  if (booker_phone) {
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org';
+    const friendFirst = (name || 'your friend').split(' ')[0];
+    sendSMS(booker_phone, `One Love: You booked service for ${friendFirst}! Track it here: ${BASE_URL}/service/${data.id}`).catch(err =>
+      console.error('[bookings] booker SMS failed:', err?.message || err)
+    );
+  }
 
   // Notify customer — skip if admin-created with phone-only preference, or no contact info
   const skipNotification = admin_created && (

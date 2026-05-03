@@ -1086,6 +1086,15 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 {booking.contact_preference === 'text' ? 'Text' : booking.contact_preference === 'phone' ? 'Phone' : 'Email'}
               </span>
             )}
+            {booking.referred_by && (
+              <span style={{
+                marginLeft: 8, fontSize: 11, fontWeight: 700,
+                background: '#fef3c7', color: '#92400e',
+                border: '1px solid #fde68a', borderRadius: 6, padding: '1px 8px',
+              }}>
+                via {booking.referred_by.split(' (')[0]}
+              </span>
+            )}
             {(booking.contact_preference === 'text' || booking.contact_preference === 'phone') &&
              ['confirmed', 'ready'].includes(booking.status) && (
               booking.last_notified_status === booking.status ? (
