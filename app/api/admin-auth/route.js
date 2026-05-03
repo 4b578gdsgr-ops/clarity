@@ -16,7 +16,7 @@ export async function POST(request) {
   const response = Response.json({ ok: true });
   response.headers.set(
     'Set-Cookie',
-    `ol_admin=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`
+    `ol_admin=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`
   );
   return response;
 }
