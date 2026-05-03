@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getProfile } from '../../../lib/pwaProfile';
 import { getSavedBookingIds } from '../../../lib/pwaBookings';
 import dynamic from 'next/dynamic';
@@ -74,10 +74,11 @@ function HomeTab({ profile }) {
 
 export default function PwaHome({ onResetProfile }) {
   const profile = getProfile();
+  const [tab, setTab] = useState('bookings');
 
-  const [tab, setTab] = useState(() => {
-    return getSavedBookingIds().length > 0 ? 'bookings' : 'home';
-  });
+  useEffect(() => {
+    console.log('[PWA] PwaHome mounted — profile:', profile?.name, '| savedIds:', getSavedBookingIds());
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#fafaf7' }}>

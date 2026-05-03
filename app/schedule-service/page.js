@@ -755,6 +755,14 @@ export default function ScheduleService() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
+      {pwaProfile && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #e5e7eb', background: '#fff' }}>
+          <a href="/" style={{ fontSize: 14, color: '#2d8653', fontWeight: 600, textDecoration: 'none' }}>&larr; Home</a>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14' }}>Book service</span>
+          <a href="/" style={{ fontSize: 14, color: '#2d8653', fontWeight: 600, textDecoration: 'none' }}>My bookings</a>
+        </div>
+      )}
+
       {step !== 'welcome-back' && !pwaProfile && (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0 0', gap: 8 }}>
           {['location', 'form'].map(s => (

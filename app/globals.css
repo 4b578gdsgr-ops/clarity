@@ -41,6 +41,11 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #c8c0b4; }
 
+/* Hide site chrome in installed PWA — the PWA has its own tab bar */
+@media (display-mode: standalone) {
+  .site-topnav, .site-footer { display: none !important; }
+}
+
 .nature-bg {
   background-image:
     radial-gradient(ellipse at 20% 50%, rgba(45, 134, 83, 0.05) 0%, transparent 50%),

@@ -6,7 +6,7 @@ export default function Footer() {
   if (pathname.startsWith('/embed') || pathname.startsWith('/admin')) return null;
 
   return (
-    <footer style={{ borderTop: '1px solid #e5e0d8', marginTop: 48, padding: '32px 20px 40px', textAlign: 'center', background: '#faf9f6' }}>
+    <footer className="site-footer" style={{ borderTop: '1px solid #e5e0d8', marginTop: 48, padding: '32px 20px 40px', textAlign: 'center', background: '#faf9f6' }}>
       <p style={{ fontFamily: 'Playfair Display, serif', fontStyle: 'italic', fontSize: 15, color: '#636e72', marginBottom: 10, lineHeight: 1.6 }}>
         No ads. No investors. Built by riders, for riders.
       </p>

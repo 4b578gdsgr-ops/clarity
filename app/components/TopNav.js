@@ -16,7 +16,7 @@ export default function TopNav() {
   if (pathname.startsWith('/embed')) return null;
 
   return (
-    <nav style={{
+    <nav className="site-topnav" style={{
       position: 'sticky', top: 0, zIndex: 100,
       background: 'rgba(250,249,246,0.95)',
       backdropFilter: 'blur(8px)',

@@ -119,12 +119,15 @@ export default function HomePage() {
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
 
+    console.log('[PWA] standalone:', standalone, '| matchMedia:', window.matchMedia('(display-mode: standalone)').matches, '| navigator.standalone:', window.navigator.standalone);
+
     if (!standalone) {
       setMode('web');
       return;
     }
 
     const profile = getProfile();
+    console.log('[PWA] profile:', profile?.name, profile?.phone);
     setMode(profile?.name && profile?.phone ? 'pwa' : 'setup');
   }, []);
 
