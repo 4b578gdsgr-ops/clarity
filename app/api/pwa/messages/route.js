@@ -44,9 +44,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const { phone, name, message } = await req.json();
-  if (!phone || !message?.trim()) {
-    return Response.json({ error: 'phone and message required' }, { status: 400 });
+  const { phone, name, message, photo_url } = await req.json();
+  if (!phone || (!message?.trim() && !photo_url)) {
+    return Response.json({ error: 'phone and message or photo required' }, { status: 400 });
   }
 
   const digits = normalizePhone(phone);
@@ -61,9 +61,10 @@ export async function POST(req) {
       thread_id,
       phone: digits,
       name: name?.trim() || null,
-      message: message.trim(),
+      message: message?.trim() || '',
       sender: 'member',
       unread: true,
+      ...(photo_url ? { photo_url } : {}),
     }])
     .select()
     .single();

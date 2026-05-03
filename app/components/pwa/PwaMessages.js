@@ -1,17 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-
-const STATUS_COLORS = {
-  new: { bg: '#fef3c7', color: '#92400e', label: 'New' },
-  confirmed: { bg: '#dbeafe', color: '#1e40af', label: 'Confirmed' },
-  picked_up: { bg: '#e0e7ff', color: '#3730a3', label: 'Picked up' },
-  in_progress: { bg: '#ede9fe', color: '#6d28d9', label: 'In progress' },
-  ready: { bg: '#d1fae5', color: '#065f46', label: 'Ready' },
-  out_for_delivery: { bg: '#cffafe', color: '#0e7490', label: 'Out for delivery' },
-  complete: { bg: '#f3f4f6', color: '#374151', label: 'Complete' },
-  cancelled: { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' },
-  no_show: { bg: '#fee2e2', color: '#991b1b', label: 'No show' },
-};
+import { uploadMessagePhoto } from '../../../lib/uploadMessagePhoto';
 
 export default function PwaMessages({ profile, onBack }) {
   const [messages, setMessages] = useState(null);
@@ -19,8 +8,11 @@ export default function PwaMessages({ profile, onBack }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const bottomRef = useRef(null);
   const pollRef = useRef(null);
+  const photoInputRef = useRef(null);
 
   async function load() {
     try {
@@ -45,20 +37,39 @@ export default function PwaMessages({ profile, onBack }) {
     }
   }, [messages]);
 
+  function handlePhotoSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    e.target.value = '';
+  }
+
+  function clearPhoto() {
+    setPhotoFile(null);
+    if (photoPreview) { URL.revokeObjectURL(photoPreview); setPhotoPreview(null); }
+  }
+
   async function handleSend(e) {
     e.preventDefault();
-    if (!text.trim() || sending) return;
+    if ((!text.trim() && !photoFile) || sending) return;
     setSending(true);
     setErr('');
+    let photo_url = null;
+    if (photoFile) {
+      try { photo_url = await uploadMessagePhoto(photoFile); }
+      catch { setErr('Photo upload failed. Try again.'); setSending(false); return; }
+    }
     try {
       const res = await fetch('/api/pwa/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: profile.phone, name: profile.name, message: text.trim() }),
+        body: JSON.stringify({ phone: profile.phone, name: profile.name, message: text.trim(), photo_url }),
       });
       const d = await res.json();
       if (!res.ok) { setErr(d.error || 'Failed to send'); return; }
       setText('');
+      clearPhoto();
       await load();
     } catch {
       setErr('Network error. Try again.');
@@ -106,9 +117,7 @@ export default function PwaMessages({ profile, onBack }) {
           <div style={{ textAlign: 'center', marginTop: 60, padding: '0 24px' }}>
             <p style={{ color: '#374151', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>No messages yet.</p>
             <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.6 }}>
-              {canMessage
-                ? 'Questions? Send us a note below.'
-                : 'Book a service to start a conversation.'}
+              {canMessage ? 'Questions? Send us a note below.' : 'Book a service to start a conversation.'}
             </p>
           </div>
         )}
@@ -119,15 +128,21 @@ export default function PwaMessages({ profile, onBack }) {
             <div key={msg.id || i} style={{ display: 'flex', justifyContent: isCustomer ? 'flex-end' : 'flex-start', marginBottom: 12 }}>
               <div style={{ maxWidth: '78%' }}>
                 <div style={{
-                  padding: '9px 13px',
+                  padding: msg.photo_url ? '4px' : '9px 13px',
                   borderRadius: isCustomer ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                   background: isCustomer ? '#1a3328' : '#fff',
                   border: isCustomer ? 'none' : '1px solid #e5e7eb',
                   color: isCustomer ? '#fff' : '#0f1a14',
-                  fontSize: 15,
-                  lineHeight: 1.5,
+                  fontSize: 15, lineHeight: 1.5,
                 }}>
-                  {msg.message}
+                  {msg.photo_url && (
+                    <a href={msg.photo_url} target="_blank" rel="noreferrer" style={{ display: 'block' }}>
+                      <img src={msg.photo_url} alt="" style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 12, display: 'block', cursor: 'pointer' }} />
+                    </a>
+                  )}
+                  {msg.message && (
+                    <div style={{ padding: msg.photo_url ? '6px 8px 4px' : 0 }}>{msg.message}</div>
+                  )}
                 </div>
                 <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3, textAlign: isCustomer ? 'right' : 'left' }}>
                   {formatTime(msg.created_at)}
@@ -144,6 +159,12 @@ export default function PwaMessages({ profile, onBack }) {
       {canMessage && (
         <div style={{ padding: '10px 16px 16px', borderTop: '1px solid #e5e7eb', background: '#fff' }}>
           {err && <p style={{ fontSize: 13, color: '#dc2626', marginBottom: 6 }}>{err}</p>}
+          {photoPreview && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <img src={photoPreview} alt="" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+              <button type="button" onClick={clearPhoto} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af', lineHeight: 1, padding: 0 }}>×</button>
+            </div>
+          )}
           <form onSubmit={handleSend} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <textarea
               value={text}
@@ -157,16 +178,32 @@ export default function PwaMessages({ profile, onBack }) {
                 lineHeight: 1.5, maxHeight: 120, overflowY: 'auto',
               }}
             />
+            <input type="file" accept="image/*" ref={photoInputRef} onChange={handlePhotoSelect} style={{ display: 'none' }} />
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              style={{
+                padding: '10px 11px', background: photoFile ? '#f0fdf4' : '#f9fafb',
+                border: '1px solid ' + (photoFile ? '#86efac' : '#d1d5db'),
+                borderRadius: 20, cursor: 'pointer', lineHeight: 1,
+                color: photoFile ? '#16a34a' : '#6b7280',
+              }}
+              title="Attach photo"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </button>
             <button
               type="submit"
-              disabled={sending || !text.trim()}
+              disabled={sending || (!text.trim() && !photoFile)}
               style={{
-                padding: '10px 18px', background: (!text.trim() || sending) ? '#9ca3af' : '#1a3328',
+                padding: '10px 18px',
+                background: (!text.trim() && !photoFile) || sending ? '#9ca3af' : '#1a3328',
                 color: '#fff', border: 'none', borderRadius: 20, fontSize: 15,
-                cursor: (!text.trim() || sending) ? 'default' : 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                cursor: (!text.trim() && !photoFile) || sending ? 'default' : 'pointer',
+                fontFamily: 'inherit', fontWeight: 600,
               }}
             >
-              Send
+              {sending ? '...' : 'Send'}
             </button>
           </form>
         </div>
@@ -174,9 +211,7 @@ export default function PwaMessages({ profile, onBack }) {
 
       {!canMessage && messages !== null && (
         <div style={{ padding: '12px 16px 20px', borderTop: '1px solid #e5e7eb', background: '#fff', textAlign: 'center' }}>
-          <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>
-            Book a service to start a conversation.
-          </p>
+          <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>Book a service to start a conversation.</p>
         </div>
       )}
     </div>

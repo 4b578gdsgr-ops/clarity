@@ -356,12 +356,62 @@ function fmtTime(t) {
 
 // ─── MessageThread (per booking card) ────────────────────────────────────────
 
+async function uploadMsgPhoto(file) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase not configured');
+  const client = createClient(url, key);
+  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/gif' ? 'gif' : 'jpg';
+  const path = `msg/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await client.storage.from('booking-photos').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+  if (error) throw error;
+  return client.storage.from('booking-photos').getPublicUrl(path).data.publicUrl;
+}
+
+function MsgPhotoBtn({ onFile, active }) {
+  const ref = useRef(null);
+  return (
+    <>
+      <input type="file" accept="image/*" ref={ref} onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ''; }} style={{ display: 'none' }} />
+      <button type="button" onClick={() => ref.current?.click()} title="Attach photo"
+        style={{ padding: '7px 9px', background: active ? '#f0fdf4' : '#fafafa', border: '1px solid ' + (active ? '#86efac' : '#d1d5db'), borderRadius: 7, cursor: 'pointer', lineHeight: 1, color: active ? '#16a34a' : '#6b7280', flexShrink: 0 }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </button>
+    </>
+  );
+}
+
+function MsgBubble({ m, isAdmin }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: isAdmin ? 'flex-end' : 'flex-start' }}>
+      <div style={{
+        maxWidth: '80%', padding: m.photo_url ? '4px' : '6px 10px', borderRadius: 10, fontSize: 13, lineHeight: 1.4,
+        background: isAdmin ? '#1a3328' : '#fff',
+        color: isAdmin ? '#fff' : '#111827',
+        border: !isAdmin ? '1px solid #e5e7eb' : 'none',
+      }}>
+        {m.photo_url && (
+          <a href={m.photo_url} target="_blank" rel="noreferrer" style={{ display: 'block' }}>
+            <img src={m.photo_url} alt="" style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 7, display: 'block', cursor: 'pointer' }} />
+          </a>
+        )}
+        {m.message && <div style={{ padding: m.photo_url ? '5px 6px 3px' : 0 }}>{m.message}</div>}
+        <div style={{ fontSize: 10, opacity: 0.45, marginTop: 3, textAlign: 'right' }}>
+          {new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MessageThread({ bookingId, onMarkRead }) {
   const [msgs, setMsgs] = useState(null);
   const [loadErr, setLoadErr] = useState('');
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -395,24 +445,27 @@ function MessageThread({ bookingId, onMarkRead }) {
 
   async function send(e) {
     e.preventDefault();
-    if (!text.trim() || sending) return;
+    if ((!text.trim() && !photoFile) || sending) return;
     setSending(true);
     setSendErr('');
+    let photo_url = null;
+    if (photoFile) {
+      try { photo_url = await uploadMsgPhoto(photoFile); }
+      catch { setSendErr('Photo upload failed'); setSending(false); return; }
+    }
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ booking_id: bookingId, sender: 'admin', message: text }),
+        body: JSON.stringify({ booking_id: bookingId, sender: 'admin', message: text, photo_url }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setSendErr('Send failed: ' + (data.error || res.status));
-        return;
-      }
+      if (!res.ok) { setSendErr('Send failed: ' + (data.error || res.status)); return; }
       setText('');
+      setPhotoFile(null); setPhotoPreview(null);
       await load();
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    } catch (e) {
+    } catch {
       setSendErr('Network error — try again');
     } finally {
       setSending(false);
@@ -443,19 +496,7 @@ function MessageThread({ bookingId, onMarkRead }) {
           <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', margin: '8px 0' }}>No messages yet.</p>
         )}
         {msgs.map(m => (
-          <div key={m.id} style={{ display: 'flex', justifyContent: m.sender === 'admin' ? 'flex-end' : 'flex-start' }}>
-            <div style={{
-              maxWidth: '80%', padding: '6px 10px', borderRadius: 10, fontSize: 13, lineHeight: 1.4,
-              background: m.sender === 'admin' ? '#1a3328' : '#fff',
-              color: m.sender === 'admin' ? '#fff' : '#111827',
-              border: m.sender === 'customer' ? '1px solid #e5e7eb' : 'none',
-            }}>
-              {m.message}
-              <div style={{ fontSize: 10, opacity: 0.45, marginTop: 3, textAlign: 'right' }}>
-                {new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </div>
-            </div>
-          </div>
+          <MsgBubble key={m.id} m={m} isAdmin={m.sender === 'admin'} />
         ))}
         <div ref={bottomRef} />
       </div>
@@ -464,26 +505,29 @@ function MessageThread({ bookingId, onMarkRead }) {
           <span style={{ fontSize: 12, color: '#dc2626' }}>{sendErr}</span>
         </div>
       )}
-      <form onSubmit={send} style={{ display: 'flex', gap: 6, padding: '8px 14px', background: '#fff', borderTop: '1px solid #f3f4f6' }}>
-        <input
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Reply..."
-          style={{
-            flex: 1, padding: '7px 11px', border: '1px solid #d1d5db',
-            borderRadius: 7, fontSize: 13, outline: 'none',
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!text.trim() || sending}
-          style={{
-            padding: '7px 14px', background: text.trim() ? '#1a3328' : '#9ca3af',
-            color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, cursor: text.trim() ? 'pointer' : 'default',
-          }}
-        >
-          {sending ? '...' : 'Send'}
-        </button>
+      <form onSubmit={send} style={{ padding: '8px 14px', background: '#fff', borderTop: '1px solid #f3f4f6' }}>
+        {photoPreview && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <img src={photoPreview} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }} />
+            <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9ca3af', lineHeight: 1, padding: 0 }}>×</button>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder="Reply..."
+            style={{ flex: 1, padding: '7px 11px', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 13, outline: 'none' }}
+          />
+          <MsgPhotoBtn active={!!photoFile} onFile={f => { setPhotoFile(f); setPhotoPreview(URL.createObjectURL(f)); }} />
+          <button
+            type="submit"
+            disabled={(!text.trim() && !photoFile) || sending}
+            style={{ padding: '7px 14px', background: (text.trim() || photoFile) ? '#1a3328' : '#9ca3af', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, cursor: (text.trim() || photoFile) ? 'pointer' : 'default' }}
+          >
+            {sending ? '...' : 'Send'}
+          </button>
+        </div>
       </form>
       {msgs.length > 0 && (
         <div style={{ padding: '4px 14px 8px', background: '#fff', textAlign: 'right' }}>
@@ -2736,6 +2780,8 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -2754,17 +2800,23 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
 
   async function sendReply(e) {
     e.preventDefault();
-    if (!replyText.trim() || sending) return;
+    if ((!replyText.trim() && !photoFile) || sending) return;
     setSending(true);
     setSendErr('');
+    let photo_url = null;
+    if (photoFile) {
+      try { photo_url = await uploadMsgPhoto(photoFile); }
+      catch { setSendErr('Photo upload failed'); setSending(false); return; }
+    }
     try {
       const res = await fetch('/api/member-messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ thread_id: thread.thread_id, message: replyText, sender: 'admin' }),
+        body: JSON.stringify({ thread_id: thread.thread_id, message: replyText, sender: 'admin', photo_url }),
       });
       if (!res.ok) throw new Error();
       setReplyText('');
+      setPhotoFile(null); setPhotoPreview(null);
       onRefresh();
     } catch {
       setSendErr('Send failed — try again');
@@ -2835,12 +2887,17 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
             {thread.messages.map(m => (
               <div key={m.id} style={{ display: 'flex', justifyContent: m.sender === 'admin' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
-                  maxWidth: '80%', padding: '8px 12px', borderRadius: 10, fontSize: 13, lineHeight: 1.4,
+                  maxWidth: '80%', padding: m.photo_url ? '4px' : '8px 12px', borderRadius: 10, fontSize: 13, lineHeight: 1.4,
                   background: m.sender === 'admin' ? '#1a3328' : '#fff',
                   color: m.sender === 'admin' ? '#fff' : '#111827',
                   border: m.sender === 'member' ? '1px solid #e5e7eb' : 'none',
                 }}>
-                  {m.message}
+                  {m.photo_url && (
+                    <a href={m.photo_url} target="_blank" rel="noreferrer" style={{ display: 'block' }}>
+                      <img src={m.photo_url} alt="" style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 7, display: 'block', cursor: 'pointer' }} />
+                    </a>
+                  )}
+                  {m.message && <div style={{ padding: m.photo_url ? '5px 6px 3px' : 0 }}>{m.message}</div>}
                   <div style={{ fontSize: 10, opacity: 0.55, marginTop: 3, textAlign: 'right' }}>
                     {fmtET(m.created_at)}
                   </div>
@@ -2865,24 +2922,29 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
             </div>
           )}
           {sendErr && <div style={{ padding: '4px 16px', color: '#dc2626', fontSize: 12 }}>{sendErr}</div>}
-          <form onSubmit={sendReply} style={{ display: 'flex', gap: 6, padding: '8px 14px', background: '#fff', borderTop: '1px solid #f3f4f6' }}>
-            <input
-              value={replyText}
-              onChange={e => setReplyText(e.target.value)}
-              placeholder="Reply..."
-              style={{ flex: 1, padding: '7px 11px', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 13, outline: 'none' }}
-            />
-            <button
-              type="submit"
-              disabled={!replyText.trim() || sending}
-              style={{
-                padding: '7px 14px', background: replyText.trim() ? '#1a3328' : '#9ca3af',
-                color: '#fff', border: 'none', borderRadius: 7, fontSize: 13,
-                cursor: replyText.trim() ? 'pointer' : 'default',
-              }}
-            >
-              {sending ? '...' : 'Send'}
-            </button>
+          <form onSubmit={sendReply} style={{ padding: '8px 14px', background: '#fff', borderTop: '1px solid #f3f4f6' }}>
+            {photoPreview && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <img src={photoPreview} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }} />
+                <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9ca3af', lineHeight: 1, padding: 0 }}>×</button>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                placeholder="Reply..."
+                style={{ flex: 1, padding: '7px 11px', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 13, outline: 'none' }}
+              />
+              <MsgPhotoBtn active={!!photoFile} onFile={f => { setPhotoFile(f); setPhotoPreview(URL.createObjectURL(f)); }} />
+              <button
+                type="submit"
+                disabled={(!replyText.trim() && !photoFile) || sending}
+                style={{ padding: '7px 14px', background: (replyText.trim() || photoFile) ? '#1a3328' : '#9ca3af', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, cursor: (replyText.trim() || photoFile) ? 'pointer' : 'default' }}
+              >
+                {sending ? '...' : 'Send'}
+              </button>
+            </div>
           </form>
         </div>
       )}

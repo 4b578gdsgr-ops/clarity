@@ -38,9 +38,9 @@ export async function GET(request) {
 // Admin outbound:  { sender: 'admin', phone, message, name? }
 export async function POST(request) {
   const body = await request.json();
-  const { name, message, email, phone, thread_id, sender = 'member' } = body;
+  const { name, message, email, phone, thread_id, sender = 'member', photo_url } = body;
 
-  if (!message?.trim()) return Response.json({ error: 'Message is required' }, { status: 400 });
+  if (!message?.trim() && !photo_url) return Response.json({ error: 'Message or photo is required' }, { status: 400 });
   if (sender === 'member' && !name?.trim()) return Response.json({ error: 'Name is required' }, { status: 400 });
 
   if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
@@ -64,12 +64,13 @@ export async function POST(request) {
     .from('member_messages')
     .insert([{
       name: name?.trim() || null,
-      message: message.trim(),
+      message: message?.trim() || '',
       email: email?.trim() || null,
       phone: phoneDigits || null,
       thread_id: resolvedThreadId,
       sender,
       unread: true,
+      ...(photo_url ? { photo_url } : {}),
     }])
     .select()
     .single();

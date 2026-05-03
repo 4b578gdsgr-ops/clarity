@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
+import { uploadMessagePhoto } from '../../../lib/uploadMessagePhoto';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
@@ -663,10 +664,13 @@ export default function BookingStatusPage({ params }) {
   const [msgText, setMsgText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [inspBikeIdx, setInspBikeIdx] = useState(0);
   const threadRef = useRef(null);
   const threadMountedRef = useRef(false);
   const intervalRef = useRef(null);
+  const msgPhotoRef = useRef(null);
 
   async function loadData() {
     try {
@@ -704,16 +708,34 @@ export default function BookingStatusPage({ params }) {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [messages]);
 
+  function handleMsgPhotoSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    e.target.value = '';
+  }
+
+  function clearMsgPhoto() {
+    setPhotoFile(null);
+    if (photoPreview) { URL.revokeObjectURL(photoPreview); setPhotoPreview(null); }
+  }
+
   async function sendMessage(e) {
     e.preventDefault();
-    if (!msgText.trim() || sending) return;
+    if ((!msgText.trim() && !photoFile) || sending) return;
     setSending(true);
     setSendErr('');
+    let photo_url = null;
+    if (photoFile) {
+      try { photo_url = await uploadMessagePhoto(photoFile); }
+      catch { setSendErr('Photo upload failed. Try again.'); setSending(false); return; }
+    }
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ booking_id: id, sender: 'customer', message: msgText }),
+        body: JSON.stringify({ booking_id: id, sender: 'customer', message: msgText, photo_url }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -721,6 +743,7 @@ export default function BookingStatusPage({ params }) {
         return;
       }
       setMsgText('');
+      clearMsgPhoto();
       await loadData();
     } catch {
       setSendErr('Failed to send. Try again.');
@@ -1191,12 +1214,19 @@ export default function BookingStatusPage({ params }) {
             {messages.map(m => (
               <div key={m.id} style={{ display: 'flex', justifyContent: m.sender === 'customer' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
-                  maxWidth: '80%', padding: '8px 12px', borderRadius: 12,
+                  maxWidth: '80%', padding: m.photo_url ? '4px' : '8px 12px', borderRadius: 12,
                   background: m.sender === 'customer' ? '#1a3328' : '#f3f4f6',
                   color: m.sender === 'customer' ? '#fff' : '#111827',
                   fontSize: 14, lineHeight: 1.4,
                 }}>
-                  {m.message}
+                  {m.photo_url && (
+                    <a href={m.photo_url} target="_blank" rel="noreferrer" style={{ display: 'block' }}>
+                      <img src={m.photo_url} alt="" style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 8, display: 'block', cursor: 'pointer' }} />
+                    </a>
+                  )}
+                  {m.message && (
+                    <div style={{ padding: m.photo_url ? '6px 8px 4px' : 0 }}>{m.message}</div>
+                  )}
                 </div>
               </div>
             ))}
@@ -1207,28 +1237,42 @@ export default function BookingStatusPage({ params }) {
               {sendErr}
             </p>
           )}
-          <form onSubmit={sendMessage} style={{ padding: 12, borderTop: '1px solid #f3f4f6', display: 'flex', gap: 8 }}>
-            <input
-              id="message-input"
-              type="text"
-              value={msgText}
-              onChange={e => setMsgText(e.target.value)}
-              placeholder="Type a message..."
-              style={{
-                flex: 1, padding: '9px 13px', border: '1px solid #d1d5db',
-                borderRadius: 8, fontSize: 14, outline: 'none',
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!msgText.trim() || sending}
-              style={{
-                padding: '9px 18px', background: msgText.trim() ? '#1a3328' : '#9ca3af',
-                color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, cursor: msgText.trim() ? 'pointer' : 'default',
-              }}
-            >
-              {sending ? '...' : 'Send'}
-            </button>
+          <form onSubmit={sendMessage} style={{ padding: 12, borderTop: '1px solid #f3f4f6' }}>
+            {photoPreview && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '4px 0' }}>
+                <img src={photoPreview} alt="" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }} />
+                <button type="button" onClick={clearMsgPhoto} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#9ca3af', lineHeight: 1, padding: 0 }}>×</button>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                id="message-input"
+                type="text"
+                value={msgText}
+                onChange={e => setMsgText(e.target.value)}
+                placeholder="Type a message..."
+                style={{ flex: 1, padding: '9px 13px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none' }}
+              />
+              <input type="file" accept="image/*" ref={msgPhotoRef} onChange={handleMsgPhotoSelect} style={{ display: 'none' }} />
+              <button
+                type="button"
+                onClick={() => msgPhotoRef.current?.click()}
+                style={{ padding: '9px 11px', background: photoFile ? '#f0fdf4' : '#f9fafb', border: '1px solid ' + (photoFile ? '#86efac' : '#d1d5db'), borderRadius: 8, cursor: 'pointer', lineHeight: 1, color: photoFile ? '#16a34a' : '#6b7280' }}
+                title="Attach photo"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+              <button
+                type="submit"
+                disabled={(!msgText.trim() && !photoFile) || sending}
+                style={{
+                  padding: '9px 18px', background: (msgText.trim() || photoFile) ? '#1a3328' : '#9ca3af',
+                  color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, cursor: (msgText.trim() || photoFile) ? 'pointer' : 'default',
+                }}
+              >
+                {sending ? '...' : 'Send'}
+              </button>
+            </div>
           </form>
         </div>
 

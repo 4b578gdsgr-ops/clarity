@@ -51,19 +51,19 @@ export async function POST(request) {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { booking_id, sender, message } = body;
-  console.log('[messages] POST body:', { booking_id, sender, message_length: message?.length });
+  const { booking_id, sender, message, photo_url } = body;
+  console.log('[messages] POST body:', { booking_id, sender, message_length: message?.length, has_photo: !!photo_url });
 
-  if (!booking_id || !sender || !message?.trim()) {
-    console.error('[messages] POST: validation failed', { booking_id, sender, has_message: !!message });
-    return Response.json({ error: 'booking_id, sender, and message are required' }, { status: 400 });
+  if (!booking_id || !sender || (!message?.trim() && !photo_url)) {
+    console.error('[messages] POST: validation failed', { booking_id, sender, has_message: !!message, has_photo: !!photo_url });
+    return Response.json({ error: 'booking_id, sender, and message or photo are required' }, { status: 400 });
   }
   if (!['customer', 'admin'].includes(sender)) {
     console.error('[messages] POST: invalid sender:', sender);
     return Response.json({ error: 'sender must be customer or admin' }, { status: 400 });
   }
 
-  const insertPayload = { booking_id, sender, message: message.trim() };
+  const insertPayload = { booking_id, sender, message: message?.trim() || '', ...(photo_url ? { photo_url } : {}) };
   console.log('[messages] POST inserting:', insertPayload);
 
   const { data, error } = await supabaseAdmin
