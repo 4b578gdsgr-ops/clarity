@@ -114,7 +114,7 @@ export default function PwaMessages({ profile, onBack }) {
         )}
 
         {messages !== null && messages.map((msg, i) => {
-          const isCustomer = msg.sender === 'customer';
+          const isCustomer = msg.sender === 'member';
           return (
             <div key={msg.id || i} style={{ display: 'flex', justifyContent: isCustomer ? 'flex-end' : 'flex-start', marginBottom: 12 }}>
               <div style={{ maxWidth: '78%' }}>

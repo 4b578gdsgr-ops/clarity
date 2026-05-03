@@ -2627,6 +2627,109 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
 
 // ─── Member Messages ──────────────────────────────────────────────────────────
 
+function NewMessageDialog({ bookings, onClose, onSent }) {
+  const [phone, setPhone] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [err, setErr] = useState('');
+
+  const customers = [];
+  const seen = new Set();
+  for (const b of bookings) {
+    if (b.phone) {
+      const digits = b.phone.replace(/\D/g, '');
+      if (!seen.has(digits)) {
+        seen.add(digits);
+        customers.push({ phone: b.phone, name: b.name || '' });
+      }
+    }
+  }
+
+  async function handleSend(e) {
+    e.preventDefault();
+    if (!phone.trim() || !message.trim()) return;
+    setSending(true);
+    setErr('');
+    try {
+      const res = await fetch('/api/member-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: 'admin', phone: phone.trim(), message: message.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setErr(d.error || 'Failed to send'); return; }
+      onSent();
+    } catch {
+      setErr('Network error');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#0f1a14' }}>New message</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af', lineHeight: 1, padding: 0 }}>×</button>
+      </div>
+      <form onSubmit={handleSend}>
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ display: 'block', fontSize: 12, color: '#6b7280', marginBottom: 3 }}>Phone number</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            placeholder="(860) 555-1234"
+            list="nm-customer-phones"
+            autoFocus
+            style={{ width: '100%', padding: '8px 11px', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+          />
+          {customers.length > 0 && (
+            <datalist id="nm-customer-phones">
+              {customers.map(c => (
+                <option key={c.phone} value={c.phone}>{c.name}</option>
+              ))}
+            </datalist>
+          )}
+        </div>
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ display: 'block', fontSize: 12, color: '#6b7280', marginBottom: 3 }}>Message</label>
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder="Your message..."
+            rows={3}
+            style={{ width: '100%', padding: '8px 11px', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 14, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
+          />
+        </div>
+        {err && <p style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{err}</p>}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="submit"
+            disabled={!phone.trim() || !message.trim() || sending}
+            style={{
+              flex: 1, padding: '8px 0',
+              background: (!phone.trim() || !message.trim() || sending) ? '#9ca3af' : '#1a3328',
+              color: '#fff', border: 'none', borderRadius: 7, fontSize: 14,
+              cursor: (!phone.trim() || !message.trim() || sending) ? 'default' : 'pointer',
+              fontFamily: 'inherit', fontWeight: 600,
+            }}
+          >
+            {sending ? 'Sending...' : 'Send via SMS'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: '8px 16px', background: '#fff', border: '1px solid #d1d5db', borderRadius: 7, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', color: '#374151' }}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function MemberThread({ thread, onRefresh, onMarkRead }) {
   const [expanded, setExpanded] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -2700,7 +2803,10 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
                 {thread.unreadCount}
               </span>
             )}
-            {thread.email && (
+            {thread.phone && (
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>{thread.phone}</span>
+            )}
+            {!thread.phone && thread.email && (
               <span style={{ fontSize: 12, color: '#9ca3af' }}>{thread.email}</span>
             )}
           </div>
@@ -2743,14 +2849,19 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
             ))}
             <div ref={bottomRef} />
           </div>
-          {thread.email && (
+          {thread.phone && (
+            <div style={{ padding: '4px 16px 2px', fontSize: 11, color: '#9ca3af', background: '#fff' }}>
+              Reply will be sent via SMS to {thread.phone}
+            </div>
+          )}
+          {!thread.phone && thread.email && (
             <div style={{ padding: '4px 16px 2px', fontSize: 11, color: '#9ca3af', background: '#fff' }}>
               Reply will be emailed to {thread.email}
             </div>
           )}
-          {!thread.email && (
+          {!thread.phone && !thread.email && (
             <div style={{ padding: '4px 16px 2px', fontSize: 11, color: '#f59e0b', background: '#fff' }}>
-              No email on file — reply won't be sent
+              No contact info on file — reply won't be sent
             </div>
           )}
           {sendErr && <div style={{ padding: '4px 16px', color: '#dc2626', fontSize: 12 }}>{sendErr}</div>}
@@ -2779,16 +2890,18 @@ function MemberThread({ thread, onRefresh, onMarkRead }) {
   );
 }
 
-function MemberMessagesView({ messages, onRefresh, onMarkRead }) {
+function MemberMessagesView({ messages, bookings, onRefresh, onMarkRead }) {
+  const [composing, setComposing] = useState(false);
   const threadsMap = {};
   for (const msg of messages) {
     const tid = msg.thread_id;
     if (!threadsMap[tid]) {
-      threadsMap[tid] = { thread_id: tid, name: '', email: '', messages: [], unreadCount: 0 };
+      threadsMap[tid] = { thread_id: tid, name: '', email: '', phone: '', messages: [], unreadCount: 0 };
     }
     threadsMap[tid].messages.push(msg);
-    if (!threadsMap[tid].name && msg.sender === 'member' && msg.name) threadsMap[tid].name = msg.name;
+    if (!threadsMap[tid].name && msg.name) threadsMap[tid].name = msg.name;
     if (!threadsMap[tid].email && msg.email) threadsMap[tid].email = msg.email;
+    if (!threadsMap[tid].phone && msg.phone) threadsMap[tid].phone = msg.phone;
     if (msg.sender === 'member' && msg.unread) threadsMap[tid].unreadCount++;
   }
 
@@ -2798,12 +2911,26 @@ function MemberMessagesView({ messages, onRefresh, onMarkRead }) {
     return new Date(bLast) - new Date(aLast);
   });
 
-  if (threads.length === 0) {
-    return <p style={{ color: '#9ca3af', fontSize: 14 }}>No member messages yet.</p>;
-  }
-
   return (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button
+          onClick={() => setComposing(true)}
+          style={{ background: '#1a3328', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          + New message
+        </button>
+      </div>
+      {composing && (
+        <NewMessageDialog
+          bookings={bookings || []}
+          onClose={() => setComposing(false)}
+          onSent={() => { setComposing(false); onRefresh(); }}
+        />
+      )}
+      {threads.length === 0 && (
+        <p style={{ color: '#9ca3af', fontSize: 14 }}>No member messages yet.</p>
+      )}
       {threads.map(thread => (
         <MemberThread key={thread.thread_id} thread={thread} onRefresh={onRefresh} onMarkRead={onMarkRead} />
       ))}
@@ -3956,7 +4083,7 @@ export default function AdminServicePage() {
           <AllRequestsView bookings={bookings} onRefresh={load} unreadCounts={unreadCounts.counts} onMarkRead={handleMarkRead} onRebook={handleRebook} />
         )}
         {!loading && activeTab === 'members' && (
-          <MemberMessagesView messages={memberMessages} onRefresh={load} onMarkRead={handleMemberMarkRead} />
+          <MemberMessagesView messages={memberMessages} bookings={bookings} onRefresh={load} onMarkRead={handleMemberMarkRead} />
         )}
         {activeTab === 'email' && <SendEmailView />}
         {activeTab === 'phone_leads' && (

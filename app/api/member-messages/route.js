@@ -1,9 +1,14 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { Resend } from 'resend';
+import { sendSMS } from '../../../lib/sms';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = 'One Love Outdoors <service@oneloveoutdoors.org>';
 const ADMIN_EMAIL = 'service@oneloveoutdoors.org';
+
+function normalizePhone(p) {
+  return (p || '').replace(/\D/g, '');
+}
 
 // GET /api/member-messages?thread_id=xxx  (member view)
 // GET /api/member-messages                (admin — all messages)
@@ -27,17 +32,32 @@ export async function GET(request) {
 }
 
 // POST /api/member-messages
-// body: { name, message, email, thread_id (optional), sender ('member'|'admin') }
+// Member message:  { sender: 'member', name, message, email?, phone? }
+// Admin reply:     { sender: 'admin', thread_id, message }
+// Admin outbound:  { sender: 'admin', phone, message, name? }
 export async function POST(request) {
   const body = await request.json();
-  const { name, message, email, thread_id, sender = 'member' } = body;
+  const { name, message, email, phone, thread_id, sender = 'member' } = body;
 
   if (!message?.trim()) return Response.json({ error: 'Message is required' }, { status: 400 });
   if (sender === 'member' && !name?.trim()) return Response.json({ error: 'Name is required' }, { status: 400 });
 
-  const newThreadId = thread_id || crypto.randomUUID();
-
   if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+
+  const phoneDigits = phone ? normalizePhone(phone) : null;
+
+  // Resolve thread_id: use provided, or find by phone, or create new
+  let resolvedThreadId = thread_id || null;
+  if (!resolvedThreadId && phoneDigits) {
+    const { data: existing } = await supabaseAdmin
+      .from('member_messages')
+      .select('thread_id')
+      .eq('phone', phoneDigits)
+      .order('created_at', { ascending: true })
+      .limit(1);
+    resolvedThreadId = existing?.[0]?.thread_id || null;
+  }
+  if (!resolvedThreadId) resolvedThreadId = crypto.randomUUID();
 
   const { data, error } = await supabaseAdmin
     .from('member_messages')
@@ -45,7 +65,8 @@ export async function POST(request) {
       name: name?.trim() || null,
       message: message.trim(),
       email: email?.trim() || null,
-      thread_id: newThreadId,
+      phone: phoneDigits || null,
+      thread_id: resolvedThreadId,
       sender,
       unread: true,
     }])
@@ -54,41 +75,63 @@ export async function POST(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  if (resend) {
-    if (sender === 'member') {
-      // Notify admin
+  if (sender === 'member') {
+    // Notify admin by email
+    if (resend) {
       resend.emails.send({
         from: FROM,
         to: [ADMIN_EMAIL],
         subject: 'Member message — ' + name.trim(),
-        text: message.trim() + '\n\nFrom: ' + name.trim() + (email ? '\nReply to: ' + email.trim() : '') + '\n\n— One Love Member Dashboard',
+        text: message.trim() +
+          '\n\nFrom: ' + name.trim() +
+          (email ? '\nEmail: ' + email.trim() : '') +
+          (phoneDigits ? '\nPhone: ' + phoneDigits : '') +
+          '\n\n— One Love Member Dashboard',
       }).catch(err => console.error('[member-messages] admin email failed:', err?.message));
-    } else if (sender === 'admin') {
-      // Find member email from thread
-      const { data: threadMsgs } = await supabaseAdmin
+    }
+  } else if (sender === 'admin') {
+    // Find contact info for this thread — prefer phone rows for SMS routing
+    const { data: phoneMsgs } = await supabaseAdmin
+      .from('member_messages')
+      .select('phone, name')
+      .eq('thread_id', resolvedThreadId)
+      .not('phone', 'is', null)
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    const contactPhone = phoneMsgs?.[0]?.phone || phoneDigits;
+    const contactName = phoneMsgs?.[0]?.name || name || 'there';
+
+    if (contactPhone) {
+      sendSMS(contactPhone, 'One Love: ' + message.trim()).catch(err =>
+        console.error('[member-messages] SMS failed:', err?.message)
+      );
+    } else {
+      // Fall back to email
+      const { data: emailMsgs } = await supabaseAdmin
         .from('member_messages')
         .select('email, name')
-        .eq('thread_id', newThreadId)
+        .eq('thread_id', resolvedThreadId)
         .eq('sender', 'member')
         .not('email', 'is', null)
         .order('created_at', { ascending: true })
         .limit(1);
 
-      const memberEmail = threadMsgs?.[0]?.email;
-      const memberName = threadMsgs?.[0]?.name || 'there';
+      const contactEmail = emailMsgs?.[0]?.email;
+      const emailName = emailMsgs?.[0]?.name || contactName;
 
-      if (memberEmail) {
+      if (contactEmail && resend) {
         resend.emails.send({
           from: FROM,
-          to: [memberEmail],
+          to: [contactEmail],
           subject: 'New message from One Love Outdoors',
-          text: 'Hi ' + memberName + ',\n\n' + message.trim() + '\n\n— One Love Outdoors',
+          text: 'Hi ' + emailName + ',\n\n' + message.trim() + '\n\n— One Love Outdoors',
         }).catch(err => console.error('[member-messages] member email failed:', err?.message));
       }
     }
   }
 
-  return Response.json({ message: data, thread_id: newThreadId });
+  return Response.json({ message: data, thread_id: resolvedThreadId });
 }
 
 // DELETE /api/member-messages?thread_id=xxx

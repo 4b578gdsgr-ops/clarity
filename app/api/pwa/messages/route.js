@@ -1,17 +1,18 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { pushToAdmin } from '../../../../lib/push';
-import { sendAdminMessageNotification } from '../../../../lib/email';
 
 function normalizePhone(p) {
   return (p || '').replace(/\D/g, '');
 }
 
-async function getBookingsForPhone(digits) {
+async function getThreadIdForPhone(digits) {
   const { data } = await supabaseAdmin
-    .from('service_bookings')
-    .select('id, name, phone, status, created_at')
-    .order('created_at', { ascending: false });
-  return (data || []).filter(b => normalizePhone(b.phone) === digits);
+    .from('member_messages')
+    .select('thread_id')
+    .eq('phone', digits)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  return data?.[0]?.thread_id || null;
 }
 
 export async function GET(req) {
@@ -22,20 +23,14 @@ export async function GET(req) {
   const digits = normalizePhone(phone);
   if (digits.length < 7) return Response.json({ error: 'invalid phone' }, { status: 400 });
 
-  const bookings = await getBookingsForPhone(digits);
-  if (!bookings.length) return Response.json({ messages: [], canMessage: false });
-
-  const bookingIds = bookings.map(b => b.id);
   const { data: messages, error } = await supabaseAdmin
-    .from('service_messages')
+    .from('member_messages')
     .select('*')
-    .in('booking_id', bookingIds)
+    .eq('phone', digits)
     .order('created_at', { ascending: true });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  const active = bookings.find(b => !['cancelled', 'no_show', 'complete'].includes(b.status));
-  return Response.json({ messages: messages || [], canMessage: true, activeBookingId: active?.id || bookings[0]?.id });
+  return Response.json({ messages: messages || [], canMessage: true });
 }
 
 export async function POST(req) {
@@ -45,26 +40,26 @@ export async function POST(req) {
   }
 
   const digits = normalizePhone(phone);
-  const bookings = await getBookingsForPhone(digits);
-  if (!bookings.length) {
-    return Response.json({ error: 'No bookings found for this phone number' }, { status: 404 });
-  }
-
-  const active = bookings.find(b => !['cancelled', 'no_show', 'complete'].includes(b.status));
-  const bookingId = active?.id || bookings[0].id;
-  const bookingName = active?.name || bookings[0]?.name || name;
+  let thread_id = await getThreadIdForPhone(digits);
+  if (!thread_id) thread_id = crypto.randomUUID();
 
   const { data, error } = await supabaseAdmin
-    .from('service_messages')
-    .insert([{ booking_id: bookingId, sender: 'customer', message: message.trim() }])
+    .from('member_messages')
+    .insert([{
+      thread_id,
+      phone: digits,
+      name: name?.trim() || null,
+      message: message.trim(),
+      sender: 'member',
+      unread: true,
+    }])
     .select()
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  sendAdminMessageNotification({ name: bookingName, bike_brand: '' }, message.trim()).catch(() => {});
   pushToAdmin({
-    title: 'Message from ' + (bookingName || name || 'customer'),
+    title: 'Message from ' + (name?.trim() || 'customer'),
     body: message.trim().slice(0, 80),
     url: '/admin/service',
     tag: 'olo-admin-msg',

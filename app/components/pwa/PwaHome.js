@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 const PwaBookings = dynamic(() => import('./PwaBookings'));
 const PwaMessages = dynamic(() => import('./PwaMessages'));
 const PwaSettings = dynamic(() => import('./PwaSettings'));
+const PwaRides = dynamic(() => import('./PwaRides'));
 
 const ACTIVE_STATUSES = new Set(['new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery']);
 const STATUS_VERB = {
@@ -155,6 +156,22 @@ export default function PwaHome({ onResetProfile }) {
                   </div>
                   <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setView('rides')}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
+                    padding: '18px 20px', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1a14', marginBottom: 2 }}>Rides</div>
+                    <div style={{ fontSize: 13, color: '#6b7280' }}>Upcoming group rides.</div>
+                  </div>
+                  <div style={{ color: '#9ca3af', fontSize: 22 }}>&rsaquo;</div>
+                </button>
               </div>
             </div>
           </div>
@@ -165,6 +182,7 @@ export default function PwaHome({ onResetProfile }) {
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {view === 'bookings' && <PwaBookings profile={profile} onBack={() => setView('home')} />}
           {view === 'messages' && <PwaMessages profile={profile} onBack={() => setView('home')} />}
+          {view === 'rides'    && <PwaRides onBack={() => setView('home')} />}
           {view === 'settings' && <PwaSettings profile={profile} onDone={() => setView('home')} onResetProfile={onResetProfile} />}
         </div>
       )}
