@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { Resend } from 'resend';
 import { sendSMS } from '../../../lib/sms';
+import { pushToPhone, pushToAdmin } from '../../../lib/push';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = 'One Love Outdoors <service@oneloveoutdoors.org>';
@@ -89,6 +90,12 @@ export async function POST(request) {
           '\n\n— One Love Member Dashboard',
       }).catch(err => console.error('[member-messages] admin email failed:', err?.message));
     }
+    pushToAdmin({
+      title: 'Message from ' + (name?.trim() || 'member'),
+      body: message.trim().slice(0, 80),
+      url: '/admin/service',
+      tag: 'olo-admin-msg',
+    }).catch(() => {});
   } else if (sender === 'admin') {
     // Find contact info for this thread — prefer phone rows for SMS routing
     const { data: phoneMsgs } = await supabaseAdmin
@@ -106,6 +113,12 @@ export async function POST(request) {
       sendSMS(contactPhone, 'One Love: ' + message.trim()).catch(err =>
         console.error('[member-messages] SMS failed:', err?.message)
       );
+      pushToPhone(contactPhone, {
+        title: 'New message from One Love Outdoors',
+        body: message.trim().slice(0, 80),
+        url: '/?openTab=messages',
+        tag: 'olo-message',
+      }).catch(err => console.error('[member-messages] push failed:', err?.message));
     } else {
       // Fall back to email
       const { data: emailMsgs } = await supabaseAdmin

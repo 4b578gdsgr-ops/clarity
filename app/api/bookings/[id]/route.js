@@ -1,20 +1,28 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
 import { sendCancellationNotification } from '../../../../lib/email';
-import { pushToBooking, pushToAdmin } from '../../../../lib/push';
+import { pushToBooking, pushToAdmin, pushToPhone } from '../../../../lib/push';
 
 const PUSH_PAYLOADS = {
   confirmed: {
-    title: 'Booking confirmed',
+    title: 'Your bike: confirmed',
     body: "We've got your request. We'll be in touch to set up pickup.",
   },
+  in_progress: {
+    title: 'Your bike: in progress',
+    body: "Your bike is on the stand — we're working on it.",
+  },
   ready: {
-    title: 'Your bike is ready',
+    title: 'Your bike: ready',
     body: "All done. We'll have it back to you soon.",
   },
   out_for_delivery: {
-    title: 'On its way',
+    title: 'Your bike: out for delivery',
     body: 'Your bike is heading back to you.',
+  },
+  complete: {
+    title: 'Your bike: complete',
+    body: 'Service is complete. Thanks for riding with us.',
   },
 };
 
@@ -111,12 +119,18 @@ export async function PATCH(request, { params }) {
   }
 
   // Push notification for key status changes (sent regardless of contact_preference)
-  const PUSH_STATUSES = new Set(['confirmed', 'ready', 'out_for_delivery']);
+  const PUSH_STATUSES = new Set(['confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete']);
   if (update.status && PUSH_STATUSES.has(update.status) && !skip_notification) {
     const push = PUSH_PAYLOADS[update.status];
-    pushToBooking(id, { ...push, url: '/service/' + id, tag: 'olo-status' }).catch(err =>
+    const pushPayload = { ...push, url: '/service/' + id, tag: 'olo-status' };
+    pushToBooking(id, pushPayload).catch(err =>
       console.error('[bookings/[id]] push failed for', update.status, ':', err?.message || err)
     );
+    if (data.phone) {
+      pushToPhone(data.phone, pushPayload).catch(err =>
+        console.error('[bookings/[id]] phone push failed for', update.status, ':', err?.message || err)
+      );
+    }
   }
 
   // Notify admin when customer cancels

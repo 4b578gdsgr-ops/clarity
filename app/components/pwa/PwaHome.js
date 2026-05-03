@@ -74,13 +74,118 @@ function ActiveBanner({ profile }) {
   );
 }
 
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function PushPrompt({ phone, onDone }) {
+  async function handleEnable() {
+    onDone();
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      const digits = String(phone || '').replace(/\D/g, '');
+      if (digits.length >= 7) {
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: digits, subscription: sub.toJSON() }),
+        });
+        console.log('[push] customer subscribed with phone', digits);
+      }
+    } catch (err) {
+      console.error('[push] subscription failed:', err);
+    }
+  }
+
+  function handleDismiss() {
+    onDone();
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem('ol_push_prompt') || '{}'); } catch {}
+    const dismissals = (state.dismissals || 0) + 1;
+    const nextPrompt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    localStorage.setItem('ol_push_prompt', JSON.stringify({ dismissals, nextPrompt }));
+  }
+
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
+      padding: '14px 16px', marginBottom: 16,
+    }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14', marginBottom: 4 }}>
+        Enable notifications
+      </div>
+      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12, lineHeight: 1.5 }}>
+        Get notified when your bike is ready or we send you a message.
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={handleEnable}
+          style={{
+            flex: 1, padding: '9px 0', background: '#1a3328', color: '#fff',
+            border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          Enable
+        </button>
+        <button
+          onClick={handleDismiss}
+          style={{
+            flex: 1, padding: '9px 0', background: 'none', color: '#6b7280',
+            border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          Not now
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PwaHome({ onResetProfile }) {
   const profile = getProfile();
   const [view, setView] = useState('home');
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
 
   useEffect(() => {
     console.log('[PWA] PwaHome mounted — profile:', profile?.name, '| savedIds:', getSavedBookingIds());
+
+    // Handle ?openTab= deep-link from push notification
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('openTab');
+    if (tab && ['bookings', 'messages', 'rides', 'settings'].includes(tab)) {
+      setView(tab);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
+
+  useEffect(() => {
+    if (view !== 'home') return;
+    if (!('Notification' in window) || !VAPID_PUBLIC_KEY) return;
+    if (Notification.permission !== 'default') return;
+    if (!profile?.phone) return;
+
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem('ol_push_prompt') || '{}'); } catch {}
+    if ((state.dismissals || 0) >= 2) return;
+    if (Date.now() < (state.nextPrompt || 0)) return;
+
+    const t = setTimeout(() => setShowPushPrompt(true), 800);
+    return () => clearTimeout(t);
+  }, [view, profile?.phone]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#fafaf7' }}>
@@ -108,6 +213,10 @@ export default function PwaHome({ onResetProfile }) {
               <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>What do you need today?</p>
 
               <ActiveBanner profile={profile} />
+
+              {showPushPrompt && (
+                <PushPrompt phone={profile?.phone} onDone={() => setShowPushPrompt(false)} />
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <a

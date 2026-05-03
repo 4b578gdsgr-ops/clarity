@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase';
+import { pushToAllCustomers } from '../../../lib/push';
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -22,5 +23,13 @@ export async function POST(req) {
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  pushToAllCustomers({
+    title: 'New ride: ' + (title || 'Group ride'),
+    body: [date, location].filter(Boolean).join(' · '),
+    url: '/?openTab=rides',
+    tag: 'olo-ride',
+  }).catch(() => {});
+
   return Response.json({ ride: data });
 }
