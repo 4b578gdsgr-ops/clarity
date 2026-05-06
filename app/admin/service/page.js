@@ -1879,7 +1879,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
           >
             Customer view
           </a>
-          {['complete', 'done', 'delivered'].includes(booking.status) && (
+          {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (
             paymentStatus === 'paid' ? (
               <>
                 <button
