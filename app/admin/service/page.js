@@ -614,6 +614,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   const [memberVerified, setMemberVerified] = useState(!!booking.member_verified);
   const [copiedTracking, setCopiedTracking] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [copiedThanks, setCopiedThanks] = useState(false);
   const [shopPhotos, setShopPhotos] = useState(() =>
     (booking.shop_photos || []).map((url, i) => ({ id: 'existing-' + i, preview: url, url, uploading: false, error: null }))
   );
@@ -920,6 +921,15 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
       });
       onRefresh();
     }
+  }
+
+  function copyThankYouText() {
+    const firstName = (booking.name || 'there').split(' ')[0];
+    const membershipLink = 'https://oneloveoutdoors.org/membership';
+    const text = `Hi ${firstName}, thanks for trusting us. Your bike should be riding great. Know someone who needs service? Send them to oneloveoutdoors.org. And if you're interested in priority service and preferred pricing, check out our membership: ${membershipLink} — One Love`;
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedThanks(true);
+    setTimeout(() => setCopiedThanks(false), 2000);
   }
 
   // Silent save — updates a field without triggering a full list refresh.
@@ -1871,21 +1881,37 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
           </a>
           {['complete', 'done', 'delivered'].includes(booking.status) && (
             paymentStatus === 'paid' ? (
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!window.confirm('Mark as unpaid?')) return;
-                  await save({ payment_status: 'unpaid' });
-                  setPaymentStatus('unpaid');
-                }}
-                style={{
-                  padding: '5px 12px', background: '#f0fdf4', color: '#166534',
-                  border: '1px solid #bbf7d0', borderRadius: 7, fontSize: 12, fontWeight: 700,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                Paid ✓
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm('Mark as unpaid?')) return;
+                    await save({ payment_status: 'unpaid' });
+                    setPaymentStatus('unpaid');
+                  }}
+                  style={{
+                    padding: '5px 12px', background: '#f0fdf4', color: '#166534',
+                    border: '1px solid #bbf7d0', borderRadius: 7, fontSize: 12, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  Paid ✓
+                </button>
+                {(booking.contact_preference === 'text' || booking.contact_preference === 'phone') && (
+                  <button
+                    type="button"
+                    onClick={copyThankYouText}
+                    style={{
+                      padding: '5px 12px', background: copiedThanks ? '#f0fdf4' : '#fff',
+                      color: copiedThanks ? '#166534' : '#374151',
+                      border: '1px solid ' + (copiedThanks ? '#bbf7d0' : '#e5e7eb'),
+                      borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    {copiedThanks ? 'Copied!' : 'Copy thank-you text'}
+                  </button>
+                )}
+              </>
             ) : (
               <button
                 type="button"

@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
-import { sendCancellationNotification } from '../../../../lib/email';
+import { sendCancellationNotification, sendThankYouEmail } from '../../../../lib/email';
 import { pushToBooking, pushToAdmin, pushToPhone } from '../../../../lib/push';
 
 const PUSH_PAYLOADS = {
@@ -90,6 +90,16 @@ export async function PATCH(request, { params }) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Send thank-you email when payment is marked paid (email customers only)
+  if (update.payment_status === 'paid') {
+    const pref = data.contact_preference;
+    if (pref !== 'text' && pref !== 'phone') {
+      sendThankYouEmail(data).catch(err =>
+        console.error('[bookings/[id]] thank-you email failed:', err?.message || err)
+      );
+    }
+  }
 
   // Send quote notification if requested
   if (send_quote) {

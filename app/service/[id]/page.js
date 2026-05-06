@@ -667,6 +667,8 @@ export default function BookingStatusPage({ params }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [inspBikeIdx, setInspBikeIdx] = useState(0);
+  const [isPwa, setIsPwa] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const threadRef = useRef(null);
   const threadMountedRef = useRef(false);
   const intervalRef = useRef(null);
@@ -700,6 +702,7 @@ export default function BookingStatusPage({ params }) {
   useEffect(() => {
     loadData();
     intervalRef.current = setInterval(loadData, 10000);
+    setIsPwa(window.matchMedia('(display-mode: standalone)').matches);
     return () => clearInterval(intervalRef.current);
   }, [id]);
 
@@ -1287,13 +1290,70 @@ export default function BookingStatusPage({ params }) {
           <UpdateInfoSection booking={booking} bookingId={id} onUpdated={loadData} />
         )}
 
-        {['complete', 'done', 'delivered'].includes(booking.status) && !booking.is_member && (
-          <p style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', marginBottom: 16 }}>
-            {'Liked the experience? Members get priority scheduling and preferred pricing on every service. '}
-            <a href="https://oneloveoutdoors.org/membership" target="_blank" rel="noreferrer" style={{ color: '#1a3328', textDecoration: 'underline' }}>
-              Learn more →
-            </a>
-          </p>
+        {['complete', 'done', 'delivered'].includes(booking.status) && booking.payment_status === 'paid' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+            {/* Card 1: Referral */}
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', margin: '0 0 4px' }}>
+                Know someone who needs service?
+              </p>
+              <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 12px', lineHeight: 1.5 }}>
+                Share the love. They don&apos;t need the app — just send them here.
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText('https://oneloveoutdoors.org/schedule-service-app').catch(() => {});
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 2000);
+                  }}
+                  style={{
+                    padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    background: linkCopied ? '#f0fdf4' : '#f9fafb',
+                    color: linkCopied ? '#166534' : '#374151',
+                    border: '1px solid ' + (linkCopied ? '#bbf7d0' : '#e5e7eb'),
+                    borderRadius: 8, fontFamily: 'inherit',
+                  }}
+                >
+                  {linkCopied ? 'Copied!' : 'Copy link'}
+                </button>
+                {isPwa && (
+                  <a
+                    href="/?openTab=friend"
+                    style={{
+                      padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                      background: '#f9fafb', color: '#374151',
+                      border: '1px solid #e5e7eb', borderRadius: 8,
+                      textDecoration: 'none', display: 'inline-block',
+                    }}
+                  >
+                    Book for a friend
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Card 2: Membership (non-members only) */}
+            {!booking.is_member && (
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px' }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', margin: '0 0 4px' }}>
+                  Never think about maintenance again.
+                </p>
+                <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  Members get priority service and preferred pricing. We handle the rest.
+                </p>
+                <a
+                  href="https://oneloveoutdoors.org/membership"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: 13, fontWeight: 600, color: '#1a3328', textDecoration: 'underline' }}
+                >
+                  Learn more →
+                </a>
+              </div>
+            )}
+          </div>
         )}
 
         <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
