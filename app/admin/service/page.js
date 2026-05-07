@@ -3324,6 +3324,7 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
   const [notes, setNotes] = useState(prefill?.notes || '');
   const [contactPref, setContactPref] = useState(prefill?.contact_preference || 'text');
   const [isMember, setIsMember] = useState(prefill?.is_member || false);
+  const [isDropoff, setIsDropoff] = useState(false);
   const [status, setStatus] = useState('new');
   const [pickupDate, setPickupDate] = useState('');
   const [pickupTime, setPickupTime] = useState('');
@@ -3384,6 +3385,7 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
           confirmed_time: pickupTime || null,
           return_date: returnDate || null,
           admin_created: true,
+          dropoff: isDropoff,
         }),
       });
       const data = await res.json();
@@ -3457,6 +3459,23 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
             <label style={labelStyle}>Address *</label>
             <input value={address} onChange={e => setAddress(e.target.value)} placeholder="123 Main St, Hartford, CT" style={inputStyle} />
           </div>
+
+          {/* Drop-off flag */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', background: isDropoff ? '#f0fdf4' : '#f9fafb', border: '1px solid ' + (isDropoff ? '#bbf7d0' : '#e5e7eb'), borderRadius: 8 }}>
+            <input
+              type="checkbox"
+              checked={isDropoff}
+              onChange={e => {
+                setIsDropoff(e.target.checked);
+                setStatus(e.target.checked ? 'in_progress' : 'new');
+              }}
+              style={{ accentColor: '#1a3328', width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }}
+            />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Drop-off</div>
+              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>We already have the bike — skip pickup, start in progress</div>
+            </div>
+          </label>
 
           {/* Bikes */}
           <div>
@@ -3562,25 +3581,27 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
             </div>
           </div>
 
-          {/* Pickup date + time */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Pickup date (optional)</label>
-              <input
-                type="date"
-                value={pickupDate}
-                onChange={e => {
-                  setPickupDate(e.target.value);
-                  if (e.target.value && !returnDate) setReturnDate(pickupToReturn(e.target.value));
-                }}
-                style={inputStyle}
-              />
+          {/* Pickup date + time — hidden for drop-offs */}
+          {!isDropoff && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Pickup date (optional)</label>
+                <input
+                  type="date"
+                  value={pickupDate}
+                  onChange={e => {
+                    setPickupDate(e.target.value);
+                    if (e.target.value && !returnDate) setReturnDate(pickupToReturn(e.target.value));
+                  }}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Pickup time (optional)</label>
+                <input type="time" value={pickupTime} onChange={e => setPickupTime(e.target.value)} style={inputStyle} />
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>Pickup time (optional)</label>
-              <input type="time" value={pickupTime} onChange={e => setPickupTime(e.target.value)} style={inputStyle} />
-            </div>
-          </div>
+          )}
 
           {/* Return date */}
           <div>

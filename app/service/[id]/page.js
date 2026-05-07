@@ -39,6 +39,7 @@ function getStatusHeading(booking) {
     }
     case 'picked_up': // legacy
     case 'in_progress':
+      if (booking.dropoff) return "We've got your bike. We'll let you know when it's ready.";
       return `Your ${noun} ${verb} with us. Working on it.`;
     case 'ready': {
       const ret = return_date ? fmtDate(return_date) : '';
@@ -834,7 +835,7 @@ export default function BookingStatusPage({ params }) {
             </div>
           )}
 
-          {booking.confirmed_date && (
+          {booking.confirmed_date && !booking.dropoff && (
             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 8 }}>
               <div style={{ fontSize: 13, color: '#1d4ed8', fontWeight: 600 }}>
                 {'Pickup: '}
@@ -868,7 +869,7 @@ export default function BookingStatusPage({ params }) {
             {!booking.bikes?.length && booking.issues && booking.issues.length > 0 && (
               <span><strong>Issues:</strong> {booking.issues.join(', ')}</span>
             )}
-            {booking.address && (
+            {booking.address && !booking.dropoff && (
               <span><strong>Pickup:</strong> {booking.address}</span>
             )}
           </div>

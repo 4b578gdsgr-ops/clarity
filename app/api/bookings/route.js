@@ -37,7 +37,8 @@ export async function POST(request) {
           preferred_day, time_slot, contact_preference, is_member,
           photos, status, confirmed_date, confirmed_time, return_date,
           admin_created, bikes,
-          referred_by, booker_phone, booker_name } = body;
+          referred_by, booker_phone, booker_name,
+          dropoff } = body;
   console.log('[bookings] new booking from:', name, '| email present:', !!email);
   console.log('[bookings] lat/lng from body:', lat, lng);
 
@@ -71,6 +72,7 @@ export async function POST(request) {
       referred_by: referred_by || null,
       booker_phone: booker_phone || null,
       booker_name: booker_name || null,
+      dropoff: dropoff === true,
     }])
     .select()
     .single();

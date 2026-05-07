@@ -57,7 +57,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json();
   const { skip_notification, send_quote } = body;
 
-  const allowed = ['status', 'notes', 'time_slot', 'preferred_day',
+  const allowed = ['status', 'notes', 'time_slot', 'preferred_day', 'dropoff',
                    'confirmed_date', 'confirmed_time', 'return_date', 'delivery_time', 'zone', 'preferred_time',
                    'invoice_amount', 'payment_link', 'address', 'member_verified',
                    'name', 'phone', 'email', 'last_notified_status',
