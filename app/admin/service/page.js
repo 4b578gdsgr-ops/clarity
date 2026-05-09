@@ -1880,7 +1880,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
             {copiedText ? 'Text copied!' : 'Copy text'}
           </button>
           <a
-            href={'/service/' + booking.id}
+            href={'/service/' + booking.id + '?from=admin'}
             target="_blank"
             rel="noreferrer"
             style={{ fontSize: 13, color: '#6b7280', textDecoration: 'underline' }}

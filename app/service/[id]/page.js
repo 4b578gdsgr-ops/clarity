@@ -691,6 +691,7 @@ export default function BookingStatusPage({ params }) {
   const [inspBikeIdx, setInspBikeIdx] = useState(0);
   const [isPwa, setIsPwa] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [fromAdmin, setFromAdmin] = useState(false);
   const threadRef = useRef(null);
   const threadMountedRef = useRef(false);
   const intervalRef = useRef(null);
@@ -725,6 +726,7 @@ export default function BookingStatusPage({ params }) {
     loadData();
     intervalRef.current = setInterval(loadData, 10000);
     setIsPwa(window.matchMedia('(display-mode: standalone)').matches);
+    setFromAdmin(new URLSearchParams(window.location.search).get('from') === 'admin');
     return () => clearInterval(intervalRef.current);
   }, [id]);
 
@@ -804,6 +806,13 @@ export default function BookingStatusPage({ params }) {
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7' }}>
+      {fromAdmin && (
+        <div style={{ background: '#1a3328', padding: '8px 20px' }}>
+          <a href="/admin/service" style={{ color: '#a7f3d0', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+            ← Back to admin
+          </a>
+        </div>
+      )}
       <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '12px 20px' }}>
         <a href="/" style={{ textDecoration: 'none' }}>
           <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: '#0f1a14', fontStyle: 'italic' }}>
