@@ -571,6 +571,29 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
   );
 }
 
+// ─── Save Contact ─────────────────────────────────────────────────────────────
+
+function saveContact() {
+  const vcard = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    'FN:One Love Outdoors',
+    'ORG:One Love Outdoors',
+    'TEL;TYPE=WORK:8602817888',
+    'EMAIL:service@oneloveoutdoors.org',
+    'URL:https://oneloveoutdoors.org',
+    'NOTE:Mobile bike service — text us anytime. oneloveoutdoors.org',
+    'END:VCARD',
+  ].join('\r\n');
+  const blob = new Blob([vcard], { type: 'text/vcard' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'one-love-outdoors.vcf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ─── Step 3: Done ─────────────────────────────────────────────────────────────
 
 function DoneStep({ bookingId, contactPreference, isAssembly, onReset, pwaMode = false }) {
@@ -598,6 +621,18 @@ function DoneStep({ bookingId, contactPreference, isAssembly, onReset, pwaMode =
           {'Track your booking \u2192'}
         </a>
       )}
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 10 }}>
+          Save our number \u2014 text is the fastest way to reach us.
+        </p>
+        <button
+          type="button"
+          onClick={saveContact}
+          style={{ display: 'block', width: '100%', padding: '12px 0', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Save our number \u2014 text us anytime.
+        </button>
+      </div>
       {pwaMode ? (
         <a
           href="/"

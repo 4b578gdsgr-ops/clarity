@@ -138,6 +138,27 @@ const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoor
 
 const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
 
+function saveContact() {
+  const vcard = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    'FN:One Love Outdoors',
+    'ORG:One Love Outdoors',
+    'TEL;TYPE=WORK:8602817888',
+    'EMAIL:service@oneloveoutdoors.org',
+    'URL:https://oneloveoutdoors.org',
+    'NOTE:Mobile bike service — text us anytime. oneloveoutdoors.org',
+    'END:VCARD',
+  ].join('\r\n');
+  const blob = new Blob([vcard], { type: 'text/vcard' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'one-love-outdoors.vcf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function renderWithLinks(text) {
   if (!text) return null;
   const parts = text.split(/(https?:\/\/[^\s]+)/g);
@@ -1262,6 +1283,18 @@ export default function EmbedBookingStatusPage({ params }) {
         </p>
       )}
 
+      <div style={{ textAlign: 'center', marginBottom: 12 }}>
+        <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 8 }}>
+          Save our number — text is the fastest way to reach us.
+        </p>
+        <button
+          type="button"
+          onClick={saveContact}
+          style={{ padding: '8px 18px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Save our number — text us anytime.
+        </button>
+      </div>
       <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
         {'Bookmark this page to check your status anytime.'}
       </p>
