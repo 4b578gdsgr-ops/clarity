@@ -941,7 +941,7 @@ export default function BookingStatusPage({ params }) {
           const activeReport = showTabs
             ? (report.find(r => r.bike_index === inspBikeIdx) || null)
             : (report[0] || null);
-          const wearItems   = (activeReport?.items || []).filter(it => !it.na && it.wear != null);
+          const wearItems   = (activeReport?.items || []).filter(it => !it.na && (it.wear != null || (it.label === 'Chain wear' && it.chain_service === 'waxed')));
           const replaced    = (activeReport?.items || []).filter(it => !it.na && it.state === 'replaced');
           const done        = (activeReport?.items || []).filter(it => !it.na && it.state === 'done');
           const sentOut     = (activeReport?.items || []).filter(it => !it.na && it.state === 'sent_out');
@@ -1000,10 +1000,35 @@ export default function BookingStatusPage({ params }) {
                       </div>
                       {wearItems.map((item, i) => {
                         const pct = item.wear;
+                        const mb = i < wearItems.length - 1 ? 10 : 0;
+
+                        // Special treatment for waxed chain
+                        if (item.label === 'Chain wear' && item.chain_service === 'waxed') {
+                          const barColor = pct != null ? (pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct >= 25 ? '#ea580c' : '#dc2626') : '#d97706';
+                          return (
+                            <div key={i} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px', marginBottom: mb }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: pct != null ? 4 : 6 }}>
+                                <span style={{ fontSize: 13, color: '#92400e', fontWeight: 700 }}>Chain ✨</span>
+                                {pct != null && <span style={{ fontSize: 12, color: barColor, fontWeight: 700 }}>{pct}%</span>}
+                              </div>
+                              {pct != null && (
+                                <div style={{ height: 6, background: '#fde68a', borderRadius: 3, overflow: 'hidden', marginBottom: 5 }}>
+                                  <div style={{ height: '100%', width: pct + '%', background: barColor, borderRadius: 3 }} />
+                                </div>
+                              )}
+                              <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.55 }}>
+                                {pct != null
+                                  ? pct + '% life remaining — freshly waxed'
+                                  : 'Freshly waxed. Smooth, silent, and easy on your drivetrain. You\'ll feel the difference.'}
+                              </div>
+                            </div>
+                          );
+                        }
+
                         const wearColor = item.replaced ? '#16a34a' : (pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct >= 25 ? '#ea580c' : '#dc2626');
                         const wearLabel = item.replaced ? 'Replaced ✓' : pct === 100 ? 'new' : pct === 75 ? 'good' : pct === 50 ? 'halfway — plan to replace next service' : pct === 25 ? 'replace soon' : 'replace now';
                         return (
-                          <div key={i} style={{ marginBottom: i < wearItems.length - 1 ? 10 : 0 }}>
+                          <div key={i} style={{ marginBottom: mb }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                               <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{item.label}</span>
                               <span style={{ fontSize: 12, color: wearColor, fontWeight: 600 }}>{item.replaced ? 'Replaced ✓' : pct + '%'}</span>

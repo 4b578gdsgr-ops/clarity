@@ -20,7 +20,7 @@ function wearColor(pct) {
 function renderItems(items) {
   if (!items || items.length === 0) return '<p style="color:#9ca3af;font-size:13px;">No items recorded.</p>';
 
-  const wearItems  = items.filter(it => !it.na && 'wear' in it && it.wear != null);
+  const wearItems  = items.filter(it => !it.na && (('wear' in it && it.wear != null) || (it.label === 'Chain wear' && it.chain_service === 'waxed')));
   const replaced   = items.filter(it => !it.na && it.state === 'replaced');
   const done       = items.filter(it => !it.na && it.state === 'done');
   const sentOut    = items.filter(it => !it.na && it.state === 'sent_out');
@@ -34,6 +34,23 @@ function renderItems(items) {
   if (wearItems.length > 0) {
     html += '<div class="section"><div class="section-title">Component Wear</div>';
     for (const item of wearItems) {
+      if (item.label === 'Chain wear' && item.chain_service === 'waxed') {
+        const pct = item.wear;
+        const color = pct != null ? wearColor(pct) : '#d97706';
+        html += `<div class="wear-item" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span class="item-label" style="color:#92400e;">Chain ✨</span>
+            <span style="font-size:12px;font-weight:700;color:${color};">${pct != null ? pct + '%' : 'Waxed'}</span>
+          </div>
+          ${pct != null ? `<div class="wear-bar" style="background:#fde68a;"><div style="height:100%;width:${pct}%;background:${color};border-radius:3px;"></div></div>` : ''}
+          <div style="font-size:11px;color:#78350f;margin-top:4px;line-height:1.55;">
+            ${pct != null ? pct + '% life remaining — freshly waxed.' : 'Freshly waxed.'}
+            Wax coating reduces friction, extends drivetrain life, and keeps things whisper quiet.
+          </div>
+          ${item.photo ? `<img src="${esc(item.photo)}" class="item-photo" alt="Chain" />` : ''}
+        </div>`;
+        continue;
+      }
       const pct = item.wear;
       const color = item.replaced ? '#16a34a' : wearColor(pct);
       const label = item.replaced ? 'Replaced' : pct === 100 ? 'New' : pct === 75 ? 'Good' : pct === 50 ? 'Halfway' : pct === 25 ? 'Replace soon' : 'Replace now';

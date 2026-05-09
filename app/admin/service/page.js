@@ -773,6 +773,14 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
     saveInspection(activeBikeIdx, next);
   }
 
+  function updateItemChainService(idx, service) {
+    const current = getOrCreateInspection(activeBikeIdx);
+    const items = current.items.map((it, i) => i === idx ? { ...it, chain_service: service || null } : it);
+    const next = { ...current, items };
+    setInspections(prev => ({ ...prev, [activeBikeIdx]: next }));
+    saveInspection(activeBikeIdx, next);
+  }
+
   function setItemNote(idx, note) {
     const current = getOrCreateInspection(activeBikeIdx);
     const items = current.items.map((it, i) => i === idx ? { ...it, note } : it);
@@ -2166,6 +2174,23 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                           <option value="">—</option>
                           {WEAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
+                        {item.label === 'Chain wear' && (
+                          <select
+                            value={item.chain_service || ''}
+                            onChange={e => updateItemChainService(idx, e.target.value || null)}
+                            style={{
+                              padding: '3px 8px', fontSize: 11, borderRadius: 6, fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
+                              border: '1px solid ' + (item.chain_service === 'waxed' ? '#fde68a' : '#e5e7eb'),
+                              background: item.chain_service === 'waxed' ? '#fffbeb' : '#fff',
+                              color: item.chain_service === 'waxed' ? '#92400e' : '#374151',
+                              fontWeight: item.chain_service === 'waxed' ? 600 : 400,
+                            }}
+                          >
+                            <option value="">Service: —</option>
+                            <option value="cleaned_lubed">Cleaned &amp; lubed</option>
+                            <option value="waxed">Waxed ✨</option>
+                          </select>
+                        )}
                         <button
                           type="button"
                           onClick={() => updateItemReplaced(idx)}
