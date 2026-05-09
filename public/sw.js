@@ -76,12 +76,19 @@ self.addEventListener('push', event => {
     tag: data.tag || 'olo-update',
     renotify: true,
   };
-  console.log('[SW] showing notification:', title, options.body);
-  event.waitUntil(self.registration.showNotification(title, options));
+  const badgeCount = data.badgeCount || 1;
+  console.log('[SW] showing notification:', title, options.body, '| badge:', badgeCount);
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      self.navigator?.setAppBadge ? self.navigator.setAppBadge(badgeCount) : Promise.resolve(),
+    ])
+  );
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  if (self.navigator?.clearAppBadge) self.navigator.clearAppBadge();
   const url = event.notification.data && event.notification.data.url ? event.notification.data.url : '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
