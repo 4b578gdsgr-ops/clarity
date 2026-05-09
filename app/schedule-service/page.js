@@ -623,14 +623,14 @@ function DoneStep({ bookingId, contactPreference, isAssembly, onReset, pwaMode =
       )}
       <div style={{ marginBottom: 20 }}>
         <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 10 }}>
-          Save our number \u2014 text is the fastest way to reach us.
+          Save our number for quick questions. For service, booking here is always the fastest way to get on the schedule.
         </p>
         <button
           type="button"
           onClick={saveContact}
           style={{ display: 'block', width: '100%', padding: '12px 0', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
         >
-          Save our number \u2014 text us anytime.
+          Save contact
         </button>
       </div>
       {pwaMode ? (

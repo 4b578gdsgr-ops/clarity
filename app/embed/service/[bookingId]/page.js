@@ -1285,14 +1285,14 @@ export default function EmbedBookingStatusPage({ params }) {
 
       <div style={{ textAlign: 'center', marginBottom: 12 }}>
         <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 8 }}>
-          Save our number — text is the fastest way to reach us.
+          Save our number — handy for quick questions between services.
         </p>
         <button
           type="button"
           onClick={saveContact}
           style={{ padding: '8px 18px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
         >
-          Save our number — text us anytime.
+          Save contact
         </button>
       </div>
       <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
