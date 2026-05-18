@@ -17,7 +17,15 @@ function wearColor(pct) {
   return '#dc2626';
 }
 
-function renderItems(items) {
+function isVideoUrl(url) { return url && /\.(mp4|mov)$/i.test(url); }
+
+function mediaHtml(url, label, trackingUrl) {
+  if (!url) return '';
+  if (isVideoUrl(url)) return `<p style="font-size:12px;color:#6b7280;margin-top:6px;">Video available — <a href="${esc(trackingUrl)}" style="color:#1a3328;">view online</a></p>`;
+  return `<img src="${esc(url)}" class="item-photo" alt="${esc(label || '')}" />`;
+}
+
+function renderItems(items, trackingUrl) {
   if (!items || items.length === 0) return '<p style="color:#9ca3af;font-size:13px;">No items recorded.</p>';
 
   const wearItems  = items.filter(it => !it.na && (('wear' in it && it.wear != null) || (it.label === 'Chain wear' && it.chain_service === 'waxed')));
@@ -47,7 +55,7 @@ function renderItems(items) {
             ${pct != null ? pct + '% life remaining — freshly waxed.' : 'Freshly waxed.'}
             Wax coating reduces friction, extends drivetrain life, and keeps things whisper quiet.
           </div>
-          ${item.photo ? `<img src="${esc(item.photo)}" class="item-photo" alt="Chain" />` : ''}
+          ${mediaHtml(item.photo, 'Chain', trackingUrl)}
         </div>`;
         continue;
       }
@@ -61,7 +69,7 @@ function renderItems(items) {
         </div>
         <div class="wear-bar"><div style="height:100%;width:${pct}%;background:${color};border-radius:3px;"></div></div>
         <div style="font-size:11px;color:#6b7280;margin-top:3px;">${esc(label)}${item.note ? ' — ' + esc(item.note) : ''}</div>
-        ${item.photo ? `<img src="${esc(item.photo)}" class="item-photo" alt="${esc(item.label)}" />` : ''}
+        ${mediaHtml(item.photo, item.label, trackingUrl)}
       </div>`;
     }
     html += '</div>';
@@ -73,7 +81,7 @@ function renderItems(items) {
       html += `<div class="card card-green">
         <div class="item-label" style="color:#166534;">${esc(item.label)} ✓</div>
         ${item.note ? `<div style="font-size:12px;color:#4b7c5e;margin-top:3px;">${esc(item.note)}</div>` : ''}
-        ${item.photo ? `<img src="${esc(item.photo)}" class="item-photo" />` : ''}
+        ${mediaHtml(item.photo, item.label, trackingUrl)}
       </div>`;
     }
     html += '</div>';
@@ -97,7 +105,7 @@ function renderItems(items) {
       html += `<div class="card card-orange">
         <div class="item-label" style="color:#92400e;">${esc(item.label)}</div>
         ${item.note ? `<div style="font-size:12px;color:#c2410c;margin-top:3px;">${esc(item.note)}</div>` : ''}
-        ${item.photo ? `<img src="${esc(item.photo)}" class="item-photo" />` : ''}
+        ${mediaHtml(item.photo, item.label, trackingUrl)}
       </div>`;
     }
     html += '</div>';
@@ -109,7 +117,7 @@ function renderItems(items) {
       html += `<div class="card card-blue">
         <div class="item-label" style="color:#1e40af;">${esc(item.label)}</div>
         ${item.note ? `<div style="font-size:12px;color:#1d4ed8;margin-top:3px;">${esc(item.note)}</div>` : ''}
-        ${item.photo ? `<img src="${esc(item.photo)}" class="item-photo" />` : ''}
+        ${mediaHtml(item.photo, item.label, trackingUrl)}
       </div>`;
     }
     html += '</div>';
@@ -158,7 +166,7 @@ export async function GET(request, { params }) {
     const typeBadges = [report?.bike_type, report?.drivetrain_type].filter(Boolean).map(t => `<span class="bike-type-badge">${esc(t)}</span>`).join(' ');
     bikesSections += `<div class="bike-section">
       <h3 class="bike-title">${esc(bikeLabel)}${typeBadges ? ' ' + typeBadges : ''}</h3>
-      ${report ? renderItems(report.items) : '<p style="color:#9ca3af;font-size:13px;">No inspection on file for this bike.</p>'}
+      ${report ? renderItems(report.items, `https://service.oneloveoutdoors.org/service/${bookingId}`) : '<p style="color:#9ca3af;font-size:13px;">No inspection on file for this bike.</p>'}
       ${report?.notes ? `<div class="overall-notes"><strong>Notes:</strong> ${esc(report.notes)}</div>` : ''}
     </div>`;
   }

@@ -140,6 +140,24 @@ function fmtTime(timeStr) {
 
 const EDITABLE_STATUSES = new Set(['new', 'confirmed', 'in_progress', 'booked', 'picked_up']);
 
+function isVideoUrl(url) { return url && /\.(mp4|mov)$/i.test(url); }
+
+function InspMedia({ url, label, borderColor = '#e5e7eb' }) {
+  if (!url) return null;
+  if (isVideoUrl(url)) {
+    return (
+      <div style={{ marginTop: 6 }}>
+        <video src={url} controls playsInline style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 6, border: '1px solid ' + borderColor, display: 'block' }} />
+      </div>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
+      <img src={url} alt={label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid ' + borderColor, display: 'block' }} />
+    </a>
+  );
+}
+
 function saveContact() {
   const vcard = [
     'BEGIN:VCARD',
@@ -1067,11 +1085,7 @@ export default function BookingStatusPage({ params }) {
                               <div style={{ height: '100%', width: pct + '%', background: wearColor, borderRadius: 3 }} />
                             </div>
                             <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{wearLabel}{item.note ? ' — ' + item.note : ''}</div>
-                            {item.photo && (
-                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
-                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb', display: 'block' }} />
-                              </a>
-                            )}
+                            <InspMedia url={item.photo} label={item.label} borderColor="#e5e7eb" />
                           </div>
                         );
                       })}
@@ -1088,11 +1102,7 @@ export default function BookingStatusPage({ params }) {
                           <div key={i} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 12px' }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#166534' }}>{item.label} ✓</div>
                             {item.note && <div style={{ fontSize: 12, color: '#4b7c5e', marginTop: 2 }}>{item.note}</div>}
-                            {item.photo && (
-                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
-                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #bbf7d0', display: 'block' }} />
-                              </a>
-                            )}
+                            <InspMedia url={item.photo} label={item.label} borderColor="#bbf7d0" />
                           </div>
                         ))}
                       </div>
@@ -1126,11 +1136,7 @@ export default function BookingStatusPage({ params }) {
                           <div key={i} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '8px 12px' }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>{item.label}</div>
                             {item.note && <div style={{ fontSize: 12, color: '#c2410c', marginTop: 2 }}>{item.note}</div>}
-                            {item.photo && (
-                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
-                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #fed7aa', display: 'block' }} />
-                              </a>
-                            )}
+                            <InspMedia url={item.photo} label={item.label} borderColor="#fed7aa" />
                           </div>
                         ))}
                       </div>
@@ -1147,11 +1153,7 @@ export default function BookingStatusPage({ params }) {
                           <div key={i} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '8px 12px' }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>{item.label}</div>
                             {item.note && <div style={{ fontSize: 12, color: '#1d4ed8', marginTop: 2 }}>{item.note}</div>}
-                            {item.photo && (
-                              <a href={item.photo} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6 }}>
-                                <img src={item.photo} alt={item.label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #bfdbfe', display: 'block' }} />
-                              </a>
-                            )}
+                            <InspMedia url={item.photo} label={item.label} borderColor="#bfdbfe" />
                           </div>
                         ))}
                       </div>

@@ -575,12 +575,19 @@ async function geocodeAddress(address) {
   return null;
 }
 
+function isVideoUrl(url) { return url && /\.(mp4|mov)$/i.test(url); }
+
 async function uploadInspPhoto(file) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error('Supabase not configured');
   const client = createClient(url, key);
-  const ext = file.type === 'image/png' ? 'png' : 'jpg';
+  let ext;
+  if (file.type === 'image/png') ext = 'png';
+  else if (file.type === 'image/heic' || file.name?.toLowerCase().endsWith('.heic')) ext = 'heic';
+  else if (file.type === 'video/mp4') ext = 'mp4';
+  else if (file.type === 'video/quicktime') ext = 'mov';
+  else ext = 'jpg';
   const path = `insp/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await client.storage.from('booking-photos').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
   if (error) throw error;
@@ -862,6 +869,24 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    const isVid = file.type.startsWith('video/');
+    if (isVid && file.size > 50 * 1024 * 1024) {
+      alert('Video is too large. Try a shorter clip.');
+      return;
+    }
+    if (isVid) {
+      const duration = await new Promise(resolve => {
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => { URL.revokeObjectURL(v.src); resolve(v.duration); };
+        v.onerror = () => resolve(0);
+        v.src = URL.createObjectURL(file);
+      });
+      if (duration > 30) {
+        alert('Video is too long. Please keep it under 30 seconds.');
+        return;
+      }
+    }
     const bikeIdx = activeBikeIdx;
     const itemIdx = inspPhotoItemIdxRef.current;
     const current = inspections[bikeIdx] || emptyInspection();
@@ -2156,7 +2181,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
               <input
                 ref={inspPhotoInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic"
+                accept="image/jpeg,image/png,image/heic,video/mp4,video/quicktime,.jpg,.jpeg,.png,.heic,.mp4,.mov"
                 style={{ display: 'none' }}
                 onChange={handleInspPhoto}
               />
@@ -2258,7 +2283,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                         />
                         <button
                           type="button"
-                          title={item.photo ? 'Change photo' : 'Add photo'}
+                          title={item.photo ? (isVideoUrl(item.photo) ? 'Change video' : 'Change photo') : 'Add photo/video'}
                           onClick={() => { inspPhotoItemIdxRef.current = idx; inspPhotoInputRef.current?.click(); }}
                           style={{
                             padding: '3px 8px', fontSize: 11, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
@@ -2268,11 +2293,14 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                             flexShrink: 0,
                           }}
                         >
-                          {item.photoUploading ? '...' : item.photo ? 'Photo ✓' : '+ Photo'}
+                          {item.photoUploading ? '...' : item.photo ? (isVideoUrl(item.photo) ? 'Video ✓' : 'Photo ✓') : '+ Photo'}
                         </button>
                         {item.photo && (
                           <a href={item.photo} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }}>
-                            <img src={item.photo} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, border: '1px solid #e5e7eb', display: 'block' }} />
+                            {isVideoUrl(item.photo)
+                              ? <div style={{ width: 28, height: 28, background: '#1a3328', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10 }}>▶</div>
+                              : <img src={item.photo} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, border: '1px solid #e5e7eb', display: 'block' }} />
+                            }
                           </a>
                         )}
                       </>
