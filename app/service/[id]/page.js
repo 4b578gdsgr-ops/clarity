@@ -1005,14 +1005,17 @@ export default function BookingStatusPage({ params }) {
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Inspection Report
                 </p>
-                <a
-                  href={'/api/inspection-pdf/' + booking.id}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ fontSize: 12, color: '#1a3328', textDecoration: 'underline' }}
-                >
-                  Download report
-                </a>
+                <div style={{ textAlign: 'right' }}>
+                  <a
+                    href={'/api/inspection-pdf/' + booking.id}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: 12, color: '#1a3328', textDecoration: 'underline', display: 'block' }}
+                  >
+                    Download report
+                  </a>
+                  <span style={{ fontSize: 11, color: '#9ca3af' }}>Save it — records are removed after 90 days.</span>
+                </div>
               </div>
 
               {showTabs && (

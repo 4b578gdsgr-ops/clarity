@@ -3950,6 +3950,8 @@ export default function AdminServicePage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [isPwa, setIsPwa] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState('');
 
   function handleRebook(booking) {
     setPrefillLead({
@@ -4193,12 +4195,38 @@ export default function AdminServicePage() {
             </button>
           )}
           <button
+            onClick={async () => {
+              if (!window.confirm('Delete completed and cancelled bookings older than 90 days?')) return;
+              setCleanupLoading(true);
+              setCleanupResult('');
+              try {
+                const res = await fetch('/api/cleanup', { method: 'POST' });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'Cleanup failed');
+                setCleanupResult('Cleaned up ' + d.cleaned + ' booking' + (d.cleaned === 1 ? '' : 's') + '.');
+              } catch (err) {
+                setCleanupResult('Error: ' + err.message);
+              } finally {
+                setCleanupLoading(false);
+              }
+            }}
+            disabled={cleanupLoading}
+            style={{ background: 'none', border: '1px solid #6b7280', color: '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: cleanupLoading ? 'default' : 'pointer', fontFamily: 'inherit' }}
+          >
+            {cleanupLoading ? 'Cleaning...' : 'Cleanup old bookings'}
+          </button>
+          <button
             onClick={load}
             style={{ background: 'none', border: '1px solid #4ade80', color: '#4ade80', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Refresh
           </button>
         </div>
+        {cleanupResult && (
+          <div style={{ color: '#9ca3af', fontSize: 12, marginTop: 6, textAlign: 'right', paddingRight: 4 }}>
+            {cleanupResult}
+          </div>
+        )}
       </div>
 
       {icalOpen && (
