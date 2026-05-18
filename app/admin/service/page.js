@@ -597,6 +597,7 @@ async function uploadInspPhoto(file) {
 // ─── BookingCard ──────────────────────────────────────────────────────────────
 
 function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook, previousNoShow }) {
+  console.log('[BookingCard]', booking.id, booking.name, '| delivery_address:', booking.delivery_address, '| delivery_preferred_day:', booking.delivery_preferred_day, '| delivery_preferred_time:', booking.delivery_preferred_time, '| delivery_time:', booking.delivery_time);
   const [confirmDate, setConfirmDate] = useState(booking.confirmed_date || '');
   const [confirmTime, setConfirmTime] = useState(booking.confirmed_time || '');
   const [returnDate, setReturnDate] = useState(booking.return_date || (booking.confirmed_date ? pickupToReturn(booking.confirmed_date) : ''));
@@ -1361,13 +1362,33 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
               {fmtDate(booking.return_date || pickupToReturn(booking.confirmed_date))}
             </span>
           )}
-          {booking.delivery_address && (
-            <span style={{ color: '#0369a1' }}>
-              <strong>Delivery to: </strong>{booking.delivery_address}
-              {booking.delivery_preferred_day && ' — ' + (booking.delivery_preferred_day.includes('-') ? fmtDate(booking.delivery_preferred_day) : booking.delivery_preferred_day)}
-              {booking.delivery_preferred_time && ' around ' + fmtTime(booking.delivery_preferred_time)}
-            </span>
-          )}
+          {booking.delivery_address && (() => {
+            const prefDay = booking.delivery_preferred_day;
+            const prefTime = booking.delivery_preferred_time;
+            const adminTime = booking.delivery_time;
+            const dayFmt = prefDay ? (prefDay.includes('-') ? fmtDate(prefDay) : prefDay) : '';
+            const timeFmt = adminTime ? fmtTime(adminTime) : prefTime ? fmtTime(prefTime) : '';
+            const when = dayFmt && timeFmt ? dayFmt + ' around ' + timeFmt : dayFmt || (timeFmt ? 'around ' + timeFmt : '');
+            return (
+              <>
+                <span style={{ color: '#0369a1', fontWeight: 600 }}>
+                  Delivery: {when || <span style={{ fontWeight: 400, color: '#9ca3af' }}>day/time not confirmed yet</span>}
+                </span>
+                <span style={{ color: '#0369a1' }}>
+                  <strong>Address: </strong>{booking.delivery_address}
+                  {' '}
+                  <a
+                    href={'https://maps.apple.com/?q=' + encodeURIComponent(booking.delivery_address)}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: 11, color: '#6b7280' }}
+                  >
+                    map ↗
+                  </a>
+                </span>
+              </>
+            );
+          })()}
         </div>
 
         {bookingBikes !== null ? (

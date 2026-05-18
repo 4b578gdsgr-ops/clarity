@@ -158,9 +158,14 @@ export async function PATCH(request, { params }) {
     pushToAdmin({ title: (data.name || 'Customer') + ' confirmed pickup', body: '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
   }
 
-  // Push admin when customer sets delivery address
+  // Push admin when customer sets delivery address or day/time
   if (update.delivery_address !== undefined) {
-    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery', body: update.delivery_address || '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
+    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery address', body: update.delivery_address || '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
+  }
+  if (update.delivery_preferred_day !== undefined || update.delivery_preferred_time !== undefined) {
+    const d = data.delivery_preferred_day || '';
+    const t = data.delivery_preferred_time || '';
+    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery day/time', body: [d, t ? 'around ' + t : ''].filter(Boolean).join(' '), url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
   }
 
   return Response.json({ booking: data });
