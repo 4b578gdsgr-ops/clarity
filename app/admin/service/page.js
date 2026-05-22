@@ -3751,7 +3751,10 @@ function RidesAdminView() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.gpx')) { setErr('File must be a .gpx file'); return; }
+    const lname = file.name.toLowerCase();
+    const isFit = lname.endsWith('.fit');
+    const isGpx = lname.endsWith('.gpx');
+    if (!isFit && !isGpx) { setErr('File must be a .gpx or .fit file'); return; }
     setGpxFile(file);
     setGpxUrl('');
     setGpxUploading(true);
@@ -3759,12 +3762,16 @@ function RidesAdminView() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/rides/upload-gpx', { method: 'POST', body: fd });
+      const endpoint = isFit ? '/api/parse-fit' : '/api/rides/upload-gpx';
+      const res = await fetch(endpoint, { method: 'POST', body: fd });
       const data = await res.json();
-      if (!res.ok) { setErr(data.error || 'GPX upload failed'); setGpxFile(null); return; }
+      if (!res.ok) { setErr(data.error || 'Upload failed'); setGpxFile(null); return; }
       setGpxUrl(data.url);
+      if (isFit && data.distance_km != null) {
+        console.log('[rides] FIT parsed —', data.point_count, 'points,', data.distance_km, 'km,', data.elevation_gain_m, 'm gain');
+      }
     } catch {
-      setErr('GPX upload failed');
+      setErr('Upload failed');
       setGpxFile(null);
     } finally {
       setGpxUploading(false);
@@ -3872,7 +3879,7 @@ function RidesAdminView() {
               />
             </div>
             <div>
-              <label style={lbl}>GPX file (optional)</label>
+              <label style={lbl}>Route file — .gpx or .fit (optional)</label>
               <label style={{
                 display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
                 padding: '8px 12px', border: '1px solid #374151', borderRadius: 7,
@@ -3880,19 +3887,19 @@ function RidesAdminView() {
               }}>
                 <input
                   type="file"
-                  accept=".gpx"
+                  accept=".gpx,.fit"
                   onChange={handleGpxChange}
                   style={{ display: 'none' }}
                 />
                 {gpxUploading
-                  ? 'Uploading...'
+                  ? 'Parsing & uploading...'
                   : gpxFile
                     ? (gpxUrl ? gpxFile.name + ' — uploaded' : gpxFile.name + ' — uploading...')
-                    : 'Choose .gpx file'}
+                    : 'Choose .gpx or .fit file'}
               </label>
               {gpxUrl && (
                 <p style={{ color: '#4ade80', fontSize: 12, margin: '4px 0 0' }}>
-                  Uploaded. Will attach to this ride.
+                  Uploaded. Customers will see a Download GPX button.
                 </p>
               )}
             </div>
