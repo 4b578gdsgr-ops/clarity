@@ -98,7 +98,7 @@ export default function RidesPage() {
               </button>
               {ride.gpx_url && (
                 <a
-                  href={ride.gpx_url}
+                  href={'/api/rides/' + ride.id + '/gpx'}
                   download
                   style={{
                     padding: '10px 20px', background: '#fff', color: '#1a3328',

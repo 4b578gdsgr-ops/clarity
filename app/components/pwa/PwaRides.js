@@ -74,9 +74,8 @@ export default function PwaRides({ onBack }) {
             )}
             {ride.gpx_url && (
               <a
-                href={ride.gpx_url}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={'/api/rides/' + ride.id + '/gpx'}
+                download
                 style={{ fontSize: 13, color: '#2d8653', fontWeight: 600, textDecoration: 'none' }}
               >
                 Download route (GPX) &rarr;
