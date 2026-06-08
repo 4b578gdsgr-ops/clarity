@@ -1182,7 +1182,17 @@ export default function EmbedBookingStatusPage({ params }) {
       {/* Payment section — shown any time invoice_amount or payment_link is set */}
       {booking.payment_status === 'paid' ? (
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid. Thanks!</p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid ✓</p>
+          {booking.receipt_url && (
+            <a
+              href={booking.receipt_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', marginTop: 8, fontSize: 14, color: '#166534', textDecoration: 'underline', fontWeight: 600 }}
+            >
+              View receipt →
+            </a>
+          )}
         </div>
       ) : (booking.invoice_amount != null || booking.payment_link) ? (
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>

@@ -634,6 +634,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   const [inspSaved, setInspSaved] = useState(false);
   const [inspSaveErr, setInspSaveErr] = useState('');
   const [paymentStatus, setPaymentStatus] = useState(booking.payment_status || '');
+  const [receiptUrl, setReceiptUrl] = useState(booking.receipt_url || '');
   const [reminderSent, setReminderSent] = useState(!!booking.reminder_sent);
   const [reminding, setReminding] = useState(false);
   const [bookingBikes, setBookingBikes] = useState(booking.bikes?.length > 0 ? booking.bikes : null);
@@ -1705,6 +1706,26 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 if (val !== (booking.payment_link || null)) {
                   setSaving('payment');
                   save({ payment_link: val }).then(() => setSaving(''));
+                }
+              }}
+              style={{
+                width: '100%', padding: '6px 9px', border: '1px solid #e5e7eb',
+                borderRadius: 6, fontSize: 13, outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>Receipt URL</label>
+            <input
+              type="url"
+              placeholder="https://receipt.stripe.com/..."
+              value={receiptUrl}
+              onChange={e => setReceiptUrl(e.target.value)}
+              onBlur={() => {
+                const val = receiptUrl.trim() || null;
+                if (val !== (booking.receipt_url || null)) {
+                  setSaving('receipt');
+                  save({ receipt_url: val }).then(() => setSaving(''));
                 }
               }}
               style={{
