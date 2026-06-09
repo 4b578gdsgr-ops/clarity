@@ -3332,7 +3332,8 @@ function PhoneLeadsView({ onCreateBooking }) {
   function copyBookingText(lead) {
     const firstName = lead.name ? lead.name.split(' ')[0] : null;
     const greeting = firstName ? 'Hey ' + firstName + ', thanks' : 'Hey, thanks';
-    const text = greeting + ' for calling One Love. Book your service here and we\'ll get you on the schedule: https://oneloveoutdoors.org/schedule-service-app — One Love';
+    const issue = lead.bike_issue ? ' We have your ' + lead.bike_issue + ' noted.' : '';
+    const text = greeting + ' for calling One Love.' + issue + ' Book your service here and we\'ll get you on the schedule: https://oneloveoutdoors.org/schedule-service-app — One Love';
     navigator.clipboard.writeText(text).then(() => {
       setCopiedId(lead.id);
       setTimeout(() => setCopiedId(null), 2000);
@@ -3358,7 +3359,10 @@ function PhoneLeadsView({ onCreateBooking }) {
                 {lead.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.phone}</span>}
                 {lead.email && <span style={{ fontSize: 12, color: '#6b7280' }}>{lead.email}</span>}
               </div>
-              {lead.summary && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 6px', lineHeight: 1.5 }}>{lead.summary}</p>}
+              {lead.bike_issue && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 3px', lineHeight: 1.4 }}><span style={{ fontWeight: 600 }}>Issue:</span> {lead.bike_issue}</p>}
+              {lead.address && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>{lead.address}</p>}
+              {lead.preferred_day && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>Prefers: {lead.preferred_day}</p>}
+              {lead.summary && !lead.bike_issue && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 6px', lineHeight: 1.5 }}>{lead.summary}</p>}
               <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(lead.created_at)}</span>
             </div>
             <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -3369,7 +3373,7 @@ function PhoneLeadsView({ onCreateBooking }) {
                 {copiedId === lead.id ? 'Copied!' : 'Copy booking text'}
               </button>
               <button
-                onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', email: lead.email || '', notes: lead.summary || '', leadId: lead.id })}
+                onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', email: lead.email || '', address: lead.address || '', notes: [lead.bike_issue, lead.preferred_day ? 'Prefers ' + lead.preferred_day : null, lead.summary].filter(Boolean).join(' | ') || '', leadId: lead.id })}
                 style={{ padding: '6px 12px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
               >
                 Create Booking
