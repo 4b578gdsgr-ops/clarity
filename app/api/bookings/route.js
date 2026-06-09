@@ -38,7 +38,7 @@ export async function POST(request) {
           photos, status, confirmed_date, confirmed_time, return_date,
           admin_created, bikes,
           referred_by, booker_phone, booker_name,
-          dropoff } = body;
+          dropoff, send_tracking_sms } = body;
   console.log('[bookings] new booking from:', name, '| email present:', !!email);
   console.log('[bookings] lat/lng from body:', lat, lng);
 
@@ -79,6 +79,14 @@ export async function POST(request) {
 
   if (error) { console.error('[bookings] insert error:', error.message); return Response.json({ error: error.message }, { status: 500 }); }
   console.log('[bookings] inserted lat/lng:', data?.lat, data?.lng);
+
+  // Send tracking link SMS when admin creates a booking from a phone lead
+  if (send_tracking_sms && data?.phone) {
+    const SMS_BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org';
+    sendSMS(data.phone, `One Love: You're on the schedule. Track your service here: ${SMS_BASE}/service/${data.id}`).catch(err =>
+      console.error('[bookings] tracking SMS failed:', err?.message || err)
+    );
+  }
 
   // Send SMS confirmation to the person who booked for their friend
   if (booker_phone) {

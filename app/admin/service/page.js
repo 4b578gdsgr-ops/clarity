@@ -3296,6 +3296,7 @@ function PhoneLeadsView({ onCreateBooking }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   async function loadLeads() {
     setLoading(true);
@@ -3328,6 +3329,16 @@ function PhoneLeadsView({ onCreateBooking }) {
     return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
 
+  function copyBookingText(lead) {
+    const firstName = lead.name ? lead.name.split(' ')[0] : null;
+    const greeting = firstName ? 'Hey ' + firstName + ', thanks' : 'Hey, thanks';
+    const text = greeting + ' for calling One Love. Book your service here and we\'ll get you on the schedule: https://oneloveoutdoors.org/schedule-service-app — One Love';
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(lead.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }
+
   if (loading) return <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>;
 
   return (
@@ -3345,13 +3356,20 @@ function PhoneLeadsView({ onCreateBooking }) {
                 )}
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{lead.name || 'Unknown caller'}</span>
                 {lead.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.phone}</span>}
+                {lead.email && <span style={{ fontSize: 12, color: '#6b7280' }}>{lead.email}</span>}
               </div>
               {lead.summary && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 6px', lineHeight: 1.5 }}>{lead.summary}</p>}
               <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(lead.created_at)}</span>
             </div>
             <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <button
-                onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', notes: lead.summary || '' })}
+                onClick={() => copyBookingText(lead)}
+                style={{ padding: '6px 12px', background: copiedId === lead.id ? '#f0fdf4' : '#f3f4f6', color: copiedId === lead.id ? '#166534' : '#374151', border: '1px solid ' + (copiedId === lead.id ? '#bbf7d0' : '#e5e7eb'), borderRadius: 7, fontSize: 12, cursor: 'pointer' }}
+              >
+                {copiedId === lead.id ? 'Copied!' : 'Copy booking text'}
+              </button>
+              <button
+                onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', email: lead.email || '', notes: lead.summary || '', leadId: lead.id })}
                 style={{ padding: '6px 12px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
               >
                 Create Booking
@@ -3426,6 +3444,8 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
   const [returnDate, setReturnDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
+  const [created, setCreated] = useState(null);
+  const [copiedTrackingText, setCopiedTrackingText] = useState(false);
 
   function addBike() {
     if (bikes.length >= 5) return;
@@ -3481,6 +3501,7 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
           return_date: returnDate || null,
           admin_created: true,
           dropoff: isDropoff,
+          send_tracking_sms: !!(prefill?.leadId) && contactPref !== 'email',
         }),
       });
       const data = await res.json();
@@ -3488,7 +3509,14 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
         setSubmitErr(data.error || 'Failed to create booking.');
         return;
       }
-      onCreated();
+      if (prefill?.leadId) {
+        fetch('/api/phone-leads', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: prefill.leadId, status: 'converted' }),
+        }).catch(() => {});
+      }
+      setCreated(data.booking);
     } catch {
       setSubmitErr('Network error — try again.');
     } finally {
@@ -3529,7 +3557,48 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {created ? (() => {
+          const trackingUrl = 'https://service.oneloveoutdoors.org/service/' + created.id;
+          const firstName = created.name ? created.name.split(' ')[0] : null;
+          const trackingText = 'Hey' + (firstName ? ' ' + firstName : '') + ', you\'re on the schedule. Track your service here: ' + trackingUrl + ' — One Love';
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: 16 }}>
+                <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700, color: '#166534' }}>Booking created</p>
+                {prefill?.leadId && created.contact_preference !== 'email' && (
+                  <p style={{ margin: 0, fontSize: 13, color: '#166534' }}>Tracking link SMS sent to {created.phone}.</p>
+                )}
+              </div>
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tracking link</p>
+                <p style={{ margin: '0 0 10px', fontSize: 13, color: '#374151', wordBreak: 'break-all' }}>{trackingUrl}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(trackingText).then(() => {
+                      setCopiedTrackingText(true);
+                      setTimeout(() => setCopiedTrackingText(false), 2000);
+                    });
+                  }}
+                  style={{ padding: '8px 16px', background: copiedTrackingText ? '#f0fdf4' : '#f3f4f6', color: copiedTrackingText ? '#166534' : '#374151', border: '1px solid ' + (copiedTrackingText ? '#bbf7d0' : '#e5e7eb'), borderRadius: 7, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  {copiedTrackingText ? 'Copied!' : 'Copy tracking text'}
+                </button>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={onCreated}
+                  style={{ padding: '10px 24px', background: '#1a3328', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          );
+        })() : null}
+
+        {!created && <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Name + Phone */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -3727,7 +3796,7 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
             </button>
           </div>
 
-        </form>
+        </form>}
       </div>
     </div>
   );
