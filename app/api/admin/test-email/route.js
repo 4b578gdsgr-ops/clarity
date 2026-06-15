@@ -1,4 +1,4 @@
-import { sendServiceEmail } from '../../../../lib/email';
+import { sendNewBookingEmail } from '../../../../lib/email';
 
 // GET /api/admin/test-email?to=you@example.com
 // Fires a test 'new' booking email so you can verify Resend is working end-to-end.
@@ -28,7 +28,7 @@ export async function GET(request) {
   };
 
   console.log('[test-email] Firing test email to', to);
-  await sendServiceEmail('new', fakeBooking);
+  await sendNewBookingEmail(fakeBooking);
   console.log('[test-email] Done');
 
   return Response.json({

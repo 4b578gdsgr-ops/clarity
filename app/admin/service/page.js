@@ -274,26 +274,21 @@ function itemNounAdmin(booking) {
 function bNoun(booking) { return itemNounAdmin(booking).noun; }
 function bVerb(booking) { return itemNounAdmin(booking).verb; }
 
-function buildTemplate(newStatus, booking, pickupDate, time, returnDate) {
+function buildTemplate(newStatus, booking, pickupDate, time, returnDate, link) {
   const name = booking.name;
-  const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled Monday') +
+  const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled day') +
     (time ? ' around ' + fmtTime(time) : '');
-  const returnWhen = returnDate ? fmtDate(returnDate) : 'Friday';
-  const noun = bNoun(booking);
-  const verb = bVerb(booking);
   switch (newStatus) {
     case 'confirmed':
-      return 'Hi ' + name + ', your pickup is confirmed for ' + pickupWhen + '. Plan on having it back by ' + returnWhen + '. We\'ll reach out when we\'re on the way. — One Love';
+      return `Hi ${name}, your pickup is confirmed for ${pickupWhen}: ${link} — One Love`;
     case 'in_progress':
-      return 'Hi ' + name + ', we\'ve got your ' + noun + ' and we\'re working on it. Plan on having it back by ' + returnWhen + '. We\'ll keep you posted. — One Love';
-    case 'done':
-      return 'Hi ' + name + ', your ' + noun + ' ' + verb + ' ready! We\'ll deliver it on ' + returnWhen + '. — One Love';
+      return `Hi ${name}, your bike is with us: ${link} — One Love`;
     case 'ready':
-      return 'Hi ' + name + ', your ' + noun + ' ' + verb + ' ready! We\'ll deliver it on ' + returnWhen + '. We\'ll confirm an exact time closer to the day. — One Love';
+      return `Hi ${name}, your bike is ready. Confirm delivery here: ${link} — One Love`;
     case 'out_for_delivery':
-      return 'Hi ' + name + ', your ' + noun + ' ' + verb + ' on the way back. See you today. — One Love';
+      return `Hi ${name}, on the way with your bike: ${link} — One Love`;
     case 'complete':
-      return 'Hi ' + name + ', delivered. Thanks for riding with us. — One Love';
+      return `Hi ${name}, delivered. You're golden. — One Love`;
     default:
       return '';
   }
@@ -635,8 +630,6 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   const [inspSaveErr, setInspSaveErr] = useState('');
   const [paymentStatus, setPaymentStatus] = useState(booking.payment_status || '');
   const [receiptUrl, setReceiptUrl] = useState(booking.receipt_url || '');
-  const [reminderSent, setReminderSent] = useState(!!booking.reminder_sent);
-  const [reminding, setReminding] = useState(false);
   const [bookingBikes, setBookingBikes] = useState(booking.bikes?.length > 0 ? booking.bikes : null);
   const [bikesSaving, setBikesSaving] = useState(false);
   const [bikesSaved, setBikesSaved] = useState(false);
@@ -919,21 +912,21 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
       case 'confirmed': {
         const day = confirmDate ? fmtDate(confirmDate) : 'the scheduled day';
         const time = confirmTime ? ' around ' + fmtTime(confirmTime) : '';
-        return 'Hi ' + name + ', we\'d like to pick up ' + day + time + '. Can you confirm here: ' + link + ' — One Love';
+        return `Hi ${name}, your pickup is confirmed for ${day}${time}: ${link} — One Love`;
       }
       case 'in_progress':
       case 'picked_up':
-        return 'Hi ' + name + ', your ' + bNoun(booking) + ' ' + bVerb(booking) + ' with us. We\'ll let you know when it\'s ready: ' + link + ' — One Love';
+        return `Hi ${name}, your bike is with us: ${link} — One Love`;
       case 'ready':
-        return 'Hi ' + name + ', your ' + bNoun(booking) + ' ' + bVerb(booking) + ' ready. Confirm delivery details here: ' + link + ' — One Love';
+        return `Hi ${name}, your bike is ready. Confirm delivery here: ${link} — One Love`;
       case 'out_for_delivery':
-        return 'Hi ' + name + ', we\'re on the way with your ' + bNoun(booking) + ': ' + link + ' — One Love';
+        return `Hi ${name}, on the way with your bike: ${link} — One Love`;
       case 'complete':
       case 'done':
       case 'delivered':
-        return 'Hi ' + name + ', delivered. You\'re golden. — One Love';
+        return `Hi ${name}, delivered. You're golden. — One Love`;
       default:
-        return 'Hi ' + name + ', your pickup is confirmed. Track here: ' + link + ' — One Love';
+        return `Hi ${name}, your pickup is confirmed. Track here: ${link} — One Love`;
     }
   }
 
@@ -994,10 +987,9 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
     const notes = estimateNotes.trim();
     const link = trackingUrl;
     return [
-      `Hi ${firstName}, here's a rough estimate for your bike: around $${amount}.`,
+      `Hi ${firstName}, estimate for your bike: around $${amount}.`,
       notes ? notes + '.' : '',
-      `If anything changes once we dig in, we'll reach out before doing extra work.`,
-      `Track here: ${link}`,
+      `Details here: ${link}`,
       `— One Love`,
     ].filter(Boolean).join(' ');
   }
@@ -1032,14 +1024,12 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
     setQuoteCopied(true);
     setTimeout(() => setQuoteCopied(false), 2500);
     // Save estimate fields silently (no refresh)
-    const isEmail = booking.contact_preference !== 'text' && booking.contact_preference !== 'phone';
     await fetch('/api/bookings/' + booking.id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         estimate_amount: amount,
         estimate_notes: estimateNotes.trim() || null,
-        ...(isEmail ? { send_quote: true } : {}),
       }),
     });
   }
@@ -1061,7 +1051,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
       if (deliveryTime) payload.delivery_time = deliveryTime;
     }
     await patch(payload);
-    setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime, returnDate));
+    setTemplate(buildTemplate(action.next, booking, confirmDate, confirmTime, returnDate, trackingUrl));
     setCopied(false);
     setAdvancing(false);
   }
@@ -1083,22 +1073,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
     onRefresh();
   }
 
-  async function sendReminder() {
-    setReminding(true);
-    try {
-      const res = await fetch('/api/bookings/' + booking.id + '/remind', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) { alert(data.error || 'Failed to send reminder'); return; }
-      if (data.type === 'sms') {
-        navigator.clipboard.writeText(data.smsText).catch(() => {});
-        alert('SMS text copied to clipboard.');
-      }
-      setReminderSent(true);
-    } catch { alert('Network error — try again.'); }
-    finally { setReminding(false); }
-  }
-
-  async function handleNoShow() {
+async function handleNoShow() {
     if (!window.confirm('Mark as no-show? This will record it for future reference.')) return;
     await patch({ status: 'no_show' });
   }
@@ -1271,17 +1246,6 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 </span>
               );
             })()}
-            {reminderSent && (
-              <span style={{
-                marginLeft: 8,
-                background: '#f0fdf4', color: '#166534',
-                border: '1px solid #bbf7d0',
-                borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.06em',
-              }}>
-                Reminded ✓
-              </span>
-            )}
           </div>
           <span style={{
             background: color + '22', color, border: '1px solid ' + color + '55',
@@ -2000,22 +1964,6 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
                 }}
               >
                 Mark paid
-              </button>
-            )
-          )}
-          {booking.status === 'confirmed' && (
-            reminderSent ? (
-              <span style={{ padding: '5px 12px', fontSize: 12, color: '#9ca3af', border: '1px solid #e5e7eb', borderRadius: 7, background: '#f9fafb' }}>
-                Reminded ✓
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={sendReminder}
-                disabled={reminding}
-                style={{ padding: '5px 12px', background: 'none', border: '1px solid #bfdbfe', borderRadius: 7, fontSize: 12, color: '#1d4ed8', cursor: reminding ? 'default' : 'pointer', fontFamily: 'inherit' }}
-              >
-                {reminding ? '...' : 'Send reminder'}
               </button>
             )
           )}

@@ -1,30 +1,10 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
-import { notifyCustomer, notifyCustomerQuote } from '../../../../lib/notify';
-import { sendCancellationNotification, sendThankYouEmail } from '../../../../lib/email';
-import { pushToBooking, pushToAdmin, pushToPhone } from '../../../../lib/push';
-
-const PUSH_PAYLOADS = {
-  confirmed: {
-    title: 'Your bike: confirmed',
-    body: "We've got your request. We'll be in touch to set up pickup.",
-  },
-  in_progress: {
-    title: 'Your bike: in progress',
-    body: "Your bike is on the stand — we're working on it.",
-  },
-  ready: {
-    title: 'Your bike: ready',
-    body: "All done. We'll have it back to you soon.",
-  },
-  out_for_delivery: {
-    title: 'Your bike: out for delivery',
-    body: 'Your bike is heading back to you.',
-  },
-  complete: {
-    title: 'Your bike: complete',
-    body: 'Service is complete. Thanks for riding with us.',
-  },
-};
+import {
+  sendCancellationNotification,
+  sendPickupConfirmedAdminEmail,
+  sendDeliveryConfirmedAdminEmail,
+} from '../../../../lib/email';
+import { pushToAdmin } from '../../../../lib/push';
 
 const VALID_STATUSES = [
   'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled', 'no_show',
@@ -55,7 +35,6 @@ export async function PATCH(request, { params }) {
 
   const { id } = params;
   const body = await request.json();
-  const { skip_notification, send_quote } = body;
 
   const allowed = ['status', 'notes', 'time_slot', 'preferred_day', 'dropoff',
                    'confirmed_date', 'confirmed_time', 'return_date', 'delivery_time', 'zone', 'preferred_time',
@@ -91,78 +70,29 @@ export async function PATCH(request, { params }) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Send thank-you email when payment is marked paid (email customers only)
-  if (update.payment_status === 'paid') {
-    const pref = data.contact_preference;
-    if (pref !== 'text' && pref !== 'phone') {
-      sendThankYouEmail(data).catch(err =>
-        console.error('[bookings/[id]] thank-you email failed:', err?.message || err)
-      );
-    }
-  }
-
-  // Send quote notification if requested
-  if (send_quote) {
-    const pref = data.contact_preference;
-    if (pref !== 'text' && pref !== 'phone') {
-      notifyCustomerQuote(data).catch(err =>
-        console.error('[bookings/[id]] quote notification failed:', err?.message || err)
-      );
-    }
-    // text/phone: admin handles manually — no auto-notification
-  }
-
-  // Notify customer on confirmed and ready only — skip_notification suppresses this for backward moves
-  const NOTIFY_TRIGGERS = new Set(['confirmed', 'ready']);
-  if (update.status && NOTIFY_TRIGGERS.has(update.status) && !skip_notification) {
-    const pref = data.contact_preference;
-    if (pref !== 'text' && pref !== 'phone') {
-      // Email preference: send automatically, then mark as notified
-      notifyCustomer(update.status, data).catch(err =>
-        console.error('[bookings/[id]] notification failed for', update.status, ':', err?.message || err)
-      );
-      await supabaseAdmin
-        .from('service_bookings')
-        .update({ last_notified_status: update.status })
-        .eq('id', id);
-      data.last_notified_status = update.status;
-    }
-    // text/phone: no auto-notification — admin sees NEEDS TEXT badge and copies manually
-  }
-
-  // Push notification for key status changes (sent regardless of contact_preference)
-  const PUSH_STATUSES = new Set(['confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete']);
-  if (update.status && PUSH_STATUSES.has(update.status) && !skip_notification) {
-    const push = PUSH_PAYLOADS[update.status];
-    const pushPayload = { ...push, url: '/service/' + id, tag: 'olo-status' };
-    pushToBooking(id, pushPayload).catch(err =>
-      console.error('[bookings/[id]] push failed for', update.status, ':', err?.message || err)
-    );
-    if (data.phone) {
-      pushToPhone(data.phone, pushPayload).catch(err =>
-        console.error('[bookings/[id]] phone push failed for', update.status, ':', err?.message || err)
-      );
-    }
-  }
-
   // Notify admin when customer cancels
-  if (update.status === 'cancelled' && !skip_notification) {
+  if (update.status === 'cancelled') {
     sendCancellationNotification(data).catch(err =>
       console.error('[bookings/[id]] cancellation notification failed:', err?.message || err)
     );
     pushToAdmin({ title: (data.name || 'Customer') + ' cancelled', body: '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
   }
 
-  // Push admin when customer confirms pickup
+  // Notify admin when customer confirms pickup
   if (update.confirmed_by_customer === true) {
+    sendPickupConfirmedAdminEmail(data).catch(err =>
+      console.error('[bookings/[id]] pickup confirmed admin email failed:', err?.message || err)
+    );
     pushToAdmin({ title: (data.name || 'Customer') + ' confirmed pickup', body: '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
   }
 
-  // Push admin when customer sets delivery address or day/time
-  if (update.delivery_address !== undefined) {
-    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery address', body: update.delivery_address || '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
-  }
-  if (update.delivery_preferred_day !== undefined || update.delivery_preferred_time !== undefined) {
+  // Notify admin when customer confirms delivery address
+  if (update.delivery_address !== undefined && update.delivery_address) {
+    sendDeliveryConfirmedAdminEmail(data).catch(err =>
+      console.error('[bookings/[id]] delivery confirmed admin email failed:', err?.message || err)
+    );
+    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery', body: update.delivery_address || '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
+  } else if (update.delivery_preferred_day !== undefined || update.delivery_preferred_time !== undefined) {
     const d = data.delivery_preferred_day || '';
     const t = data.delivery_preferred_time || '';
     pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery day/time', body: [d, t ? 'around ' + t : ''].filter(Boolean).join(' '), url: '/admin/service', tag: 'olo-admin' }).catch(() => {});

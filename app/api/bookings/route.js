@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase';
-import { notifyCustomer } from '../../../lib/notify';
+import { notifyCustomerNewBooking } from '../../../lib/notify';
 import { pushToAdmin } from '../../../lib/push';
 import { sendSMS } from '../../../lib/sms';
 
@@ -97,19 +97,11 @@ export async function POST(request) {
     );
   }
 
-  // Notify customer — skip if admin-created with phone-only preference, or no contact info
-  const skipNotification = admin_created && (
-    contact_preference === 'phone' ||
-    (contact_preference !== 'text' && !email)
-  );
-  console.log('[bookings] about to notify customer — contact_preference:', data.contact_preference, '| skip:', skipNotification);
-  if (!skipNotification) {
-    try {
-      await notifyCustomer('new', data);
-      console.log('[bookings] customer notification sent');
-    } catch (err) {
-      console.error('[bookings] customer notification FAILED:', err?.message || err);
-    }
+  // Send "we got your request" email to email-preference customers
+  if (data.contact_preference === 'email' && data.email) {
+    notifyCustomerNewBooking(data).catch(err =>
+      console.error('[bookings] new booking customer email failed:', err?.message || err)
+    );
   }
 
   // Admin notification — skip if this booking was created by admin (they know about it already)

@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { sendAdminMessageNotification } from '../../../lib/email';
 import { notifyCustomerMessage } from '../../../lib/notify';
-import { pushToBooking, pushToAdmin, pushToPhone } from '../../../lib/push';
+import { pushToAdmin } from '../../../lib/push';
 
 // GET /api/messages?booking_id=xxx
 export async function GET(request) {
@@ -81,7 +81,7 @@ export async function POST(request) {
 
   // Fire-and-forget notification emails
   if (sender === 'admin') {
-    // Notify the customer (SMS or email based on contact_preference)
+    // Email the customer if they prefer email
     const { data: booking, error: bErr } = await supabaseAdmin
       .from('service_bookings')
       .select('id, name, email, phone, contact_preference')
@@ -93,16 +93,6 @@ export async function POST(request) {
       notifyCustomerMessage(booking, message.trim()).catch(err =>
         console.error('[messages] POST customer notification failed:', err?.message || err)
       );
-      const preview = message.trim().length > 80 ? message.trim().slice(0, 77) + '...' : message.trim();
-      const msgPush = { title: 'New message from One Love Outdoors', body: preview, url: '/service/' + booking_id, tag: 'olo-message' };
-      pushToBooking(booking_id, msgPush).catch(err =>
-        console.error('[messages] POST push failed:', err?.message || err)
-      );
-      if (booking.phone) {
-        pushToPhone(booking.phone, msgPush).catch(err =>
-          console.error('[messages] POST phone push failed:', err?.message || err)
-        );
-      }
     }
   } else if (sender === 'customer') {
     // Email the admin
