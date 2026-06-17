@@ -251,15 +251,15 @@ function PickupConfirmSection({ booking, bookingId, onUpdated, onOpenMessages })
 
 function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   // phase: 'select' | 'map' | 'daytime' | 'confirmed'
-  const [phase, setPhase] = useState(booking.delivery_address ? 'confirmed' : 'select');
+  const [phase, setPhase] = useState(booking.delivery_preferred_day ? 'confirmed' : (booking.delivery_address ? 'daytime' : 'select'));
   const [savedAddress, setSavedAddress] = useState(booking.delivery_address || '');
   const [pin, setPin] = useState(null);
   const [pinAddress, setPinAddress] = useState('');
   const [pinOutside, setPinOutside] = useState(false);
   const [addrQuery, setAddrQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [deliveryDay, setDeliveryDay] = useState(booking.delivery_preferred_day || '');
-  const [deliveryTime, setDeliveryTime] = useState(booking.delivery_preferred_time || '');
+  const [deliveryDay, setDeliveryDay] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -338,6 +338,8 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
       await apiSave({
         delivery_preferred_day: deliveryDay || null,
         delivery_preferred_time: deliveryTime || null,
+        return_date: deliveryDay || null,
+        delivery_time: deliveryTime || null,
       });
       setPhase('confirmed');
       onUpdated();
@@ -346,31 +348,14 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   }
 
   if (phase === 'confirmed') {
-    const adminTime = booking.delivery_time;
-    const prefDay   = booking.delivery_preferred_day  || deliveryDay;
-    const prefTime  = booking.delivery_preferred_time || deliveryTime;
-
-    if (adminTime) {
-      const dayFmt  = booking.return_date ? fmtDate(booking.return_date) : (prefDay ? fmtDate(prefDay) : '');
-      const timeFmt = fmtTime(adminTime);
-      const when    = dayFmt ? `${dayFmt} around ${timeFmt}` : `around ${timeFmt}`;
-      return (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Delivery confirmed.</p>
-          <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Delivery: {when}</p>
-        </div>
-      );
-    }
-
-    const dayFmt  = prefDay  ? fmtDate(prefDay)  : '';
-    const timeFmt = prefTime ? fmtTime(prefTime) : '';
-    const when = dayFmt && timeFmt ? `${dayFmt} around ${timeFmt}` : dayFmt || '';
+    const date = booking.return_date ? fmtDate(booking.return_date) : '';
+    const time = booking.delivery_time ? ' around ' + fmtTime(booking.delivery_time) : '';
     return (
       <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Delivery details confirmed.</p>
-        {when
-          ? <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Requested: {when}. We'll confirm the exact time.</p>
-          : <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>We'll confirm the exact time.</p>
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 4px' }}>Delivery confirmed.</p>
+        {date
+          ? <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>Delivery: {date}{time}</p>
+          : <p style={{ fontSize: 13, color: '#4b7c5e', margin: 0 }}>We'll be in touch to confirm the exact time.</p>
         }
       </div>
     );

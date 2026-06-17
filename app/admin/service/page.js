@@ -1178,7 +1178,7 @@ async function handleNoShow() {
                 Member ✓
               </span>
             )}
-            {booking.status === 'ready' && !booking.delivery_address && (
+            {booking.status === 'ready' && !booking.delivery_preferred_day && (
               <span style={{
                 marginLeft: 8,
                 background: '#fff7ed', color: '#c2410c',
@@ -1327,30 +1327,31 @@ async function handleNoShow() {
               {fmtDate(booking.return_date || pickupToReturn(booking.confirmed_date))}
             </span>
           )}
-          {booking.delivery_address && (() => {
-            const prefDay = booking.delivery_preferred_day;
-            const prefTime = booking.delivery_preferred_time;
-            const adminTime = booking.delivery_time;
-            const dayFmt = prefDay ? (prefDay.includes('-') ? fmtDate(prefDay) : prefDay) : '';
-            const timeFmt = adminTime ? fmtTime(adminTime) : prefTime ? fmtTime(prefTime) : '';
-            const when = dayFmt && timeFmt ? dayFmt + ' around ' + timeFmt : dayFmt || (timeFmt ? 'around ' + timeFmt : '');
+          {booking.delivery_preferred_day && (() => {
+            const adminChanged = booking.return_date !== booking.delivery_preferred_day
+              || (booking.delivery_time && booking.delivery_time !== booking.delivery_preferred_time);
+            const date = booking.return_date ? fmtDate(booking.return_date) : fmtDate(booking.delivery_preferred_day);
+            const time = booking.delivery_time ? ' around ' + fmtTime(booking.delivery_time) : '';
+            const label = adminChanged ? 'Delivery:' : 'Customer requested:';
             return (
               <>
-                <span style={{ color: '#0369a1', fontWeight: 600 }}>
-                  Delivery: {when || <span style={{ fontWeight: 400, color: '#9ca3af' }}>day/time not confirmed yet</span>}
+                <span style={{ color: '#0369a1', fontWeight: adminChanged ? 400 : 600 }}>
+                  {label} {date}{time}
                 </span>
-                <span style={{ color: '#0369a1' }}>
-                  <strong>Address: </strong>{booking.delivery_address}
-                  {' '}
-                  <a
-                    href={'https://maps.apple.com/?q=' + encodeURIComponent(booking.delivery_address)}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ fontSize: 11, color: '#6b7280' }}
-                  >
-                    map ↗
-                  </a>
-                </span>
+                {booking.delivery_address && (
+                  <span style={{ color: '#0369a1' }}>
+                    <strong>Address: </strong>{booking.delivery_address}
+                    {' '}
+                    <a
+                      href={'https://maps.apple.com/?q=' + encodeURIComponent(booking.delivery_address)}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ fontSize: 11, color: '#6b7280' }}
+                    >
+                      map ↗
+                    </a>
+                  </span>
+                )}
               </>
             );
           })()}
@@ -1784,11 +1785,7 @@ async function handleNoShow() {
                 const val = e.target.value;
                 setReturnDate(val);
                 setSaving('return');
-                // Only wipe delivery confirmation if none exists yet — use the explicit Reset button to clear an existing one
-                const wipeDelivery = !booking.delivery_address
-                  ? { delivery_address: null, delivery_preferred_day: null, delivery_preferred_time: null }
-                  : {};
-                save({ return_date: val || null, ...wipeDelivery }).then(() => setSaving(''));
+                save({ return_date: val || null }).then(() => setSaving(''));
               }}
               style={{
                 padding: '6px 9px', borderRadius: 6, fontSize: 13, outline: 'none', cursor: 'pointer',
@@ -1976,15 +1973,17 @@ async function handleNoShow() {
               No show
             </button>
           )}
-          {booking.delivery_address && (
+          {(booking.delivery_address || booking.delivery_preferred_day) && (
             <button
               type="button"
               onClick={async () => {
-                if (!window.confirm('Reset delivery confirmation? The customer will be prompted to re-confirm their delivery address.')) return;
+                if (!window.confirm('Reset delivery confirmation? The customer will be prompted to re-confirm.')) return;
                 await save({
                   delivery_address: null,
                   delivery_preferred_day: null,
                   delivery_preferred_time: null,
+                  return_date: null,
+                  delivery_time: null,
                 });
               }}
               style={{
@@ -2373,13 +2372,7 @@ function PlanRouteView({ allBookings, onRefresh }) {
       .map(b => ({ ...b, _stopType: 'pickup' }));
     const deliveries = allBookings
       .filter(b => ['ready', 'out_for_delivery'].includes(b.status))
-      .filter(b => {
-        // Prefer customer-confirmed delivery date; fall back to admin-set return date
-        const delivDate = (b.delivery_preferred_day && b.delivery_preferred_day.includes('-'))
-          ? b.delivery_preferred_day
-          : b.return_date;
-        return delivDate === date;
-      })
+      .filter(b => b.return_date === date)
       .map(b => ({ ...b, _stopType: 'delivery' }));
     const dayBookings = [...pickups, ...deliveries];
     const t = {};

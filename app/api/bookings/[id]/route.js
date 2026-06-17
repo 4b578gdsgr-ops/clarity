@@ -86,16 +86,15 @@ export async function PATCH(request, { params }) {
     pushToAdmin({ title: (data.name || 'Customer') + ' confirmed pickup', body: '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
   }
 
-  // Notify admin when customer confirms delivery address
-  if (update.delivery_address !== undefined && update.delivery_address) {
+  // Notify admin when customer confirms delivery (day/time = final step of confirmation flow)
+  if (update.delivery_preferred_day !== undefined && update.delivery_preferred_day) {
     sendDeliveryConfirmedAdminEmail(data).catch(err =>
       console.error('[bookings/[id]] delivery confirmed admin email failed:', err?.message || err)
     );
-    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery', body: update.delivery_address || '', url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
-  } else if (update.delivery_preferred_day !== undefined || update.delivery_preferred_time !== undefined) {
-    const d = data.delivery_preferred_day || '';
-    const t = data.delivery_preferred_time || '';
-    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery day/time', body: [d, t ? 'around ' + t : ''].filter(Boolean).join(' '), url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
+    const addr = data.delivery_address || '';
+    const day = data.return_date || data.delivery_preferred_day || '';
+    const t = data.delivery_time || data.delivery_preferred_time || '';
+    pushToAdmin({ title: (data.name || 'Customer') + ' confirmed delivery', body: [addr, day, t ? 'around ' + t : ''].filter(Boolean).join(' · '), url: '/admin/service', tag: 'olo-admin' }).catch(() => {});
   }
 
   return Response.json({ booking: data });
