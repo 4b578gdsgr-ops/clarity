@@ -1,0 +1,7 @@
+{
+  "name": "OLO Admin",
+  "short_name": "Admin",
+  "start_url": "/admin/service",
+  "display": "standalone",
+  "scope": "/admin"
+}

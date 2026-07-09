@@ -1,6 +1,6 @@
 // Admin pages need standalone PWA mode for the admin home screen shortcut.
 export const metadata = {
-  manifest: '/manifest.json',
+  manifest: '/admin/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
