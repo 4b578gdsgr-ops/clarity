@@ -916,9 +916,79 @@ export default function EmbedBookingStatusPage({ params }) {
         />
       )}
 
+      {/* Estimate section — shown before delivery confirm so customer sees cost first */}
+      {booking.estimate_amount != null && !['complete', 'done', 'delivered'].includes(booking.status) && (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Estimated Cost
+          </p>
+          {booking.estimate_photo && (
+            <a href={booking.estimate_photo} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: 12 }}>
+              <img
+                src={booking.estimate_photo}
+                alt="Estimate photo"
+                style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb', display: 'block' }}
+              />
+            </a>
+          )}
+          <p style={{ fontSize: 20, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+            Around ${Math.round(Number(booking.estimate_amount))}
+          </p>
+          {booking.estimate_notes && (
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.5 }}>
+              {renderWithLinks(booking.estimate_notes)}
+            </p>
+          )}
+          <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px', lineHeight: 1.5 }}>
+            This is a rough estimate based on what we know so far. If we find anything else once we&apos;re in there, we&apos;ll let you know before doing any additional work. No surprises.
+          </p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+            Questions about this estimate? Message us below.
+          </p>
+        </div>
+      )}
+
       {booking.status === 'ready' && (
         <DeliveryConfirmSection booking={booking} bookingId={bookingId} onUpdated={loadData} />
       )}
+
+      {/* Payment */}
+      {booking.payment_status === 'paid' ? (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid ✓</p>
+          {booking.receipt_url && (
+            <a
+              href={booking.receipt_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', marginTop: 8, fontSize: 14, color: '#166534', textDecoration: 'underline', fontWeight: 600 }}
+            >
+              View receipt →
+            </a>
+          )}
+        </div>
+      ) : (booking.invoice_amount != null || booking.payment_link) ? (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          {booking.invoice_amount != null && (
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
+              {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
+            </p>
+          )}
+          <p style={{ fontSize: 17, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+            Pay when we deliver — cash or card at the door. Simple.
+          </p>
+          {booking.payment_link && (
+            <a
+              href={booking.payment_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', marginTop: 12, fontSize: 14, color: '#1a3328', textDecoration: 'underline', fontWeight: 600 }}
+            >
+              Need to pay ahead? Pay online →
+            </a>
+          )}
+        </div>
+      ) : null}
 
       {/* From the shop — photos */}
       {booking.shop_photos && booking.shop_photos.length > 0 && (
@@ -1132,76 +1202,6 @@ export default function EmbedBookingStatusPage({ params }) {
         );
       })()}
 
-      {/* Estimate section */}
-      {booking.estimate_amount != null && !['complete', 'done', 'delivered'].includes(booking.status) && (
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Estimated Cost
-          </p>
-          {booking.estimate_photo && (
-            <a href={booking.estimate_photo} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: 12 }}>
-              <img
-                src={booking.estimate_photo}
-                alt="Estimate photo"
-                style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb', display: 'block' }}
-              />
-            </a>
-          )}
-          <p style={{ fontSize: 20, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
-            Around ${Math.round(Number(booking.estimate_amount))}
-          </p>
-          {booking.estimate_notes && (
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.5 }}>
-              {renderWithLinks(booking.estimate_notes)}
-            </p>
-          )}
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px', lineHeight: 1.5 }}>
-            This is a rough estimate based on what we know so far. If we find anything else once we&apos;re in there, we&apos;ll let you know before doing any additional work. No surprises.
-          </p>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
-            Questions about this estimate? Message us below.
-          </p>
-        </div>
-      )}
-
-      {/* Payment section — shown any time invoice_amount or payment_link is set */}
-      {booking.payment_status === 'paid' ? (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid ✓</p>
-          {booking.receipt_url && (
-            <a
-              href={booking.receipt_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-block', marginTop: 8, fontSize: 14, color: '#166534', textDecoration: 'underline', fontWeight: 600 }}
-            >
-              View receipt →
-            </a>
-          )}
-        </div>
-      ) : (booking.invoice_amount != null || booking.payment_link) ? (
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          {booking.invoice_amount != null && (
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', marginBottom: 14, marginTop: 0 }}>
-              {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
-            </p>
-          )}
-          <p style={{ fontSize: 17, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
-            Pay when we deliver — cash or card at the door. Simple.
-          </p>
-          {booking.payment_link && (
-            <a
-              href={booking.payment_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-block', marginTop: 12, fontSize: 14, color: '#1a3328', textDecoration: 'underline', fontWeight: 600 }}
-            >
-              Need to pay ahead? Pay online →
-            </a>
-          )}
-        </div>
-      ) : null}
-
       {/* Message thread */}
       <div id="embed-messages" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
         <div style={{ padding: '10px 16px', borderBottom: '1px solid #f3f4f6', background: '#fafaf7' }}>
@@ -1260,24 +1260,8 @@ export default function EmbedBookingStatusPage({ params }) {
         </form>
       </div>
 
-      {['new', 'confirmed'].includes(booking.status) && (
-        <CancelSection booking={booking} bookingId={bookingId} onUpdated={loadData} onOpenMessages={() => {
-          document.getElementById('embed-messages')?.scrollIntoView({ behavior: 'smooth' });
-          document.getElementById('embed-message-input')?.focus();
-        }} />
-      )}
-
       {!['no_show', 'cancelled'].includes(booking.status) && (
         <UpdateInfoSection booking={booking} bookingId={bookingId} onUpdated={loadData} />
-      )}
-
-      {['complete', 'done', 'delivered'].includes(booking.status) && !booking.is_member && (
-        <p style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', marginBottom: 16 }}>
-          {'Liked the experience? Members get priority scheduling and preferred pricing on every service. '}
-          <a href="https://oneloveoutdoors.org/membership" target="_blank" rel="noreferrer" style={{ color: '#1a3328', textDecoration: 'underline' }}>
-            Learn more →
-          </a>
-        </p>
       )}
 
       <div style={{ textAlign: 'center', marginBottom: 12 }}>
@@ -1292,6 +1276,23 @@ export default function EmbedBookingStatusPage({ params }) {
           Save contact
         </button>
       </div>
+
+      {['complete', 'done', 'delivered'].includes(booking.status) && !booking.is_member && (
+        <p style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', marginBottom: 16 }}>
+          {'Liked the experience? Members get priority scheduling and preferred pricing on every service. '}
+          <a href="https://oneloveoutdoors.org/membership" target="_blank" rel="noreferrer" style={{ color: '#1a3328', textDecoration: 'underline' }}>
+            Learn more →
+          </a>
+        </p>
+      )}
+
+      {['new', 'confirmed'].includes(booking.status) && (
+        <CancelSection booking={booking} bookingId={bookingId} onUpdated={loadData} onOpenMessages={() => {
+          document.getElementById('embed-messages')?.scrollIntoView({ behavior: 'smooth' });
+          document.getElementById('embed-message-input')?.focus();
+        }} />
+      )}
+
       <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
         {'Bookmark this page to check your status anytime.'}
       </p>

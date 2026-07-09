@@ -1,8 +1,8 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../lib/serviceArea';
-import { validateBooking, isFormValid } from '../../lib/bookingValidation';
+import { validateBooking } from '../../lib/bookingValidation';
 import { getProfile } from '../../lib/pwaProfile';
 import { saveBookingId } from '../../lib/pwaBookings';
 import PhotoUpload from '../components/PhotoUpload';
@@ -195,10 +195,9 @@ function LocationStep({ pin, address, outside, onPin, onAddress, onContinue }) {
   );
 }
 
-// ─── Step 2: Form ─────────────────────────────────────────────────────────────
+// ─── Step 2+: Form (sub-stepped) ──────────────────────────────────────────────
 
 function FormStep({ address, pin, onBack, onDone, initialMember = false, initialForm = null, pwaProfile = null }) {
-  const formRef = useRef(null);
   const [isMember, setIsMember] = useState(initialMember);
   const prefill = pwaProfile || initialForm;
   const [form, setForm] = useState({
@@ -206,7 +205,6 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
     phone: prefill?.phone || '',
     email: prefill?.email || '',
     contact_preference: prefill?.contact_preference || '',
-    address: address || prefill?.address || '',
     preferred_day: '', time_slot: '', notes: '',
   });
   const [bikes, setBikes] = useState([{ type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
@@ -214,6 +212,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
+  const [subStep, setSubStep] = useState(pwaProfile ? 'service' : 'contact');
 
   function setField(k, v) {
     setForm(f => ({ ...f, [k]: v }));
@@ -245,19 +244,44 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
     setErrors(e => ({ ...e, issues: '' }));
   }
 
-  const isAssembly = bikes.some(b => b.issues.includes('New bike assembly'));
-  const canSubmit = isFormValid({ ...form, bikes });
+  function advanceFromContact() {
+    const errs = {};
+    const nameTrim = form.name.trim();
+    if (nameTrim.length < 2) errs.name = nameTrim.length === 0 ? 'Required' : 'At least 2 characters';
+    if (!form.contact_preference) errs.contact_preference = 'Choose how we should reach you';
+    if (form.contact_preference === 'text') {
+      const digits = (form.phone || '').replace(/\D/g, '');
+      if (digits.length < 10) errs.phone = digits.length === 0 ? 'Required' : 'At least 10 digits';
+    }
+    if (form.contact_preference === 'email') {
+      const e = (form.email || '').trim();
+      const at = e.indexOf('@');
+      if (!e) errs.email = 'Required';
+      else if (at < 1 || !e.slice(at + 1).includes('.')) errs.email = 'Enter a valid email';
+    }
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
+    setSubStep('service');
+  }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const errs = validateBooking({ ...form, bikes });
-    if (Object.keys(errs).length) {
-      setErrors(errs);
-      setTimeout(() => {
-        formRef.current?.querySelector('[data-field-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 50);
+  function advanceFromService() {
+    const first = bikes[0];
+    if (first.type === 'other') {
+      if (!first.otherDescription?.trim()) { setErrors({ issues: 'Tell us what you have' }); return; }
+    } else if (!first.issues.length) {
+      setErrors({ issues: 'Select at least one' });
       return;
     }
+    setErrors({});
+    setSubStep('schedule');
+  }
+
+  const isAssembly = bikes.some(b => b.issues.includes('New bike assembly'));
+  const submittedAddress = address || (pin ? `${Number(pin.lat).toFixed(4)}, ${Number(pin.lng).toFixed(4)}` : '');
+
+  async function handleSubmit() {
+    const errs = validateBooking({ ...form, address: submittedAddress, bikes });
+    if (Object.keys(errs).length) { setErrors(errs); return; }
     setSubmitting(true);
     setSubmitErr('');
     try {
@@ -265,14 +289,14 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, is_member: isMember, photos: photoUrls, lat: pin?.lat ?? null, lng: pin?.lng ?? null, bikes }),
+        body: JSON.stringify({ ...form, address: submittedAddress || null, is_member: isMember, photos: photoUrls, lat: pin?.lat ?? null, lng: pin?.lng ?? null, bikes }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitErr(data.error || 'Something went wrong.'); return; }
       try {
         localStorage.setItem(LS_KEY, JSON.stringify({
           name: form.name, phone: form.phone, email: form.email,
-          address: address || form.address,
+          address: submittedAddress,
           contact_preference: form.contact_preference,
           lat: pin?.lat ?? null, lng: pin?.lng ?? null,
         }));
@@ -289,101 +313,93 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
   const inp = { width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' };
   const lbl = { display: 'block', fontSize: 14, color: '#374151', marginBottom: 4, fontWeight: 500 };
   const errStyle = { fontSize: 13, color: '#dc2626', marginTop: 3 };
+  const wrap = { maxWidth: 640, margin: '0 auto', padding: '24px 16px' };
 
-  return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-      {pwaProfile ? (
-        <div style={{ marginBottom: 20 }}>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, color: '#0f1a14', marginBottom: 4 }}>
-            What needs work?
-          </h2>
-          <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
-            Booking for <strong>{pwaProfile.name}</strong>
-            {pwaProfile.address ? <> &mdash; {pwaProfile.address.split(',').slice(0, 2).join(',').trim()}</> : null}
-          </p>
-        </div>
-      ) : (
-        <>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, color: '#0f1a14', marginBottom: 6 }}>
-            About you and your bike
-          </h2>
-          <p style={{ color: '#4b5563', marginBottom: 24, fontSize: 15 }}>
-            {'We\'ll reach out to confirm a time.'}
-          </p>
-        </>
-      )}
-
-      {submitErr && (
-        <p style={{ color: '#dc2626', fontSize: 14, background: '#fef2f2', padding: '10px 14px', borderRadius: 8, marginBottom: 16 }}>
-          {submitErr}
+  // ── Sub-step: Contact ──
+  if (subStep === 'contact') {
+    return (
+      <div style={wrap}>
+        <p style={{ fontSize: 22, fontWeight: 700, color: '#0f1a14', fontFamily: 'Playfair Display, serif', margin: '0 0 6px' }}>
+          How should we reach you?
         </p>
-      )}
+        <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>
+          {"We'll confirm your pickup time via text or email."}
+        </p>
 
-      <form ref={formRef} onSubmit={handleSubmit}>
-        {!pwaProfile && (
-          <>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ ...lbl, color: errors.contact_preference ? '#dc2626' : '#374151' }}>
-                How should we reach you? *
-              </label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {['text', 'email'].map(opt => {
-                  const sel = form.contact_preference === opt;
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setField('contact_preference', opt)}
-                      style={{
-                        flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                        border: sel ? '2px solid #1a3328' : ('1px solid ' + (errors.contact_preference ? '#dc2626' : '#d1d5db')),
-                        background: sel ? '#1a3328' : '#fff',
-                        color: sel ? '#fff' : '#374151',
-                        fontWeight: sel ? 600 : 400,
-                      }}
-                    >
-                      {opt === 'text' ? 'Text' : 'Email'}
-                    </button>
-                  );
-                })}
-              </div>
-              {errors.contact_preference && <p data-field-error style={errStyle}>{errors.contact_preference}</p>}
-            </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ ...lbl, color: errors.contact_preference ? '#dc2626' : '#374151' }}>
+            How should we reach you? *
+          </label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {['text', 'email'].map(opt => {
+              const sel = form.contact_preference === opt;
+              return (
+                <button key={opt} type="button" onClick={() => setField('contact_preference', opt)} style={{
+                  flex: 1, padding: '11px 0', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                  border: sel ? '2px solid #1a3328' : ('1px solid ' + (errors.contact_preference ? '#dc2626' : '#d1d5db')),
+                  background: sel ? '#1a3328' : '#fff',
+                  color: sel ? '#fff' : '#374151',
+                  fontWeight: sel ? 600 : 400,
+                }}>
+                  {opt === 'text' ? 'Text' : 'Email'}
+                </button>
+              );
+            })}
+          </div>
+          {errors.contact_preference && <p data-field-error style={errStyle}>{errors.contact_preference}</p>}
+        </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={lbl}>Name *</label>
-              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#dc2626' : '#d1d5db' }} />
-              {errors.name && <p data-field-error style={errStyle}>{errors.name}</p>}
-            </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={lbl}>Name *</label>
+          <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Your name" style={{ ...inp, borderColor: errors.name ? '#dc2626' : '#d1d5db' }} />
+          {errors.name && <p data-field-error style={errStyle}>{errors.name}</p>}
+        </div>
 
-            {form.contact_preference === 'text' && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={lbl}>Phone *</label>
-                <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#dc2626' : '#d1d5db' }} />
-                {errors.phone && <p data-field-error style={errStyle}>{errors.phone}</p>}
-              </div>
-            )}
+        {form.contact_preference === 'text' && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Phone *</label>
+            <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="(xxx) xxx-xxxx" style={{ ...inp, borderColor: errors.phone ? '#dc2626' : '#d1d5db' }} />
+            {errors.phone && <p data-field-error style={errStyle}>{errors.phone}</p>}
+          </div>
+        )}
 
-            {form.contact_preference === 'email' && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={lbl}>Email *</label>
-                <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }} />
-                {errors.email && <p data-field-error style={errStyle}>{errors.email}</p>}
-              </div>
-            )}
+        {form.contact_preference === 'email' && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Email *</label>
+            <input type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="email@example.com" style={{ ...inp, borderColor: errors.email ? '#dc2626' : '#d1d5db' }} />
+            {errors.email && <p data-field-error style={errStyle}>{errors.email}</p>}
+          </div>
+        )}
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ ...lbl, color: errors.address ? '#dc2626' : '#374151' }}>Your address *</label>
-              <input
-                type="text"
-                value={form.address}
-                onChange={e => setField('address', e.target.value)}
-                placeholder="Street address"
-                style={{ ...inp, borderColor: errors.address ? '#dc2626' : '#d1d5db' }}
-              />
-              {errors.address && <p data-field-error style={errStyle}>{errors.address}</p>}
-            </div>
-          </>
+        <button type="button" onClick={advanceFromContact} style={{ width: '100%', padding: '13px 0', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, cursor: 'pointer', fontWeight: 600, marginBottom: 14 }}>
+          Continue
+        </button>
+        <div style={{ textAlign: 'center' }}>
+          <button type="button" onClick={onBack} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}>
+            Back: change location
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Sub-step: Service ──
+  if (subStep === 'service') {
+    return (
+      <div style={wrap}>
+        {pwaProfile ? (
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>What needs work?</p>
+            <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+              Booking for <strong>{pwaProfile.name}</strong>
+              {pwaProfile.address ? <> &mdash; {pwaProfile.address.split(',').slice(0, 2).join(',').trim()}</> : null}
+            </p>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>{"What's going on?"}</p>
+            <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>Tell us what needs work.</p>
+          </div>
         )}
 
         <div style={{ marginBottom: 16 }}>
@@ -393,24 +409,15 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
             const bikeEstimate = itemType === 'bike' ? getEstimateText(bike.issues) : null;
             const issueOpts = ISSUE_OPTIONS_BY_TYPE[itemType] || [];
             const displayLabel = itemDisplayLabel(itemType);
-            const headerLabel = bikes.length > 1
-              ? displayLabel + ' ' + (bikeIdx + 1)
-              : 'Your ' + displayLabel.toLowerCase();
+            const headerLabel = bikes.length > 1 ? displayLabel + ' ' + (bikeIdx + 1) : 'Your ' + displayLabel.toLowerCase();
             return (
-              <div key={bikeIdx} style={{
-                border: '1px solid #d1d5db', borderRadius: 10, padding: 14,
-                marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0,
-              }}>
+              <div key={bikeIdx} style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: 14, marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1a14' }}>{headerLabel}</span>
                   {bikeIdx > 0 && (
-                    <button type="button" onClick={() => removeBike(bikeIdx)} style={{
-                      background: 'none', border: 'none', color: '#9ca3af',
-                      cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: '0 4px', fontFamily: 'inherit',
-                    }}>×</button>
+                    <button type="button" onClick={() => removeBike(bikeIdx)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: '0 4px', fontFamily: 'inherit' }}>×</button>
                   )}
                 </div>
-                {/* Type selector */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                   {ITEM_TYPES.map(t => (
                     <button key={t.value} type="button" onClick={() => updateBike(bikeIdx, 'type', t.value)} style={{
@@ -421,22 +428,17 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
                     }}>{t.label}</button>
                   ))}
                 </div>
-                {/* Brand — dropdown for bikes, text input for everything else */}
                 <div style={{ marginBottom: 10 }}>
                   <label style={lbl}>Brand</label>
                   {itemType === 'bike' ? (
-                    <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
-                      style={{ ...inp, color: bike.brand ? '#111827' : '#9ca3af' }}>
+                    <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)} style={{ ...inp, color: bike.brand ? '#111827' : '#9ca3af' }}>
                       <option value="">Select (optional)</option>
                       {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                   ) : (
-                    <input type="text" value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)}
-                      placeholder={BRAND_PLACEHOLDER[itemType] || 'Brand (optional)'}
-                      style={inp} />
+                    <input type="text" value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)} placeholder={BRAND_PLACEHOLDER[itemType] || 'Brand (optional)'} style={inp} />
                   )}
                 </div>
-                {/* Issues / description */}
                 {itemType === 'other' ? (
                   <div style={{ marginBottom: 8 }}>
                     <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
@@ -483,11 +485,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
           })}
           {errors.issues && <p data-field-error style={errStyle}>{errors.issues}</p>}
           {bikes.length < 5 && (
-            <button type="button" onClick={addBike} style={{
-              marginTop: 10, padding: '8px 0', background: '#fff',
-              border: '1px dashed #d1d5db', borderRadius: 8, fontSize: 14, cursor: 'pointer',
-              color: '#6b7280', fontFamily: 'inherit', width: '100%',
-            }}>
+            <button type="button" onClick={addBike} style={{ marginTop: 10, padding: '8px 0', background: '#fff', border: '1px dashed #d1d5db', borderRadius: 8, fontSize: 14, cursor: 'pointer', color: '#6b7280', fontFamily: 'inherit', width: '100%' }}>
               + Add another item
             </button>
           )}
@@ -497,9 +495,34 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
           <PhotoUpload photos={photos} onChange={setPhotos} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 6 }}>
+        <button type="button" onClick={advanceFromService} style={{ width: '100%', padding: '13px 0', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, cursor: 'pointer', fontWeight: 600, marginBottom: 14 }}>
+          Continue
+        </button>
+        {!pwaProfile && (
+          <div style={{ textAlign: 'center' }}>
+            <button type="button" onClick={() => setSubStep('contact')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}>
+              Back
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Sub-step: Schedule ──
+  if (subStep === 'schedule') {
+    return (
+      <div style={wrap}>
+        <p style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#0f1a14', margin: '0 0 6px' }}>
+          Preferred pickup day and time
+        </p>
+        <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>
+          We run routes Monday, Wednesday, and Friday. Need a different day? Let us know in the notes.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
           <div>
-            <label style={lbl}>Preferred pickup day</label>
+            <label style={lbl}>Preferred day</label>
             <select value={form.preferred_day} onChange={e => setField('preferred_day', e.target.value)} style={{ ...inp, color: form.preferred_day ? '#111827' : '#9ca3af' }}>
               <option value="">No preference</option>
               <option value="Monday">Monday</option>
@@ -508,36 +531,20 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
             </select>
           </div>
           <div>
-            <label style={lbl}>Preferred pickup time</label>
+            <label style={lbl}>Preferred time</label>
             <input type="time" value={form.time_slot} onChange={e => setField('time_slot', e.target.value)} min="08:00" max="17:00" style={{ ...inp, color: form.time_slot ? '#111827' : '#9ca3af' }} />
           </div>
         </div>
-        <p style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.5, marginBottom: 16 }}>
-          We run routes on Mondays and Fridays. Pick whichever works best. Need a different day? Let us know in the notes.
-        </p>
 
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
           <label style={lbl}>Notes</label>
-          <textarea
-            value={form.notes}
-            onChange={e => setField('notes', e.target.value)}
-            placeholder="Access instructions, gate codes, anything we should know..."
-            rows={3}
-            style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }}
-          />
+          <textarea value={form.notes} onChange={e => setField('notes', e.target.value)} placeholder="Access instructions, gate codes, anything we should know..." rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }} />
         </div>
 
-        <div style={{ marginBottom: 16, padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+        <div style={{ marginBottom: 20, padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={isMember}
-              onChange={e => setIsMember(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#1a3328', cursor: 'pointer', flexShrink: 0 }}
-            />
-            <span style={{ fontSize: 14, color: '#166534', fontWeight: 600 }}>
-              I'm a One Love member
-            </span>
+            <input type="checkbox" checked={isMember} onChange={e => setIsMember(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#1a3328', cursor: 'pointer', flexShrink: 0 }} />
+            <span style={{ fontSize: 14, color: '#166534', fontWeight: 600 }}>I'm a One Love member</span>
           </label>
           {!isMember && !initialMember && (
             <p style={{ fontSize: 12, color: '#15803d', margin: '6px 0 0 26px' }}>
@@ -547,26 +554,92 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting || !canSubmit}
-          style={{ width: '100%', padding: '13px 0', background: (submitting || !canSubmit) ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, cursor: (submitting || !canSubmit) ? 'default' : 'pointer', fontWeight: 600 }}
-        >
-          {submitting ? 'Sending...' : 'Book Service'}
+        <button type="button" onClick={() => setSubStep('review')} style={{ width: '100%', padding: '13px 0', background: '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, cursor: 'pointer', fontWeight: 600, marginBottom: 14 }}>
+          Review booking
         </button>
-      </form>
-
-      {!pwaProfile && (
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={onBack}
-            style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}
-          >
-            Back: change location
+        <div style={{ textAlign: 'center' }}>
+          <button type="button" onClick={() => setSubStep('service')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}>
+            Back
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // ── Sub-step: Review ──
+  const rl = { fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' };
+  const rv = { fontSize: 14, color: '#111827', marginTop: 3 };
+  return (
+    <div style={wrap}>
+      <p style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#0f1a14', margin: '0 0 6px' }}>
+        Review your booking
+      </p>
+      <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>
+        {"Looks good? Hit Book service and we'll be in touch."}
+      </p>
+
+      {submitErr && (
+        <p style={{ color: '#dc2626', fontSize: 14, background: '#fef2f2', padding: '10px 14px', borderRadius: 8, marginBottom: 16 }}>
+          {submitErr}
+        </p>
       )}
+
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={rl}>Location</div>
+            <div style={rv}>{submittedAddress || 'Not set'}</div>
+          </div>
+          <button type="button" onClick={onBack} style={{ background: 'none', border: 'none', color: '#1a3328', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Edit</button>
+        </div>
+
+        {!pwaProfile && (
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={rl}>Contact</div>
+              <div style={rv}>{form.name}{form.phone ? ' · ' + form.phone : ''}{form.email ? ' · ' + form.email : ''}</div>
+            </div>
+            <button type="button" onClick={() => setSubStep('contact')} style={{ background: 'none', border: 'none', color: '#1a3328', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Edit</button>
+          </div>
+        )}
+
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1 }}>
+            <div style={rl}>{"What we're working on"}</div>
+            {bikes.map((b, i) => (
+              <div key={i} style={{ ...rv, marginTop: i === 0 ? 3 : 4 }}>
+                {itemDisplayLabel(b.type)}{b.brand ? ' — ' + b.brand : ''}
+                {b.type !== 'other' && b.issues.length > 0 ? ': ' + b.issues.join(', ') : ''}
+                {b.type === 'other' && b.otherDescription ? ': ' + b.otherDescription : ''}
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={() => setSubStep('service')} style={{ background: 'none', border: 'none', color: '#1a3328', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: '2px 0 0', flexShrink: 0, marginLeft: 12 }}>Edit</button>
+        </div>
+
+        <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={rl}>Pickup preference</div>
+            <div style={rv}>{form.preferred_day || 'No preference'}{form.time_slot ? ' around ' + form.time_slot : ''}</div>
+            {form.notes && <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>{form.notes}</div>}
+          </div>
+          <button type="button" onClick={() => setSubStep('schedule')} style={{ background: 'none', border: 'none', color: '#1a3328', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0, flexShrink: 0, marginLeft: 12 }}>Edit</button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={submitting}
+        style={{ width: '100%', padding: '13px 0', background: submitting ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, cursor: submitting ? 'default' : 'pointer', fontWeight: 600, marginBottom: 14 }}
+      >
+        {submitting ? 'Sending...' : 'Book service'}
+      </button>
+      <div style={{ textAlign: 'center' }}>
+        <button type="button" onClick={() => setSubStep('schedule')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}>
+          Back
+        </button>
+      </div>
     </div>
   );
 }
