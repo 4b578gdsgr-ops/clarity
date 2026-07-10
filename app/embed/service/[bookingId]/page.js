@@ -333,6 +333,7 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   }
 
   async function handleDayTimeConfirm() {
+    if (!deliveryDay || !deliveryTime) { setErr('Pick a day and a time before confirming.'); return; }
     setSaving(true); setErr('');
     try {
       await apiSave({
@@ -441,29 +442,29 @@ function DeliveryConfirmSection({ booking, bookingId, onUpdated }) {
   // phase === 'daytime'
   return (
     <div style={{ background: '#fff', border: '2px solid #0ea5e9', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-      <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>Almost done.</p>
+      <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>When works best?</p>
       <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 14px' }}>Delivering to: {savedAddress}</p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <div>
-          <label style={lbl}>Preferred day</label>
-          <select value={deliveryDay} onChange={e => setDeliveryDay(e.target.value)} style={{ ...inp, color: deliveryDay ? '#111827' : '#9ca3af' }}>
-            <option value="">No preference</option>
+          <label style={lbl}>Day</label>
+          <select value={deliveryDay} onChange={e => setDeliveryDay(e.target.value)} required style={{ ...inp, color: deliveryDay ? '#111827' : '#9ca3af' }}>
+            <option value="" disabled>Select a day</option>
             {DELIVERY_DATE_OPTIONS.map(opt => (
               <option key={opt.date} value={opt.date}>{opt.label}</option>
             ))}
           </select>
         </div>
         <div>
-          <label style={lbl}>Preferred time</label>
-          <input type="time" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} style={{ ...inp, color: deliveryTime ? '#111827' : '#9ca3af' }} />
+          <label style={lbl}>Time</label>
+          <input type="time" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required min="08:00" max="17:00" style={{ ...inp, color: deliveryTime ? '#111827' : '#9ca3af' }} />
         </div>
       </div>
       {err && <p style={{ margin: '0 0 10px', fontSize: 13, color: '#dc2626' }}>{err}</p>}
       <button
         type="button"
         onClick={handleDayTimeConfirm}
-        disabled={saving}
-        style={{ width: '100%', padding: '10px 0', background: saving ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit' }}
+        disabled={saving || !deliveryDay || !deliveryTime}
+        style={{ width: '100%', padding: '10px 0', background: (saving || !deliveryDay || !deliveryTime) ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: (saving || !deliveryDay || !deliveryTime) ? 'default' : 'pointer', fontFamily: 'inherit' }}
       >
         {saving ? 'Saving...' : 'Confirm delivery'}
       </button>
