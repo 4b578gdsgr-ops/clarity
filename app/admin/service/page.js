@@ -316,17 +316,33 @@ function buildBoxShipTemplate(newStatus, booking, pickupDate, time, link) {
   const name = (booking.name || '').split(' ')[0];
   const day = pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled day';
   const when = time ? ' around ' + fmtTime(time) : '';
+  const trackingNum = booking.tracking_number;
+  const isPaid = booking.payment_status === 'paid';
+  const payLink = booking.payment_link || link;
   switch (newStatus) {
     case 'confirmed':
       return `Hi ${name}, we've confirmed pickup of your bike for boxing. We'll see you ${day}${when}: ${link} — One Love`;
     case 'picked_up':
-      return `Hi ${name}, your bike is with us. We'll get it packed up and keep you posted: ${link} — One Love`;
+      return trackingNum
+        ? `Hi ${name}, your bike is with us. We'll get it packed up and keep you posted. Tracking: ${trackingNum}. Details here: ${link} — One Love`
+        : `Hi ${name}, your bike is with us. We'll get it packed up and keep you posted: ${link} — One Love`;
     case 'boxing':
-      return `Hi ${name}, your bike is being boxed for shipping. We'll send tracking once it's on its way: ${link} — One Love`;
+      return trackingNum
+        ? `Hi ${name}, your bike is being boxed for shipping. Tracking: ${trackingNum}. Details here: ${link} — One Love`
+        : `Hi ${name}, your bike is being boxed for shipping. We'll send tracking once it's on its way: ${link} — One Love`;
     case 'ready_to_ship':
-      return `Hi ${name}, your bike is boxed and ready to ship. We'll send tracking shortly: ${link} — One Love`;
+      if (trackingNum && !isPaid) {
+        return `Hi ${name}, your bike is boxed and ready to go. Tracking: ${trackingNum}. We'll ship as soon as payment is received. Pay here: ${payLink} — One Love`;
+      }
+      if (trackingNum && isPaid) {
+        return `Hi ${name}, your bike is boxed and heading out. Tracking: ${trackingNum}. Details here: ${link} — One Love`;
+      }
+      if (!isPaid) {
+        return `Hi ${name}, your bike is boxed and ready to ship. We'll send tracking once payment is received. Pay here: ${payLink} — One Love`;
+      }
+      return `Hi ${name}, your bike is boxed and ready to ship. We'll send tracking once it's on its way: ${link} — One Love`;
     case 'shipped': {
-      const trackingPart = booking.tracking_number ? ` Tracking: ${booking.tracking_number}.` : '';
+      const trackingPart = trackingNum ? ` Tracking: ${trackingNum}.` : '';
       return `Hi ${name}, your bike is on its way.${trackingPart} Details here: ${link} — One Love`;
     }
     case 'complete':
