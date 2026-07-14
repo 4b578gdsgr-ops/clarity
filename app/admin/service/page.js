@@ -254,6 +254,20 @@ const BOX_SHIP_STATUS_LABEL = {
   no_show:        'No Show',
 };
 
+// Status equivalents when converting a booking between the regular service
+// flow and the Box & Ship flow — picks the closest matching step so an
+// in-flight booking doesn't jump backward or forward on conversion.
+const STATUS_TO_BOX_SHIP = {
+  new: 'new', confirmed: 'confirmed', picked_up: 'picked_up',
+  in_progress: 'boxing', ready: 'ready_to_ship', out_for_delivery: 'shipped',
+  complete: 'complete', cancelled: 'cancelled', no_show: 'no_show',
+};
+const STATUS_TO_SERVICE = {
+  new: 'new', confirmed: 'confirmed', picked_up: 'picked_up',
+  boxing: 'in_progress', ready_to_ship: 'ready', shipped: 'out_for_delivery',
+  complete: 'complete', cancelled: 'cancelled', no_show: 'no_show',
+};
+
 const STATUS_COLOR = {
   new:             '#f59e0b',
   confirmed:       '#3b82f6',
@@ -1121,6 +1135,14 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
     await patch({ status: newStatus, last_notified_status: null, skip_notification: true });
   }
 
+  async function convertServiceType() {
+    if (isBoxShip) {
+      await patch({ service_type: 'service', status: STATUS_TO_SERVICE[booking.status] || booking.status });
+    } else {
+      await patch({ service_type: 'box_ship', status: STATUS_TO_BOX_SHIP[booking.status] || booking.status });
+    }
+  }
+
   async function handleDelete() {
     if (!window.confirm('Delete this booking?')) return;
     setDeleting(true);
@@ -1483,7 +1505,11 @@ async function handleNoShow() {
         {isBoxShip ? (
           <div style={{ marginBottom: 10, fontSize: 13, color: '#374151' }}>
             <strong>Box &amp; Ship</strong>
-            {booking.bike_details ? ' — ' + booking.bike_details : ''}
+            {booking.bike_details
+              ? ' — ' + booking.bike_details
+              : booking.bikes?.length > 0
+                ? ' — ' + booking.bikes.map(b => [b.brand, b.name].filter(Boolean).join(' ') || itemTypeLabel(b.type)).join(', ')
+                : booking.bike_brand ? ' — ' + booking.bike_brand : ''}
             {booking.include_disassembly && (
               <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Disassembly requested.</div>
             )}
@@ -2054,6 +2080,13 @@ async function handleNoShow() {
           >
             Customer view
           </a>
+          <button
+            type="button"
+            onClick={convertServiceType}
+            style={{ padding: 0, background: 'none', border: 'none', fontSize: 13, color: '#6b7280', textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {isBoxShip ? 'Convert to Service' : 'Convert to Box & Ship'}
+          </button>
           {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (
             paymentStatus === 'paid' ? (
               <>
