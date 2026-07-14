@@ -313,26 +313,26 @@ function bNoun(booking) { return itemNounAdmin(booking).noun; }
 function bVerb(booking) { return itemNounAdmin(booking).verb; }
 
 function buildBoxShipTemplate(newStatus, booking, pickupDate, time, link) {
-  const name = booking.name;
-  const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled day') +
-    (time ? ' around ' + fmtTime(time) : '');
+  const name = (booking.name || '').split(' ')[0];
+  const day = pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled day';
+  const when = time ? ' around ' + fmtTime(time) : '';
   switch (newStatus) {
     case 'confirmed':
-      return `Hi ${name}, pickup is confirmed for ${pickupWhen}: ${link} — One Love`;
+      return `Hi ${name}, we've confirmed pickup of your bike for boxing. We'll see you ${day}${when}: ${link} — One Love`;
     case 'picked_up':
-      return `Hi ${name}, your bike is with us. We'll get it boxed up: ${link} — One Love`;
+      return `Hi ${name}, your bike is with us. We'll get it packed up and keep you posted: ${link} — One Love`;
     case 'boxing':
-      return `Hi ${name}, your bike is being carefully packed for shipping: ${link} — One Love`;
+      return `Hi ${name}, your bike is being boxed for shipping. We'll send tracking once it's on its way: ${link} — One Love`;
     case 'ready_to_ship':
-      return `Hi ${name}, boxed and ready. Waiting for carrier pickup: ${link} — One Love`;
-    case 'shipped':
-      return booking.tracking_number
-        ? `Hi ${name}, your bike shipped! Tracking: ${booking.tracking_number} — One Love`
-        : `Hi ${name}, your bike shipped: ${link} — One Love`;
+      return `Hi ${name}, your bike is boxed and ready to ship. We'll send tracking shortly: ${link} — One Love`;
+    case 'shipped': {
+      const trackingPart = booking.tracking_number ? ` Tracking: ${booking.tracking_number}.` : '';
+      return `Hi ${name}, your bike is on its way.${trackingPart} Details here: ${link} — One Love`;
+    }
     case 'complete':
-      return `Hi ${name}, delivered. You're golden. — One Love`;
+      return `Hi ${name}, your bike has been delivered. You're golden. — One Love`;
     default:
-      return '';
+      return `Hi ${name}, track your bike here: ${link} — One Love`;
   }
 }
 
@@ -974,6 +974,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   }
 
   function buildTextMessage() {
+    if (isBoxShip) return buildBoxShipTemplate(booking.status, booking, confirmDate, confirmTime, trackingUrl);
     const name = booking.name.split(' ')[0];
     const link = trackingUrl;
     const st = booking.status;

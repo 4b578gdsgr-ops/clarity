@@ -32,18 +32,20 @@ function getBoxShipStatusHeading(booking) {
       const day = confirmed_date ? fmtDate(confirmed_date) : '';
       const time = confirmed_time ? fmtTime(confirmed_time) : '';
       const when = day && time ? `${day} around ${time}` : day || '';
-      return when ? `Pickup confirmed for ${when}.` : 'Pickup confirmed.';
+      return when
+        ? `We've confirmed pickup for boxing. We'll see you ${when}.`
+        : "We've confirmed pickup for boxing.";
     }
     case 'picked_up':
-      return "Your bike is with us. We'll get it boxed up.";
+      return "Your bike is with us. We'll get it packed up and keep you posted.";
     case 'boxing':
-      return "Your bike is being carefully packed for shipping.";
+      return "Your bike is being boxed for shipping. We'll send tracking once it's on its way.";
     case 'ready_to_ship':
-      return "Boxed and ready. Waiting for carrier pickup.";
+      return "Your bike is boxed and ready to ship. We'll send tracking shortly.";
     case 'shipped':
       return "Your bike is on its way.";
     case 'complete':
-      return "Delivered. You're golden.";
+      return "Your bike has been delivered. You're golden.";
     case 'no_show':
       return "We stopped by but missed you. No worries — reach out when you're ready.";
     case 'cancelled':
