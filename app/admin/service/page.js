@@ -2088,7 +2088,10 @@ async function handleNoShow() {
           >
             {isBoxShip ? 'Convert to Service' : 'Convert to Box & Ship'}
           </button>
-          {['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status) && (
+          {(isBoxShip
+            ? ['ready_to_ship', 'shipped', 'complete'].includes(booking.status)
+            : ['ready', 'out_for_delivery', 'complete', 'done', 'delivered'].includes(booking.status)
+          ) && (
             paymentStatus === 'paid' ? (
               <>
                 <button
