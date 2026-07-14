@@ -1084,18 +1084,38 @@ export default function BookingStatusPage({ params }) {
                 {'Your total: $' + Number(booking.invoice_amount).toFixed(2)}
               </p>
             )}
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
-              Pay when we deliver — cash or card at the door. Simple.
-            </p>
-            {booking.payment_link && (
-              <a
-                href={booking.payment_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-block', marginTop: 12, fontSize: 14, color: '#1a3328', textDecoration: 'underline', fontWeight: 600 }}
-              >
-                Need to pay ahead? Pay online →
-              </a>
+            {isBoxShip ? (
+              <>
+                {booking.payment_link && (
+                  <a
+                    href={booking.payment_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-block', padding: '12px 22px', background: '#1a3328', color: '#fff', borderRadius: 8, fontSize: 15, fontWeight: 600, textDecoration: 'none', marginBottom: 10 }}
+                  >
+                    Pay online →
+                  </a>
+                )}
+                <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+                  {booking.payment_link ? 'Or pay before pickup — cash or card.' : 'Pay before pickup — cash or card.'}
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#0f1a14', margin: '0 0 4px' }}>
+                  Pay when we deliver — cash or card at the door. Simple.
+                </p>
+                {booking.payment_link && (
+                  <a
+                    href={booking.payment_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-block', marginTop: 12, fontSize: 14, color: '#1a3328', textDecoration: 'underline', fontWeight: 600 }}
+                  >
+                    Need to pay ahead? Pay online →
+                  </a>
+                )}
+              </>
             )}
           </div>
         ) : null}
