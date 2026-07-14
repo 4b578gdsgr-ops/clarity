@@ -46,6 +46,8 @@ export async function POST(request) {
     return Response.json({ error: 'Name and phone are required' }, { status: 400 });
   }
 
+  const isBoxShip = Array.isArray(bikes) && bikes[0]?.type === 'box_ship';
+
   const { data, error } = await supabaseAdmin
     .from('service_bookings')
     .insert([{
@@ -57,8 +59,11 @@ export async function POST(request) {
       address: address || null,
       bike_brand: bike_brand || null,
       issues: Array.isArray(issues) ? issues : [],
-      bike_details: bike_details || null,
+      bike_details: isBoxShip ? (bikes[0]?.bikeDetails || null) : (bike_details || null),
       notes: notes || null,
+      service_type: isBoxShip ? 'box_ship' : 'service',
+      shipping_destination: isBoxShip ? (bikes[0]?.destination || null) : null,
+      include_disassembly: isBoxShip ? !!bikes[0]?.disassembly : false,
       preferred_day: preferred_day || null,
       time_slot: time_slot || null,
       contact_preference: contact_preference || null,
@@ -117,12 +122,19 @@ export async function POST(request) {
     const result = await resend.emails.send({
       from: 'One Love Outdoors <service@oneloveoutdoors.org>',
       to: ['service@oneloveoutdoors.org'],
-      subject: 'New booking — ' + (data.name || 'Unknown') + ' (' + (data.bike_brand || 'No brand') + ')',
-      text: 'New bicycle service:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nAddress: ' + data.address + '\n' +
-        (data.bikes?.length > 0
-          ? data.bikes.map((b, i) => 'Bike ' + (i+1) + ': ' + (b.brand || '?') + ' — ' + (b.issues || []).join(', ')).join('\n')
-          : 'Bike: ' + (data.bike_brand || 'Not specified') + '\nIssues: ' + (data.issues || []).join(', ')) +
-        '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: ' + (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/admin/service',
+      subject: isBoxShip
+        ? 'New Box & Ship request — ' + (data.name || 'Unknown')
+        : 'New booking — ' + (data.name || 'Unknown') + ' (' + (data.bike_brand || 'No brand') + ')',
+      text: isBoxShip
+        ? 'New Box & Ship request:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nPickup address: ' + data.address + '\n' +
+          'Destination: ' + (data.shipping_destination || 'Not specified') + '\nBike details: ' + (data.bike_details || 'Not specified') +
+          '\nDisassembly requested: ' + (data.include_disassembly ? 'Yes' : 'No') +
+          '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: ' + (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/admin/service'
+        : 'New bicycle service:\n\nName: ' + data.name + '\nPhone: ' + data.phone + '\nEmail: ' + data.email + '\nAddress: ' + data.address + '\n' +
+          (data.bikes?.length > 0
+            ? data.bikes.map((b, i) => 'Bike ' + (i+1) + ': ' + (b.brand || '?') + ' — ' + (b.issues || []).join(', ')).join('\n')
+            : 'Bike: ' + (data.bike_brand || 'Not specified') + '\nIssues: ' + (data.issues || []).join(', ')) +
+          '\nPreferred: ' + (data.preferred_day || '') + ' ' + (data.preferred_time || '') + '\nContact via: ' + (data.contact_preference || '') + '\nNotes: ' + (data.notes || '') + '\n\nView in admin: ' + (process.env.NEXT_PUBLIC_BASE_URL || 'https://service.oneloveoutdoors.org') + '/admin/service',
     });
     console.log('[bookings] ADMIN EMAIL SENT:', JSON.stringify(result));
   } catch (err) {

@@ -233,6 +233,27 @@ const NEXT_ACTION = {
   out_for_delivery:{ label: 'Complete',         next: 'complete'        },
 };
 
+const NEXT_ACTION_BOX_SHIP = {
+  new:            { label: 'Confirm',        next: 'confirmed'      },
+  confirmed:      { label: 'Picked Up',      next: 'picked_up'      },
+  picked_up:      { label: 'Boxing',         next: 'boxing'         },
+  boxing:         { label: 'Ready to Ship',  next: 'ready_to_ship'  },
+  ready_to_ship:  { label: 'Shipped',        next: 'shipped'        },
+  shipped:        { label: 'Complete',       next: 'complete'       },
+};
+
+const BOX_SHIP_STATUS_LABEL = {
+  new:            'New',
+  confirmed:      'Confirmed',
+  picked_up:      'Picked Up',
+  boxing:         'Boxing',
+  ready_to_ship:  'Ready to Ship',
+  shipped:        'Shipped',
+  complete:       'Complete',
+  cancelled:      'Cancelled',
+  no_show:        'No Show',
+};
+
 const STATUS_COLOR = {
   new:             '#f59e0b',
   confirmed:       '#3b82f6',
@@ -240,6 +261,9 @@ const STATUS_COLOR = {
   in_progress:     '#f97316',
   ready:           '#0ea5e9',
   out_for_delivery:'#2d8653',
+  boxing:          '#f97316',
+  ready_to_ship:   '#0ea5e9',
+  shipped:         '#2d8653',
   complete:        '#16a34a',
   done:            '#16a34a',
   cancelled:       '#9ca3af',
@@ -274,7 +298,34 @@ function itemNounAdmin(booking) {
 function bNoun(booking) { return itemNounAdmin(booking).noun; }
 function bVerb(booking) { return itemNounAdmin(booking).verb; }
 
+function buildBoxShipTemplate(newStatus, booking, pickupDate, time, link) {
+  const name = booking.name;
+  const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled day') +
+    (time ? ' around ' + fmtTime(time) : '');
+  switch (newStatus) {
+    case 'confirmed':
+      return `Hi ${name}, pickup is confirmed for ${pickupWhen}: ${link} — One Love`;
+    case 'picked_up':
+      return `Hi ${name}, your bike is with us. We'll get it boxed up: ${link} — One Love`;
+    case 'boxing':
+      return `Hi ${name}, your bike is being carefully packed for shipping: ${link} — One Love`;
+    case 'ready_to_ship':
+      return `Hi ${name}, boxed and ready. Waiting for carrier pickup: ${link} — One Love`;
+    case 'shipped':
+      return booking.tracking_number
+        ? `Hi ${name}, your bike shipped! Tracking: ${booking.tracking_number} — One Love`
+        : `Hi ${name}, your bike shipped: ${link} — One Love`;
+    case 'complete':
+      return `Hi ${name}, delivered. You're golden. — One Love`;
+    default:
+      return '';
+  }
+}
+
 function buildTemplate(newStatus, booking, pickupDate, time, returnDate, link) {
+  if (booking.service_type === 'box_ship') {
+    return buildBoxShipTemplate(newStatus, booking, pickupDate, time, link);
+  }
   const name = booking.name;
   const pickupWhen = (pickupDate ? fmtDate(pickupDate) : booking.preferred_day || 'the scheduled day') +
     (time ? ' around ' + fmtTime(time) : '');
@@ -614,6 +665,10 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   const [invoiceAmount, setInvoiceAmount] = useState(booking.invoice_amount != null ? String(booking.invoice_amount) : '');
   const [paymentLink, setPaymentLink] = useState(booking.payment_link || '');
   const [address, setAddress] = useState(booking.address || '');
+  const [shippingDestination, setShippingDestination] = useState(booking.shipping_destination || '');
+  const [shippingCarrier, setShippingCarrier] = useState(booking.shipping_carrier || '');
+  const [trackingNumber, setTrackingNumber] = useState(booking.tracking_number || '');
+  const isBoxShip = booking.service_type === 'box_ship';
   const [memberVerified, setMemberVerified] = useState(!!booking.member_verified);
   const [copiedTracking, setCopiedTracking] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
@@ -1035,7 +1090,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   }
 
   async function advance() {
-    const action = NEXT_ACTION[booking.status];
+    const action = isBoxShip ? NEXT_ACTION_BOX_SHIP[booking.status] : NEXT_ACTION[booking.status];
     if (!action) return;
     if (action.next === 'confirmed' && !confirmDate) {
       alert('Set a pickup date before confirming.');
@@ -1078,7 +1133,7 @@ async function handleNoShow() {
     await patch({ status: 'no_show' });
   }
 
-  const action = NEXT_ACTION[booking.status];
+  const action = isBoxShip ? NEXT_ACTION_BOX_SHIP[booking.status] : NEXT_ACTION[booking.status];
   const color = STATUS_COLOR[booking.status] || '#9ca3af';
 
   return (
@@ -1094,6 +1149,17 @@ async function handleNoShow() {
             ) : booking.bike_brand ? (
               <span style={{ marginLeft: 8, fontSize: 13, color: '#6b7280' }}>{booking.bike_brand}</span>
             ) : null}
+            {isBoxShip && (
+              <span style={{
+                marginLeft: 8,
+                background: '#dbeafe', color: '#1d4ed8',
+                border: '1px solid #bfdbfe',
+                borderRadius: 6, padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Box & Ship
+              </span>
+            )}
             {booking.contact_preference && (
               <span style={{
                 marginLeft: 8,
@@ -1251,7 +1317,7 @@ async function handleNoShow() {
             background: color + '22', color, border: '1px solid ' + color + '55',
             borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', whiteSpace: 'nowrap',
           }}>
-            {booking.status}
+            {isBoxShip ? (BOX_SHIP_STATUS_LABEL[booking.status] || booking.status) : booking.status}
           </span>
         </div>
 
@@ -1357,7 +1423,72 @@ async function handleNoShow() {
           })()}
         </div>
 
-        {bookingBikes !== null ? (
+        {isBoxShip && (
+          <div style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+              Shipping
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: 'block', fontSize: 11, color: '#6b7280', marginBottom: 3 }}>Destination</label>
+              <input
+                type="text"
+                value={shippingDestination}
+                onChange={e => setShippingDestination(e.target.value)}
+                onBlur={() => {
+                  const val = shippingDestination.trim() || null;
+                  if (val !== (booking.shipping_destination || null)) save({ shipping_destination: val });
+                }}
+                placeholder="e.g. shipping to buyer in Colorado"
+                style={{ width: '100%', padding: '6px 9px', border: '1px solid #bfdbfe', borderRadius: 6, fontSize: 13, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ flex: '0 0 auto' }}>
+                <label style={{ display: 'block', fontSize: 11, color: '#6b7280', marginBottom: 3 }}>Carrier</label>
+                <select
+                  value={shippingCarrier}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setShippingCarrier(val);
+                    save({ shipping_carrier: val || null });
+                  }}
+                  style={{ padding: '6px 9px', border: '1px solid #bfdbfe', borderRadius: 6, fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}
+                >
+                  <option value="">Not set</option>
+                  <option value="UPS">UPS</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="BikeFlights">BikeFlights</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <label style={{ display: 'block', fontSize: 11, color: '#6b7280', marginBottom: 3 }}>Tracking number</label>
+                <input
+                  type="text"
+                  value={trackingNumber}
+                  onChange={e => setTrackingNumber(e.target.value)}
+                  onBlur={() => {
+                    const val = trackingNumber.trim() || null;
+                    if (val !== (booking.tracking_number || null)) save({ tracking_number: val });
+                  }}
+                  placeholder="Enter once shipped"
+                  style={{ width: '100%', padding: '6px 9px', border: '1px solid #bfdbfe', borderRadius: 6, fontSize: 13, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                />
+                <p style={{ fontSize: 11, color: '#6b7280', margin: '3px 0 0' }}>Customer can see this once entered.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isBoxShip ? (
+          <div style={{ marginBottom: 10, fontSize: 13, color: '#374151' }}>
+            <strong>Box &amp; Ship</strong>
+            {booking.bike_details ? ' — ' + booking.bike_details : ''}
+            {booking.include_disassembly && (
+              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Disassembly requested.</div>
+            )}
+          </div>
+        ) : bookingBikes !== null ? (
           <div style={{ marginBottom: 10 }}>
             {bookingBikes.map((bike, i) => {
               const itemType = bike.type || 'bike';
@@ -1547,7 +1678,7 @@ async function handleNoShow() {
         {/* Shop photos */}
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
-            From the shop
+            {isBoxShip ? 'Boxing photos' : 'From the shop'}
           </div>
           <PhotoUpload
             photos={shopPhotos}
@@ -1773,6 +1904,7 @@ async function handleNoShow() {
         </div>
 
         {/* Est. return + Delivery time */}
+        {!isBoxShip && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
           <div>
             <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>
@@ -1817,6 +1949,7 @@ async function handleNoShow() {
             />
           </div>
         </div>
+        )}
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1833,8 +1966,12 @@ async function handleNoShow() {
             </button>
           )}
           {(() => {
-            const STEPS = ['new', 'confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete'];
-            const BACK_LABELS = { new: 'New', confirmed: 'Confirmed', in_progress: 'In Progress', ready: 'Ready', out_for_delivery: 'Out for Delivery', complete: 'Complete' };
+            const STEPS = isBoxShip
+              ? ['new', 'confirmed', 'picked_up', 'boxing', 'ready_to_ship', 'shipped', 'complete']
+              : ['new', 'confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete'];
+            const BACK_LABELS = isBoxShip
+              ? BOX_SHIP_STATUS_LABEL
+              : { new: 'New', confirmed: 'Confirmed', in_progress: 'In Progress', ready: 'Ready', out_for_delivery: 'Out for Delivery', complete: 'Complete' };
             const idx = STEPS.indexOf(booking.status);
             if (idx <= 0) return null;
             return (
@@ -1854,6 +1991,7 @@ async function handleNoShow() {
               </select>
             );
           })()}
+          {!isBoxShip && (
           <button
             onClick={toggleInspection}
             style={{
@@ -1866,6 +2004,7 @@ async function handleNoShow() {
           >
             Inspection
           </button>
+          )}
           <button
             onClick={() => setShowMsgs(!showMsgs)}
             style={{
@@ -2065,7 +2204,7 @@ async function handleNoShow() {
       })()}
 
       {/* Inspection checklist */}
-      {showInspection && (
+      {!isBoxShip && showInspection && (
         <div style={{ borderTop: '1px solid #e5e7eb', padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <span style={{ fontWeight: 600, fontSize: 14, color: '#1a3328' }}>Inspection Checklist</span>
@@ -2604,6 +2743,7 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
     { key: 'ready',           label: 'Ready'           },
     { key: 'out_for_delivery',label: 'Out for Delivery'},
     { key: 'complete',        label: 'Complete'        },
+    { key: 'box_ship',        label: 'Box & Ship'      },
     { key: 'no_show',         label: 'No Show'         },
     { key: 'cancelled',       label: 'Cancelled'       },
     { key: 'all',             label: 'All'             },
@@ -2645,7 +2785,9 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
                 ? [b.bikes[0].name, b.bikes[0].brand].filter(Boolean).join(' ')
                 : b.bike_brand || '';
               const date = b.confirmed_date || (b.created_at ? b.created_at.slice(0, 10) : '');
-              const statusLabel = STATUS_LABELS[b.status] || b.status;
+              const statusLabel = b.service_type === 'box_ship'
+                ? (BOX_SHIP_STATUS_LABEL[b.status] || b.status)
+                : (STATUS_LABELS[b.status] || b.status);
               return (
                 <div key={b.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -2673,7 +2815,9 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
     );
   }
 
-  // picked_up is legacy — show under in_progress tab
+  // picked_up is legacy for regular bookings — show under in_progress tab.
+  // Box & Ship bookings get their own tab regardless of sub-status (picked_up is a real,
+  // distinct status for them, so it must NOT fold into the regular in_progress tab).
   // no_show/cancelled only show in their own tabs or 'all' — hide from other tabs
   // In 'all' view, cancelled bookings sort to the bottom
   const filtered = filter === 'all'
@@ -2682,13 +2826,15 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
         const bC = b.status === 'cancelled' ? 1 : 0;
         return aC - bC;
       })
-    : filter === 'in_progress'
-      ? bookings.filter(b => b.status === 'in_progress' || b.status === 'picked_up')
-      : filter === 'no_show'
-        ? bookings.filter(b => b.status === 'no_show')
-        : filter === 'cancelled'
-          ? bookings.filter(b => b.status === 'cancelled')
-          : bookings.filter(b => b.status === filter && b.status !== 'no_show' && b.status !== 'cancelled');
+    : filter === 'box_ship'
+      ? bookings.filter(b => b.service_type === 'box_ship' && !['complete', 'cancelled'].includes(b.status))
+      : filter === 'in_progress'
+        ? bookings.filter(b => (b.status === 'in_progress' || b.status === 'picked_up') && b.service_type !== 'box_ship')
+        : filter === 'no_show'
+          ? bookings.filter(b => b.status === 'no_show')
+          : filter === 'cancelled'
+            ? bookings.filter(b => b.status === 'cancelled')
+            : bookings.filter(b => b.status === filter && b.status !== 'no_show' && b.status !== 'cancelled' && b.service_type !== 'box_ship');
 
   return (
     <div>
@@ -2701,8 +2847,10 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {FILTERS.map(f => {
           const count = f.key === 'all' ? bookings.length
-            : f.key === 'in_progress' ? (counts['in_progress'] || 0) + (counts['picked_up'] || 0)
-            : (counts[f.key] || 0);
+            : f.key === 'box_ship' ? bookings.filter(b => b.service_type === 'box_ship' && !['complete', 'cancelled'].includes(b.status)).length
+            : f.key === 'in_progress' ? bookings.filter(b => (b.status === 'in_progress' || b.status === 'picked_up') && b.service_type !== 'box_ship').length
+            : f.key === 'no_show' || f.key === 'cancelled' ? (counts[f.key] || 0)
+            : bookings.filter(b => b.status === f.key && b.service_type !== 'box_ship').length;
           const active = filter === f.key;
           return (
             <button

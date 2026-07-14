@@ -25,6 +25,7 @@ const ITEM_TYPES = [
   { value: 'fork',     label: 'Fork' },
   { value: 'shock',    label: 'Shock' },
   { value: 'other',    label: 'Other' },
+  { value: 'box_ship', label: 'Box & Ship' },
 ];
 
 const ISSUE_OPTIONS_BY_TYPE = {
@@ -33,6 +34,7 @@ const ISSUE_OPTIONS_BY_TYPE = {
   fork:     ['Service', 'Seals', 'Damper', 'Air spring'],
   shock:    ['Service', 'Seals', 'Damper', 'Air spring'],
   other:    [],
+  box_ship: [],
 };
 
 const BRAND_PLACEHOLDER = {
@@ -41,7 +43,10 @@ const BRAND_PLACEHOLDER = {
   fork:     'e.g. Fox, RockShox, Marzocchi...',
   shock:    'e.g. Fox, RockShox, Cane Creek...',
   other:    'Brand or make (optional)',
+  box_ship: '',
 };
+
+const BOX_SHIP_ESTIMATE_TEXT = "Box & ship pricing depends on the bike and destination. We'll quote after discussing the details.";
 
 function itemDisplayLabel(type) {
   switch (type) {
@@ -49,6 +54,7 @@ function itemDisplayLabel(type) {
     case 'fork':     return 'Fork';
     case 'shock':    return 'Shock';
     case 'other':    return 'Item';
+    case 'box_ship': return 'Box & Ship';
     default:         return 'Bike';
   }
 }
@@ -207,7 +213,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
     contact_preference: prefill?.contact_preference || '',
     preferred_day: '', time_slot: '', notes: '',
   });
-  const [bikes, setBikes] = useState([{ type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
+  const [bikes, setBikes] = useState([{ type: 'bike', brand: '', issues: [], notes: '', otherDescription: '', destination: '', bikeDetails: '', disassembly: false }]);
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -221,19 +227,28 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
 
   function addBike() {
     if (bikes.length >= 5) return;
-    setBikes(prev => [...prev, { type: 'bike', brand: '', issues: [], notes: '', otherDescription: '' }]);
+    setBikes(prev => [...prev, { type: 'bike', brand: '', issues: [], notes: '', otherDescription: '', destination: '', bikeDetails: '', disassembly: false }]);
   }
   function removeBike(idx) {
     setBikes(prev => prev.filter((_, i) => i !== idx));
     setErrors(e => ({ ...e, issues: '' }));
   }
   function updateBike(idx, key, val) {
-    setBikes(prev => prev.map((b, i) => {
-      if (i !== idx) return b;
-      if (key === 'type') return { ...b, type: val, issues: [], otherDescription: '' };
-      return { ...b, [key]: val };
-    }));
-    if (key === 'issues' || key === 'otherDescription') setErrors(e => ({ ...e, issues: '' }));
+    setBikes(prev => {
+      const next = prev.map((b, i) => {
+        if (i !== idx) return b;
+        if (key === 'type') {
+          return { ...b, type: val, issues: [], otherDescription: '', destination: '', bikeDetails: '', disassembly: false };
+        }
+        return { ...b, [key]: val };
+      });
+      // Box & Ship is single-item only — drop any other items when it's selected
+      if (key === 'type' && val === 'box_ship') return [next[idx]];
+      return next;
+    });
+    if (key === 'issues' || key === 'otherDescription' || key === 'destination' || key === 'bikeDetails') {
+      setErrors(e => ({ ...e, issues: '' }));
+    }
   }
   function toggleBikeIssue(idx, issue) {
     setBikes(prev => prev.map((b, i) => {
@@ -266,7 +281,12 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
 
   function advanceFromService() {
     const first = bikes[0];
-    if (first.type === 'other') {
+    if (first.type === 'box_ship') {
+      if (!first.destination?.trim() || !first.bikeDetails?.trim()) {
+        setErrors({ issues: 'Tell us where it\'s going and a bit about the bike' });
+        return;
+      }
+    } else if (first.type === 'other') {
       if (!first.otherDescription?.trim()) { setErrors({ issues: 'Tell us what you have' }); return; }
     } else if (!first.issues.length) {
       setErrors({ issues: 'Select at least one' });
@@ -405,11 +425,13 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
         <div style={{ marginBottom: 16 }}>
           {bikes.map((bike, bikeIdx) => {
             const itemType = bike.type || 'bike';
+            const isBoxShip = itemType === 'box_ship';
             const bikeIsAssembly = itemType === 'bike' && bike.issues.includes('New bike assembly');
             const bikeEstimate = itemType === 'bike' ? getEstimateText(bike.issues) : null;
             const issueOpts = ISSUE_OPTIONS_BY_TYPE[itemType] || [];
             const displayLabel = itemDisplayLabel(itemType);
             const headerLabel = bikes.length > 1 ? displayLabel + ' ' + (bikeIdx + 1) : 'Your ' + displayLabel.toLowerCase();
+            const typeOptions = bikeIdx === 0 ? ITEM_TYPES : ITEM_TYPES.filter(t => t.value !== 'box_ship');
             return (
               <div key={bikeIdx} style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: 14, marginBottom: bikeIdx < bikes.length - 1 ? 10 : 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -419,7 +441,7 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
                   )}
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-                  {ITEM_TYPES.map(t => (
+                  {typeOptions.map(t => (
                     <button key={t.value} type="button" onClick={() => updateBike(bikeIdx, 'type', t.value)} style={{
                       padding: '5px 12px', borderRadius: 16, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
                       border: itemType === t.value ? '2px solid #1a3328' : '1px solid #d1d5db',
@@ -428,63 +450,101 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
                     }}>{t.label}</button>
                   ))}
                 </div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={lbl}>Brand</label>
-                  {itemType === 'bike' ? (
-                    <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)} style={{ ...inp, color: bike.brand ? '#111827' : '#9ca3af' }}>
-                      <option value="">Select (optional)</option>
-                      {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                  ) : (
-                    <input type="text" value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)} placeholder={BRAND_PLACEHOLDER[itemType] || 'Brand (optional)'} style={inp} />
-                  )}
-                </div>
-                {itemType === 'other' ? (
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
-                      Tell us what you've got {bikeIdx === 0 ? '*' : ''}
-                    </label>
-                    <input type="text" value={bike.otherDescription || ''} onChange={e => updateBike(bikeIdx, 'otherDescription', e.target.value)}
-                      placeholder="Describe the item and what it needs..."
-                      style={{ ...inp, borderColor: errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db' }} />
-                  </div>
-                ) : (
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
-                      What needs attention? {bikeIdx === 0 ? '*' : ''}
-                    </label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {issueOpts.map(issue => {
-                        const on = bike.issues.includes(issue);
-                        return (
-                          <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
-                            padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                            border: on ? '2px solid #1a3328' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db')),
-                            background: on ? '#1a3328' : '#fff',
-                            color: on ? '#fff' : '#374151',
-                          }}>{issue}</button>
-                        );
-                      })}
+                {isBoxShip ? (
+                  <>
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
+                        Where is the bike going? *
+                      </label>
+                      <input type="text" value={bike.destination || ''} onChange={e => updateBike(bikeIdx, 'destination', e.target.value)}
+                        placeholder="Address, or e.g. &ldquo;shipping to buyer in Colorado&rdquo;"
+                        style={{ ...inp, borderColor: errors.issues && bikeIdx === 0 && !bike.destination?.trim() ? '#dc2626' : '#d1d5db' }} />
                     </div>
-                  </div>
-                )}
-                {bikeIsAssembly && (
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={lbl}>Tell us about the bike (optional)</label>
-                    <input type="text" value={bike.notes} onChange={e => updateBike(bikeIdx, 'notes', e.target.value)}
-                      placeholder="Brand, model, year, where you ordered it from..." style={inp} />
-                  </div>
-                )}
-                {bikeEstimate && (
-                  <div style={{ padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-                    <p style={{ fontSize: 13, color: '#166534', lineHeight: 1.5, margin: 0 }}>{bikeEstimate}</p>
-                  </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
+                        Bike details *
+                      </label>
+                      <textarea value={bike.bikeDetails || ''} onChange={e => updateBike(bikeIdx, 'bikeDetails', e.target.value)}
+                        placeholder="Brand, model, year, anything special..." rows={2}
+                        style={{ ...inp, resize: 'vertical', lineHeight: 1.5, borderColor: errors.issues && bikeIdx === 0 && !bike.bikeDetails?.trim() ? '#dc2626' : '#d1d5db' }} />
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={!!bike.disassembly} onChange={e => updateBike(bikeIdx, 'disassembly', e.target.checked)} style={{ width: 16, height: 16, accentColor: '#1a3328', cursor: 'pointer', flexShrink: 0 }} />
+                        <span style={{ fontSize: 14, color: '#374151' }}>Include disassembly?</span>
+                      </label>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <label style={lbl}>Notes</label>
+                      <textarea value={bike.notes || ''} onChange={e => updateBike(bikeIdx, 'notes', e.target.value)}
+                        placeholder="Anything else we should know..." rows={2}
+                        style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }} />
+                    </div>
+                    <div style={{ padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                      <p style={{ fontSize: 13, color: '#166534', lineHeight: 1.5, margin: 0 }}>{BOX_SHIP_ESTIMATE_TEXT}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={lbl}>Brand</label>
+                      {itemType === 'bike' ? (
+                        <select value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)} style={{ ...inp, color: bike.brand ? '#111827' : '#9ca3af' }}>
+                          <option value="">Select (optional)</option>
+                          {BIKE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                      ) : (
+                        <input type="text" value={bike.brand} onChange={e => updateBike(bikeIdx, 'brand', e.target.value)} placeholder={BRAND_PLACEHOLDER[itemType] || 'Brand (optional)'} style={inp} />
+                      )}
+                    </div>
+                    {itemType === 'other' ? (
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
+                          Tell us what you've got {bikeIdx === 0 ? '*' : ''}
+                        </label>
+                        <input type="text" value={bike.otherDescription || ''} onChange={e => updateBike(bikeIdx, 'otherDescription', e.target.value)}
+                          placeholder="Describe the item and what it needs..."
+                          style={{ ...inp, borderColor: errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db' }} />
+                      </div>
+                    ) : (
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={{ ...lbl, color: errors.issues && bikeIdx === 0 ? '#dc2626' : '#374151' }}>
+                          What needs attention? {bikeIdx === 0 ? '*' : ''}
+                        </label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {issueOpts.map(issue => {
+                            const on = bike.issues.includes(issue);
+                            return (
+                              <button key={issue} type="button" onClick={() => toggleBikeIssue(bikeIdx, issue)} style={{
+                                padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                                border: on ? '2px solid #1a3328' : ('1px solid ' + (errors.issues && bikeIdx === 0 ? '#dc2626' : '#d1d5db')),
+                                background: on ? '#1a3328' : '#fff',
+                                color: on ? '#fff' : '#374151',
+                              }}>{issue}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {bikeIsAssembly && (
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={lbl}>Tell us about the bike (optional)</label>
+                        <input type="text" value={bike.notes} onChange={e => updateBike(bikeIdx, 'notes', e.target.value)}
+                          placeholder="Brand, model, year, where you ordered it from..." style={inp} />
+                      </div>
+                    )}
+                    {bikeEstimate && (
+                      <div style={{ padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                        <p style={{ fontSize: 13, color: '#166534', lineHeight: 1.5, margin: 0 }}>{bikeEstimate}</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );
           })}
           {errors.issues && <p data-field-error style={errStyle}>{errors.issues}</p>}
-          {bikes.length < 5 && (
+          {bikes.length < 5 && bikes[0]?.type !== 'box_ship' && (
             <button type="button" onClick={addBike} style={{ marginTop: 10, padding: '8px 0', background: '#fff', border: '1px dashed #d1d5db', borderRadius: 8, fontSize: 14, cursor: 'pointer', color: '#6b7280', fontFamily: 'inherit', width: '100%' }}>
               + Add another item
             </button>
@@ -608,9 +668,20 @@ function FormStep({ address, pin, onBack, onDone, initialMember = false, initial
             <div style={rl}>{"What we're working on"}</div>
             {bikes.map((b, i) => (
               <div key={i} style={{ ...rv, marginTop: i === 0 ? 3 : 4 }}>
-                {itemDisplayLabel(b.type)}{b.brand ? ' — ' + b.brand : ''}
-                {b.type !== 'other' && b.issues.length > 0 ? ': ' + b.issues.join(', ') : ''}
-                {b.type === 'other' && b.otherDescription ? ': ' + b.otherDescription : ''}
+                {b.type === 'box_ship' ? (
+                  <>
+                    {'Box & Ship — ' + (b.destination || 'destination not set')}
+                    {b.bikeDetails ? '. ' + b.bikeDetails : ''}
+                    {b.disassembly ? '. Disassembly requested.' : ''}
+                    {b.notes ? '. ' + b.notes : ''}
+                  </>
+                ) : (
+                  <>
+                    {itemDisplayLabel(b.type)}{b.brand ? ' — ' + b.brand : ''}
+                    {b.type !== 'other' && b.issues.length > 0 ? ': ' + b.issues.join(', ') : ''}
+                    {b.type === 'other' && b.otherDescription ? ': ' + b.otherDescription : ''}
+                  </>
+                )}
               </div>
             ))}
           </div>

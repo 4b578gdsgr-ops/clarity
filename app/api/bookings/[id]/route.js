@@ -8,6 +8,8 @@ import { pushToAdmin } from '../../../../lib/push';
 
 const VALID_STATUSES = [
   'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled', 'no_show',
+  // Box & Ship flow
+  'boxing', 'ready_to_ship', 'shipped',
   // legacy values kept for backwards compat
   'booked', 'done', 'delivered',
 ];
@@ -43,7 +45,8 @@ export async function PATCH(request, { params }) {
                    'delivery_address', 'delivery_preferred_day', 'delivery_preferred_time',
                    'lat', 'lng', 'shop_photos', 'bikes', 'payment_status',
                    'estimate_amount', 'estimate_notes', 'estimate_photo',
-                   'reminder_sent', 'confirmed_by_customer', 'customer_confirmed_at'];
+                   'reminder_sent', 'confirmed_by_customer', 'customer_confirmed_at',
+                   'service_type', 'shipping_destination', 'shipping_carrier', 'tracking_number', 'include_disassembly'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];

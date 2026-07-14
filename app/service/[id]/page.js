@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
 import { uploadMessagePhoto } from '../../../lib/uploadMessagePhoto';
+import { getCarrierTrackingUrl } from '../../../lib/shippingTracking';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
@@ -22,7 +23,38 @@ function itemNoun(booking) {
   }
 }
 
+function getBoxShipStatusHeading(booking) {
+  const { status, confirmed_date, confirmed_time } = booking;
+  switch (status) {
+    case 'new':
+      return "We got your request. We'll reach out with a quote.";
+    case 'confirmed': {
+      const day = confirmed_date ? fmtDate(confirmed_date) : '';
+      const time = confirmed_time ? fmtTime(confirmed_time) : '';
+      const when = day && time ? `${day} around ${time}` : day || '';
+      return when ? `Pickup confirmed for ${when}.` : 'Pickup confirmed.';
+    }
+    case 'picked_up':
+      return "Your bike is with us. We'll get it boxed up.";
+    case 'boxing':
+      return "Your bike is being carefully packed for shipping.";
+    case 'ready_to_ship':
+      return "Boxed and ready. Waiting for carrier pickup.";
+    case 'shipped':
+      return "Your bike is on its way.";
+    case 'complete':
+      return "Delivered. You're golden.";
+    case 'no_show':
+      return "We stopped by but missed you. No worries — reach out when you're ready.";
+    case 'cancelled':
+      return "This booking was cancelled. No worries — we're here when you need us.";
+    default:
+      return "We got your request. We'll reach out with a quote.";
+  }
+}
+
 function getStatusHeading(booking) {
+  if (booking.service_type === 'box_ship') return getBoxShipStatusHeading(booking);
   const { status, confirmed_date, confirmed_time, return_date } = booking;
   const { noun, verb } = itemNoun(booking);
   switch (status) {
@@ -80,7 +112,23 @@ const STATUS_LABEL = {
   delivered:       'Delivered',
 };
 
+// Box & Ship reuses the same status column with its own label set (shares
+// new/confirmed/complete with the regular flow, but picked_up/boxing/
+// ready_to_ship/shipped are box_ship-specific).
+const STATUS_LABEL_BOX_SHIP = {
+  new:            'New',
+  confirmed:      'Confirmed',
+  picked_up:      'Picked Up',
+  boxing:         'Boxing',
+  ready_to_ship:  'Ready to Ship',
+  shipped:        'Shipped',
+  complete:       'Complete',
+  no_show:        'Missed pickup',
+  cancelled:      'Cancelled',
+};
+
 const STATUS_STEPS = ['new', 'confirmed', 'in_progress', 'ready', 'out_for_delivery', 'complete'];
+const STATUS_STEPS_BOX_SHIP = ['new', 'confirmed', 'picked_up', 'boxing', 'ready_to_ship', 'shipped', 'complete'];
 
 const STATUS_COLOR = {
   new:             '#f59e0b',
@@ -92,6 +140,16 @@ const STATUS_COLOR = {
   complete:        '#16a34a',
   done:            '#16a34a',
   cancelled:       '#9ca3af',
+};
+
+// Box & Ship uses its own color for picked_up (a real, distinct status there,
+// unlike the regular flow where it's legacy/folded into in_progress).
+const STATUS_COLOR_BOX_SHIP = {
+  ...STATUS_COLOR,
+  picked_up:      '#8b5cf6',
+  boxing:         '#f97316',
+  ready_to_ship:  '#0ea5e9',
+  shipped:        '#2d8653',
 };
 
 function fmt(ts) {
@@ -799,9 +857,13 @@ export default function BookingStatusPage({ params }) {
     );
   }
 
-  const displayStatus = booking.status === 'picked_up' ? 'in_progress' : booking.status;
-  const currentStep = STATUS_STEPS.indexOf(displayStatus);
-  const color = STATUS_COLOR[booking.status] || '#9ca3af';
+  const isBoxShip = booking.service_type === 'box_ship';
+  const displayStatus = isBoxShip ? booking.status : (booking.status === 'picked_up' ? 'in_progress' : booking.status);
+  const activeSteps = isBoxShip ? STATUS_STEPS_BOX_SHIP : STATUS_STEPS;
+  const currentStep = activeSteps.indexOf(displayStatus);
+  const statusLabelMap = isBoxShip ? STATUS_LABEL_BOX_SHIP : STATUS_LABEL;
+  const color = (isBoxShip ? STATUS_COLOR_BOX_SHIP : STATUS_COLOR)[booking.status] || '#9ca3af';
+  const trackingUrl = isBoxShip ? getCarrierTrackingUrl(booking.shipping_carrier, booking.tracking_number) : null;
 
   console.log('[service/[id] render] status:', booking.status, '| showCancel:', ['new','confirmed'].includes(booking.status));
 
@@ -841,14 +903,14 @@ export default function BookingStatusPage({ params }) {
               background: color + '22', color, border: '1px solid ' + color + '55',
               borderRadius: 20, padding: '4px 12px', fontSize: 13, fontWeight: 600,
             }}>
-              {STATUS_LABEL[booking.status] || booking.status}
+              {statusLabelMap[booking.status] || booking.status}
             </span>
           </div>
 
           {/* Progress bar — hide for terminal statuses */}
           {!['no_show', 'cancelled'].includes(booking.status) && (
             <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-              {STATUS_STEPS.map((s, i) => (
+              {activeSteps.map((s, i) => (
                 <div key={s} style={{
                   flex: 1, height: 4, borderRadius: 2,
                   background: i <= currentStep ? color : '#e5e7eb',
@@ -894,10 +956,10 @@ export default function BookingStatusPage({ params }) {
           )}
 
           <div style={{ fontSize: 14, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {!booking.bikes?.length && booking.bike_brand && (
+            {!booking.bikes?.length && booking.bike_brand && !isBoxShip && (
               <span><strong>Bike:</strong> {booking.bike_brand}</span>
             )}
-            {!booking.bikes?.length && booking.issues && booking.issues.length > 0 && (
+            {!booking.bikes?.length && booking.issues && booking.issues.length > 0 && !isBoxShip && (
               <span><strong>Issues:</strong> {booking.issues.join(', ')}</span>
             )}
             {booking.address && !booking.dropoff && (
@@ -905,7 +967,19 @@ export default function BookingStatusPage({ params }) {
             )}
           </div>
 
-          {booking.bikes?.length > 0 && (
+          {isBoxShip ? (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6', fontSize: 13, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {booking.shipping_destination && (
+                <span><strong>Shipping to:</strong> {booking.shipping_destination}</span>
+              )}
+              {booking.bike_details && (
+                <span><strong>Bike details:</strong> {booking.bike_details}</span>
+              )}
+              {booking.include_disassembly && (
+                <span style={{ color: '#6b7280' }}>Disassembly requested</span>
+              )}
+            </div>
+          ) : booking.bikes?.length > 0 && (
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
               {booking.bikes.map((bike, i) => (
                 <div key={i} style={{ marginBottom: i < booking.bikes.length - 1 ? 8 : 0 }}>
@@ -922,6 +996,26 @@ export default function BookingStatusPage({ params }) {
             </div>
           )}
         </div>
+
+        {isBoxShip && booking.tracking_number && (
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Tracking
+            </p>
+            {booking.shipping_carrier && (
+              <p style={{ fontSize: 13, color: '#374151', margin: '0 0 4px' }}>
+                <strong>Carrier:</strong> {booking.shipping_carrier}
+              </p>
+            )}
+            {trackingUrl ? (
+              <a href={trackingUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 15, fontWeight: 700, color: '#1d4ed8', textDecoration: 'underline' }}>
+                {booking.tracking_number}
+              </a>
+            ) : (
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#0f1a14', margin: 0 }}>{booking.tracking_number}</p>
+            )}
+          </div>
+        )}
 
         {['no_show', 'cancelled'].includes(booking.status) && (
           <RebookSection onOpenMessages={() => {
@@ -974,7 +1068,7 @@ export default function BookingStatusPage({ params }) {
           </div>
         )}
 
-        {booking.status === 'ready' && (
+        {!isBoxShip && booking.status === 'ready' && (
           <DeliveryConfirmSection booking={booking} bookingId={id} onUpdated={loadData} />
         )}
 
@@ -1006,11 +1100,11 @@ export default function BookingStatusPage({ params }) {
           </div>
         ) : null}
 
-        {/* From the shop — photos */}
+        {/* From the shop — photos (relabeled "packed" photos for Box & Ship) */}
         {booking.shop_photos && booking.shop_photos.length > 0 && (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              From the shop
+              {isBoxShip ? "Here's how we packed it" : 'From the shop'}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {booking.shop_photos.map((url, i) => (
@@ -1026,8 +1120,8 @@ export default function BookingStatusPage({ params }) {
           </div>
         )}
 
-        {/* Inspection Report */}
-        {Array.isArray(report) && report.some(r => r.items?.some(it => !it.na && (it.state || it.wear != null || it.note))) && (() => {
+        {/* Inspection Report — doesn't apply to Box & Ship */}
+        {!isBoxShip && Array.isArray(report) && report.some(r => r.items?.some(it => !it.na && (it.state || it.wear != null || it.note))) && (() => {
           const showTabs = (booking.bikes?.length || 0) > 1;
           const activeReport = showTabs
             ? (report.find(r => r.bike_index === inspBikeIdx) || null)
