@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { extractLeadFromTranscript } from '../../../../lib/leadExtraction';
 
+// Force-rebuild marker: previous deploy of this route didn't go live on Vercel.
+
 // POST /api/phone-leads/auto-review
 // Backfills leads whose transcript never got name/phone/bike_issue filled in
 // (Retell's own extraction came back empty) by running the transcript
