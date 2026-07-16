@@ -84,14 +84,19 @@ export async function POST(request) {
     return Response.json({ ok: true, action: 'discarded' });
   }
 
-  // Only create a lead for genuine service calls with real signal — anything
-  // thinner than that (misdials, hangups, robocalls) is discarded silently.
-  const signalCount = [name, phone, bikeIssue].filter(Boolean).length;
-  if (callType !== 'service' || signalCount < 2) {
-    console.log('[retell-webhook] insufficient signal for a lead — discarding (call_type:', callType, ', signals:', signalCount + '/3)');
+  // Anything Retell didn't classify as a service call — discard.
+  if (callType !== 'service') {
+    console.log('[retell-webhook] not a service call — discarding (call_type:', callType + ')');
     return Response.json({ ok: true, action: 'discarded' });
   }
 
+  // Very short calls are almost always hangups/misdials, even if tagged "service".
+  if (durationSeconds != null && durationSeconds < 20) {
+    console.log('[retell-webhook] call under 20s — discarding as junk (duration_s:', durationSeconds + ')');
+    return Response.json({ ok: true, action: 'discarded' });
+  }
+
+  // Retell already decided this is real — create the lead. No extra filtering here.
   if (!supabaseAdmin) {
     console.error('[retell-webhook] supabaseAdmin unavailable');
     return Response.json({ error: 'DB unavailable' }, { status: 500 });

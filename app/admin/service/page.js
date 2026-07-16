@@ -3434,22 +3434,23 @@ const ALL_STATUSES = [
   { value: 'complete',        label: 'Complete'        },
 ];
 
-function leadSignalCount(lead) {
-  return [lead.name, lead.phone, lead.bike_issue].filter(Boolean).length;
-}
+const JUNK_KEYWORDS = ['warranty', 'insurance', 'solar', 'credit card', 'student loan', 'political', 'survey', 'donation'];
 
-function fmtCallDuration(sec) {
-  if (sec == null) return null;
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return m > 0 ? m + ':' + String(s).padStart(2, '0') : sec + 's';
+function isLikelyJunkLead(lead) {
+  if (lead.call_type === 'junk') return true;
+  if (!lead.name && !lead.phone && !lead.summary) return true;
+  if (!lead.transcript || !lead.transcript.trim()) return true;
+  const summary = (lead.summary || '').toLowerCase();
+  if (JUNK_KEYWORDS.some(k => summary.includes(k))) return true;
+  return false;
 }
 
 function PhoneLeadsView({ onCreateBooking, refreshKey }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
-  const [copiedId, setCopiedId] = useState(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState('');
 
   async function loadLeads() {
     setLoading(true);
@@ -3462,7 +3463,7 @@ function PhoneLeadsView({ onCreateBooking, refreshKey }) {
   }
 
   async function updateStatus(id, status) {
-    // Optimistic — Junk/Dismiss should feel instant, no confirmation dialog.
+    // Optimistic — Dismiss should feel instant, no confirmation dialog.
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
     await fetch('/api/phone-leads', {
       method: 'PATCH',
@@ -3471,82 +3472,110 @@ function PhoneLeadsView({ onCreateBooking, refreshKey }) {
     }).catch(() => {});
   }
 
+  async function bulkUpdateStatus(ids, status) {
+    setLeads(prev => prev.map(l => ids.includes(l.id) ? { ...l, status } : l));
+    await Promise.all(ids.map(id => fetch('/api/phone-leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    }).catch(() => {})));
+  }
+
   useEffect(() => { loadLeads(); }, [refreshKey]);
 
-  const active = leads.filter(l => !['dismissed', 'junk', 'converted'].includes(l.status) && l.call_type !== 'junk');
-  const archived = leads.filter(l => ['dismissed', 'junk', 'converted'].includes(l.status) || l.call_type === 'junk');
+  const active = leads.filter(l => !['dismissed', 'junk', 'converted'].includes(l.status));
+  const archived = leads.filter(l => ['dismissed', 'junk', 'converted'].includes(l.status));
 
   function fmtTime(ts) {
     if (!ts) return '';
     return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
 
-  function copyBookingText(lead) {
-    const firstName = lead.name ? lead.name.split(' ')[0] : null;
-    const greeting = firstName ? 'Hey ' + firstName + ', thanks' : 'Hey, thanks';
-    const issue = lead.bike_issue ? ' We have your ' + lead.bike_issue + ' noted.' : '';
-    const text = greeting + ' for calling One Love.' + issue + ' Book your service here and we\'ll get you on the schedule: https://oneloveoutdoors.org/schedule-service-app — One Love';
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(lead.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    });
+  async function handleClearJunk() {
+    const junkIds = active.filter(isLikelyJunkLead).map(l => l.id);
+    if (junkIds.length === 0) {
+      setBulkMessage('No junk leads found.');
+      setTimeout(() => setBulkMessage(''), 3000);
+      return;
+    }
+    setBulkBusy(true);
+    await bulkUpdateStatus(junkIds, 'junk');
+    setBulkBusy(false);
+    setBulkMessage('Cleared ' + junkIds.length + ' junk lead' + (junkIds.length === 1 ? '' : 's'));
+    setTimeout(() => setBulkMessage(''), 4000);
+  }
+
+  async function handleDismissAll() {
+    if (active.length === 0) return;
+    if (!window.confirm('Dismiss all ' + active.length + ' visible lead' + (active.length === 1 ? '' : 's') + '?')) return;
+    const ids = active.map(l => l.id);
+    setBulkBusy(true);
+    await bulkUpdateStatus(ids, 'dismissed');
+    setBulkBusy(false);
+    setBulkMessage('Dismissed ' + ids.length + ' lead' + (ids.length === 1 ? '' : 's'));
+    setTimeout(() => setBulkMessage(''), 4000);
   }
 
   if (loading) return <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>;
 
   return (
     <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <button
+          onClick={handleClearJunk}
+          disabled={bulkBusy}
+          style={{ padding: '7px 14px', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
+        >
+          Clear junk
+        </button>
+        <button
+          onClick={handleDismissAll}
+          disabled={bulkBusy}
+          style={{ padding: '7px 14px', background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
+        >
+          Dismiss all
+        </button>
+        {bulkMessage && <span style={{ fontSize: 13, color: '#6b7280' }}>{bulkMessage}</span>}
+      </div>
+
       {active.length === 0 && (
         <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>No active phone leads.</p>
       )}
-      {active.map(lead => {
-        const signals = leadSignalCount(lead);
-        const confidence = signals >= 3 ? 'high' : signals === 2 ? 'medium' : 'low';
-        const borderColor = confidence === 'high' ? '#4ade80' : confidence === 'medium' ? '#facc15' : '#e5e7eb';
-        const duration = fmtCallDuration(lead.call_duration_seconds);
-        const likelyJunkCall = lead.call_duration_seconds != null && lead.call_duration_seconds < 15;
-        return (
-        <div key={lead.id} style={{ background: '#fff', border: '2px solid ' + borderColor, borderRadius: 12, padding: 16, marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ flex: 1 }}>
+      {active.map(lead => (
+        <div key={lead.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 220 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                 {lead.status === 'new' && (
                   <span style={{ fontSize: 10, fontWeight: 700, background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}>NEW</span>
                 )}
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{lead.name || 'Unknown caller'}</span>
                 {lead.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.phone}</span>}
-                {lead.email && <span style={{ fontSize: 12, color: '#6b7280' }}>{lead.email}</span>}
-                <span style={{
-                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-                  color: confidence === 'high' ? '#166534' : confidence === 'medium' ? '#92400e' : '#6b7280',
-                  background: confidence === 'high' ? '#f0fdf4' : confidence === 'medium' ? '#fffbeb' : '#f3f4f6',
-                  border: '1px solid ' + (confidence === 'high' ? '#bbf7d0' : confidence === 'medium' ? '#fde68a' : '#e5e7eb'),
-                  borderRadius: 8, padding: '2px 8px',
-                }}>
-                  {confidence === 'high' ? 'High confidence' : confidence === 'medium' ? 'Medium confidence' : 'Low confidence'}
-                </span>
-                {duration && (
-                  <span style={{ fontSize: 11, color: likelyJunkCall ? '#c2410c' : '#9ca3af', fontWeight: likelyJunkCall ? 700 : 400 }}>
-                    {duration} call{likelyJunkCall ? ' — likely junk' : ''}
-                  </span>
-                )}
               </div>
               {lead.bike_issue && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 3px', lineHeight: 1.4 }}><span style={{ fontWeight: 600 }}>Issue:</span> {lead.bike_issue}</p>}
               {lead.address && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>{lead.address}</p>}
               {lead.preferred_day && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>Prefers: {lead.preferred_day}</p>}
-              {lead.summary && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 6px', lineHeight: 1.5 }}>{lead.summary}</p>}
               <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(lead.created_at)}</span>
+              {lead.transcript && (
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
+                    style={{ fontSize: 12, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  >
+                    {expandedId === lead.id ? 'Hide transcript' : 'Show transcript'}
+                  </button>
+                  {expandedId === lead.id && (
+                    <pre style={{ fontSize: 12, color: '#374151', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, marginTop: 6, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                      {lead.transcript}
+                    </pre>
+                  )}
+                </div>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => copyBookingText(lead)}
-                style={{ padding: '6px 12px', background: copiedId === lead.id ? '#f0fdf4' : '#f3f4f6', color: copiedId === lead.id ? '#166534' : '#374151', border: '1px solid ' + (copiedId === lead.id ? '#bbf7d0' : '#e5e7eb'), borderRadius: 7, fontSize: 12, cursor: 'pointer' }}
-              >
-                {copiedId === lead.id ? 'Copied!' : 'Copy booking text'}
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'stretch' }}>
               <button
                 onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', email: lead.email || '', address: lead.address || '', notes: [lead.bike_issue, lead.preferred_day ? 'Prefers ' + lead.preferred_day : null, lead.summary].filter(Boolean).join(' | ') || '', leadId: lead.id })}
-                style={{ padding: '6px 12px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '10px 20px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 Create Booking
               </button>
@@ -3556,32 +3585,10 @@ function PhoneLeadsView({ onCreateBooking, refreshKey }) {
               >
                 Dismiss
               </button>
-              <button
-                onClick={() => updateStatus(lead.id, 'junk')}
-                style={{ padding: '6px 12px', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}
-              >
-                Junk
-              </button>
             </div>
           </div>
-          {lead.transcript && (
-            <div style={{ marginTop: 8 }}>
-              <button
-                onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
-                style={{ fontSize: 12, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-              >
-                {expandedId === lead.id ? 'Hide transcript' : 'Show transcript'}
-              </button>
-              {expandedId === lead.id && (
-                <pre style={{ fontSize: 12, color: '#374151', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, marginTop: 6, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                  {lead.transcript}
-                </pre>
-              )}
-            </div>
-          )}
         </div>
-        );
-      })}
+      ))}
       {archived.length > 0 && (
         <details style={{ marginTop: 16 }}>
           <summary style={{ fontSize: 12, color: '#9ca3af', cursor: 'pointer', userSelect: 'none' }}>
@@ -3591,7 +3598,7 @@ function PhoneLeadsView({ onCreateBooking, refreshKey }) {
             {archived.map(lead => (
               <div key={lead.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f9fafb', borderRadius: 8, marginBottom: 6 }}>
                 <span style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', background: '#f3f4f6', borderRadius: 8, padding: '2px 7px' }}>
-                  {lead.status === 'junk' || lead.call_type === 'junk' ? 'JUNK' : lead.status === 'converted' ? 'BOOKED' : 'DISMISSED'}
+                  {lead.status === 'junk' ? 'JUNK' : lead.status === 'converted' ? 'BOOKED' : 'DISMISSED'}
                 </span>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.name || 'Unknown'}</span>
                 {lead.phone && <span style={{ fontSize: 12, color: '#9ca3af' }}>{lead.phone}</span>}
