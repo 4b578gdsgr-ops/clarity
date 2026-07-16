@@ -4460,14 +4460,14 @@ export default function AdminServicePage() {
           )}
           <button
             onClick={async () => {
-              if (!window.confirm('Delete completed and cancelled bookings older than 90 days?')) return;
+              if (!window.confirm('Purge photos and videos from completed and cancelled bookings older than 90 days? Booking records, inspection data, and messages are kept.')) return;
               setCleanupLoading(true);
               setCleanupResult('');
               try {
                 const res = await fetch('/api/cleanup', { method: 'POST' });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'Cleanup failed');
-                setCleanupResult('Cleaned up ' + d.cleaned + ' booking' + (d.cleaned === 1 ? '' : 's') + '.');
+                setCleanupResult('Purged media from ' + d.cleaned + ' booking' + (d.cleaned === 1 ? '' : 's') + '.');
               } catch (err) {
                 setCleanupResult('Error: ' + err.message);
               } finally {
@@ -4477,7 +4477,7 @@ export default function AdminServicePage() {
             disabled={cleanupLoading}
             style={{ background: 'none', border: '1px solid #6b7280', color: '#9ca3af', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: cleanupLoading ? 'default' : 'pointer', fontFamily: 'inherit' }}
           >
-            {cleanupLoading ? 'Cleaning...' : 'Cleanup old bookings'}
+            {cleanupLoading ? 'Purging...' : 'Purge old photos'}
           </button>
           <button
             onClick={load}

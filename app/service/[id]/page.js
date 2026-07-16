@@ -1173,7 +1173,7 @@ export default function BookingStatusPage({ params }) {
                   >
                     Download report
                   </a>
-                  <span style={{ fontSize: 11, color: '#9ca3af' }}>Save it — records are removed after 90 days.</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af' }}>Photos are removed after 90 days — save your inspection report.</span>
                 </div>
               </div>
 
