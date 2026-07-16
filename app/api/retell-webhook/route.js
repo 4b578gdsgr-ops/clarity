@@ -7,6 +7,14 @@ const ADMIN_EMAIL = 'service@oneloveoutdoors.org';
 const FROM = 'One Love Outdoors <service@oneloveoutdoors.org>';
 const SCHEDULE_URL = 'https://oneloveoutdoors.org/schedule-service-app';
 
+function extractCallDuration(call) {
+  if (typeof call?.duration_ms === 'number') return Math.round(call.duration_ms / 1000);
+  if (typeof call?.start_timestamp === 'number' && typeof call?.end_timestamp === 'number') {
+    return Math.round((call.end_timestamp - call.start_timestamp) / 1000);
+  }
+  return null;
+}
+
 function extractCallData(body) {
   const call = body?.call || body;
   const analysis = call?.call_analysis || {};
@@ -22,8 +30,9 @@ function extractCallData(body) {
   const summary     = custom?.call_summary    || analysis?.call_summary || null;
   const transcript  = call?.transcript        || null;
   const callType    = custom?.call_type       || custom?.type          || null;
+  const durationSeconds = extractCallDuration(call);
 
-  return { name, phone, email, address, bikeIssue, preferredDay, summary, transcript, callType };
+  return { name, phone, email, address, bikeIssue, preferredDay, summary, transcript, callType, durationSeconds };
 }
 
 export async function POST(request) {
@@ -40,9 +49,9 @@ export async function POST(request) {
     return Response.json({ ok: true, skipped: true });
   }
 
-  const { name, phone, email, address, bikeIssue, preferredDay, summary, transcript, callType } = extractCallData(body);
+  const { name, phone, email, address, bikeIssue, preferredDay, summary, transcript, callType, durationSeconds } = extractCallData(body);
 
-  console.log('[retell-webhook] extracted — name:', name, '| phone:', phone, '| call_type:', callType, '| bike_issue:', bikeIssue, '| preferred_day:', preferredDay);
+  console.log('[retell-webhook] extracted — name:', name, '| phone:', phone, '| call_type:', callType, '| bike_issue:', bikeIssue, '| preferred_day:', preferredDay, '| duration_s:', durationSeconds);
 
   // Personal call — email admin only, no lead record
   if (callType === 'personal') {
@@ -75,7 +84,14 @@ export async function POST(request) {
     return Response.json({ ok: true, action: 'discarded' });
   }
 
-  // Service call (or unclassified) — insert lead
+  // Only create a lead for genuine service calls with real signal — anything
+  // thinner than that (misdials, hangups, robocalls) is discarded silently.
+  const signalCount = [name, phone, bikeIssue].filter(Boolean).length;
+  if (callType !== 'service' || signalCount < 2) {
+    console.log('[retell-webhook] insufficient signal for a lead — discarding (call_type:', callType, ', signals:', signalCount + '/3)');
+    return Response.json({ ok: true, action: 'discarded' });
+  }
+
   if (!supabaseAdmin) {
     console.error('[retell-webhook] supabaseAdmin unavailable');
     return Response.json({ error: 'DB unavailable' }, { status: 500 });
@@ -92,6 +108,7 @@ export async function POST(request) {
     transcript,
     call_type: 'service',
     status: 'new',
+    call_duration_seconds: durationSeconds,
   });
 
   if (error) {

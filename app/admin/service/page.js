@@ -1221,7 +1221,7 @@ async function handleNoShow() {
               </span>
             )}
             {(booking.contact_preference === 'text' || booking.contact_preference === 'phone') &&
-             ['confirmed', 'ready'].includes(booking.status) && (
+             (['confirmed', 'ready'].includes(booking.status) || booking.phone_lead_id) && (
               booking.last_notified_status === booking.status ? (
                 <span style={{
                   marginLeft: 8,
@@ -3434,7 +3434,18 @@ const ALL_STATUSES = [
   { value: 'complete',        label: 'Complete'        },
 ];
 
-function PhoneLeadsView({ onCreateBooking }) {
+function leadSignalCount(lead) {
+  return [lead.name, lead.phone, lead.bike_issue].filter(Boolean).length;
+}
+
+function fmtCallDuration(sec) {
+  if (sec == null) return null;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? m + ':' + String(s).padStart(2, '0') : sec + 's';
+}
+
+function PhoneLeadsView({ onCreateBooking, refreshKey }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
@@ -3451,20 +3462,19 @@ function PhoneLeadsView({ onCreateBooking }) {
   }
 
   async function updateStatus(id, status) {
-    const res = await fetch('/api/phone-leads', {
+    // Optimistic — Junk/Dismiss should feel instant, no confirmation dialog.
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
+    await fetch('/api/phone-leads', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status }),
-    });
-    if (res.ok) {
-      setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
-    }
+    }).catch(() => {});
   }
 
-  useEffect(() => { loadLeads(); }, []);
+  useEffect(() => { loadLeads(); }, [refreshKey]);
 
-  const active = leads.filter(l => l.status !== 'dismissed' && l.status !== 'junk' && l.call_type !== 'junk');
-  const archived = leads.filter(l => l.status === 'dismissed' || l.status === 'junk' || l.call_type === 'junk');
+  const active = leads.filter(l => !['dismissed', 'junk', 'converted'].includes(l.status) && l.call_type !== 'junk');
+  const archived = leads.filter(l => ['dismissed', 'junk', 'converted'].includes(l.status) || l.call_type === 'junk');
 
   function fmtTime(ts) {
     if (!ts) return '';
@@ -3489,22 +3499,42 @@ function PhoneLeadsView({ onCreateBooking }) {
       {active.length === 0 && (
         <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>No active phone leads.</p>
       )}
-      {active.map(lead => (
-        <div key={lead.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+      {active.map(lead => {
+        const signals = leadSignalCount(lead);
+        const confidence = signals >= 3 ? 'high' : signals === 2 ? 'medium' : 'low';
+        const borderColor = confidence === 'high' ? '#4ade80' : confidence === 'medium' ? '#facc15' : '#e5e7eb';
+        const duration = fmtCallDuration(lead.call_duration_seconds);
+        const likelyJunkCall = lead.call_duration_seconds != null && lead.call_duration_seconds < 15;
+        return (
+        <div key={lead.id} style={{ background: '#fff', border: '2px solid ' + borderColor, borderRadius: 12, padding: 16, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                 {lead.status === 'new' && (
                   <span style={{ fontSize: 10, fontWeight: 700, background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}>NEW</span>
                 )}
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{lead.name || 'Unknown caller'}</span>
                 {lead.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.phone}</span>}
                 {lead.email && <span style={{ fontSize: 12, color: '#6b7280' }}>{lead.email}</span>}
+                <span style={{
+                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                  color: confidence === 'high' ? '#166534' : confidence === 'medium' ? '#92400e' : '#6b7280',
+                  background: confidence === 'high' ? '#f0fdf4' : confidence === 'medium' ? '#fffbeb' : '#f3f4f6',
+                  border: '1px solid ' + (confidence === 'high' ? '#bbf7d0' : confidence === 'medium' ? '#fde68a' : '#e5e7eb'),
+                  borderRadius: 8, padding: '2px 8px',
+                }}>
+                  {confidence === 'high' ? 'High confidence' : confidence === 'medium' ? 'Medium confidence' : 'Low confidence'}
+                </span>
+                {duration && (
+                  <span style={{ fontSize: 11, color: likelyJunkCall ? '#c2410c' : '#9ca3af', fontWeight: likelyJunkCall ? 700 : 400 }}>
+                    {duration} call{likelyJunkCall ? ' — likely junk' : ''}
+                  </span>
+                )}
               </div>
               {lead.bike_issue && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 3px', lineHeight: 1.4 }}><span style={{ fontWeight: 600 }}>Issue:</span> {lead.bike_issue}</p>}
               {lead.address && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>{lead.address}</p>}
               {lead.preferred_day && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>Prefers: {lead.preferred_day}</p>}
-              {lead.summary && !lead.bike_issue && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 6px', lineHeight: 1.5 }}>{lead.summary}</p>}
+              {lead.summary && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 6px', lineHeight: 1.5 }}>{lead.summary}</p>}
               <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(lead.created_at)}</span>
             </div>
             <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -3550,17 +3580,18 @@ function PhoneLeadsView({ onCreateBooking }) {
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
       {archived.length > 0 && (
         <details style={{ marginTop: 16 }}>
           <summary style={{ fontSize: 12, color: '#9ca3af', cursor: 'pointer', userSelect: 'none' }}>
-            {archived.length} dismissed / junk
+            {archived.length} dismissed / junk / converted
           </summary>
           <div style={{ marginTop: 8 }}>
             {archived.map(lead => (
               <div key={lead.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f9fafb', borderRadius: 8, marginBottom: 6 }}>
                 <span style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', background: '#f3f4f6', borderRadius: 8, padding: '2px 7px' }}>
-                  {lead.status === 'junk' || lead.call_type === 'junk' ? 'JUNK' : 'DISMISSED'}
+                  {lead.status === 'junk' || lead.call_type === 'junk' ? 'JUNK' : lead.status === 'converted' ? 'BOOKED' : 'DISMISSED'}
                 </span>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.name || 'Unknown'}</span>
                 {lead.phone && <span style={{ fontSize: 12, color: '#9ca3af' }}>{lead.phone}</span>}
@@ -3648,6 +3679,7 @@ function NewBookingModal({ onClose, onCreated, prefill }) {
           admin_created: true,
           dropoff: isDropoff,
           send_tracking_sms: !!(prefill?.leadId) && contactPref !== 'email',
+          phone_lead_id: prefill?.leadId || null,
         }),
       });
       const data = await res.json();
@@ -4216,6 +4248,7 @@ export default function AdminServicePage() {
   const [isPwa, setIsPwa] = useState(false);
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [cleanupResult, setCleanupResult] = useState('');
+  const [leadsRefreshKey, setLeadsRefreshKey] = useState(0);
 
   function handleRebook(booking) {
     setPrefillLead({
@@ -4552,6 +4585,7 @@ export default function AdminServicePage() {
         {activeTab === 'phone_leads' && (
           <PhoneLeadsView
             onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
+            refreshKey={leadsRefreshKey}
           />
         )}
         {activeTab === 'rides' && <RidesAdminView />}
@@ -4559,8 +4593,8 @@ export default function AdminServicePage() {
 
       {newBookingOpen && (
         <NewBookingModal
-          onClose={() => { setNewBookingOpen(false); setPrefillLead(null); }}
-          onCreated={() => { setNewBookingOpen(false); setPrefillLead(null); load(); }}
+          onClose={() => { setNewBookingOpen(false); setPrefillLead(null); setLeadsRefreshKey(k => k + 1); }}
+          onCreated={() => { setNewBookingOpen(false); setPrefillLead(null); load(); setLeadsRefreshKey(k => k + 1); }}
           prefill={prefillLead}
         />
       )}
