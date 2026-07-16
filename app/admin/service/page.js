@@ -3446,6 +3446,7 @@ function isLikelyJunkLead(lead) {
 }
 
 function PhoneLeadsView({ onCreateBooking, refreshKey }) {
+  console.log('PHONE LEADS TAB RENDERED');
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
@@ -3536,10 +3537,27 @@ function PhoneLeadsView({ onCreateBooking, refreshKey }) {
     }
   }
 
-  if (loading) return <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>;
+  const bigRedAutoReviewButton = (
+    <button
+      onClick={handleAutoReview}
+      style={{ display: 'block', width: '100%', padding: '18px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 10, fontSize: 18, fontWeight: 800, letterSpacing: '0.03em', cursor: 'pointer', marginBottom: 16 }}
+    >
+      AUTO-REVIEW
+    </button>
+  );
+
+  if (loading) {
+    return (
+      <div>
+        {bigRedAutoReviewButton}
+        <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
+      {bigRedAutoReviewButton}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <button
           onClick={handleAutoReview}
