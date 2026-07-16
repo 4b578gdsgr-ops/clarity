@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { Resend } from 'resend';
 import { pushToAdmin } from '../../../lib/push';
+import { extractLeadFromTranscript } from '../../../lib/leadExtraction';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const ADMIN_EMAIL = 'service@oneloveoutdoors.org';
@@ -102,12 +103,32 @@ export async function POST(request) {
     return Response.json({ error: 'DB unavailable' }, { status: 500 });
   }
 
+  // If Retell's own structured extraction came back empty, fall back to
+  // running the transcript through Claude before saving the lead.
+  let finalName = name, finalBikeIssue = bikeIssue, finalAddress = address, finalPhone = phone;
+  if (!name && !bikeIssue && !address && transcript) {
+    const extracted = await extractLeadFromTranscript(transcript);
+    if (extracted?.is_junk) {
+      console.log('[retell-webhook] Claude extraction flagged as junk — discarding');
+      return Response.json({ ok: true, action: 'discarded' });
+    }
+    if (extracted?.is_service_call) {
+      finalName = extracted.caller_name || null;
+      finalPhone = extracted.caller_phone || phone;
+      finalBikeIssue = extracted.bike_issue || null;
+      finalAddress = extracted.address || null;
+    } else if (extracted) {
+      console.log('[retell-webhook] Claude extraction found no service signal — discarding');
+      return Response.json({ ok: true, action: 'discarded' });
+    }
+  }
+
   const { error } = await supabaseAdmin.from('phone_leads').insert({
-    name,
-    phone,
+    name: finalName,
+    phone: finalPhone,
     email,
-    address,
-    bike_issue: bikeIssue,
+    address: finalAddress,
+    bike_issue: finalBikeIssue,
     preferred_day: preferredDay,
     summary,
     transcript,
@@ -122,11 +143,11 @@ export async function POST(request) {
   }
 
   console.log('[retell-webhook] service lead saved');
-  pushToAdmin({ title: 'New phone lead — ' + (name || 'Unknown'), body: [phone, bikeIssue].filter(Boolean).join(' · '), url: '/admin/service', tag: 'olo-admin-lead' }).catch(() => {});
+  pushToAdmin({ title: 'New phone lead — ' + (finalName || 'Unknown'), body: [finalPhone, finalBikeIssue].filter(Boolean).join(' · '), url: '/admin/service', tag: 'olo-admin-lead' }).catch(() => {});
 
   // If email captured, send booking link
   if (email && resend) {
-    const firstName = name ? name.split(' ')[0] : null;
+    const firstName = finalName ? finalName.split(' ')[0] : null;
     try {
       await resend.emails.send({
         from: FROM,

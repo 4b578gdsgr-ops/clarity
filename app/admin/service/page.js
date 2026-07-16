@@ -3516,11 +3516,38 @@ function PhoneLeadsView({ onCreateBooking, refreshKey }) {
     setTimeout(() => setBulkMessage(''), 4000);
   }
 
+  async function handleAutoReview() {
+    setBulkBusy(true);
+    setBulkMessage('Reviewing transcripts...');
+    try {
+      const res = await fetch('/api/phone-leads/auto-review', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Auto-review failed');
+      setBulkMessage(
+        'Reviewed ' + data.reviewed + ' — ' + data.updated + ' updated, ' + data.junked + ' junked, ' + data.dismissed + ' dismissed' +
+        (data.failed ? ', ' + data.failed + ' failed' : '') + '.'
+      );
+      await loadLeads();
+    } catch (err) {
+      setBulkMessage('Error: ' + err.message);
+    } finally {
+      setBulkBusy(false);
+      setTimeout(() => setBulkMessage(''), 6000);
+    }
+  }
+
   if (loading) return <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>;
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <button
+          onClick={handleAutoReview}
+          disabled={bulkBusy}
+          style={{ padding: '7px 14px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
+        >
+          Auto-review
+        </button>
         <button
           onClick={handleClearJunk}
           disabled={bulkBusy}
