@@ -1078,6 +1078,21 @@ export default function BookingStatusPage({ params }) {
         {booking.payment_status === 'paid' ? (
           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid. Thanks!</p>
+            {['complete', 'done', 'delivered'].includes(booking.status) && (
+              <>
+                <p style={{ fontSize: 13, color: '#166534', margin: '10px 0 6px', lineHeight: 1.5 }}>
+                  Glad we could help. If you have a sec, a review means a lot.
+                </p>
+                <a
+                  href="https://g.page/r/CcxU4IBQHy7QEBM/review"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 13, fontWeight: 600, color: '#166534', textDecoration: 'underline' }}
+                >
+                  Leave a review →
+                </a>
+              </>
+            )}
           </div>
         ) : (booking.invoice_amount != null || booking.payment_link) ? (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>

@@ -703,6 +703,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   const [copiedTracking, setCopiedTracking] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [copiedThanks, setCopiedThanks] = useState(false);
+  const [copiedReview, setCopiedReview] = useState(false);
   const [shopPhotos, setShopPhotos] = useState(() =>
     (booking.shop_photos || []).map((url, i) => ({ id: 'existing-' + i, preview: url, url, uploading: false, error: null }))
   );
@@ -1040,10 +1041,20 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   function copyThankYouText() {
     const firstName = (booking.name || 'there').split(' ')[0];
     const membershipLink = 'https://oneloveoutdoors.org/membership';
-    const text = `Hi ${firstName}, thanks for trusting us. Your bike should be riding great. Know someone who needs service? Send them to oneloveoutdoors.org. And if you're interested in priority service and preferred pricing, check out our membership: ${membershipLink} — One Love`;
+    const reviewLink = 'https://g.page/r/CcxU4IBQHy7QEBM/review';
+    const text = `Hi ${firstName}, thanks for trusting us. Your bike should be riding great. Know someone who needs service? Send them to oneloveoutdoors.org. And if you're interested in priority service and preferred pricing, check out our membership: ${membershipLink} — One Love\n\nIf you have a moment, a Google review helps other riders find us: ${reviewLink}`;
     navigator.clipboard.writeText(text).catch(() => {});
     setCopiedThanks(true);
     setTimeout(() => setCopiedThanks(false), 2000);
+  }
+
+  function copyReviewRequestText() {
+    const firstName = (booking.name || 'there').split(' ')[0];
+    const reviewLink = 'https://g.page/r/CcxU4IBQHy7QEBM/review';
+    const text = `Hey ${firstName}, hope everything is riding great. If you have a sec, a Google review would mean a lot — helps other riders find us: ${reviewLink} — One Love`;
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedReview(true);
+    setTimeout(() => setCopiedReview(false), 2000);
   }
 
   // Silent save — updates a field without triggering a full list refresh.
@@ -2155,6 +2166,21 @@ async function handleNoShow() {
                 Mark paid
               </button>
             )
+          )}
+          {['complete', 'done', 'delivered'].includes(booking.status) &&
+           (booking.contact_preference === 'text' || booking.contact_preference === 'phone') && (
+            <button
+              type="button"
+              onClick={copyReviewRequestText}
+              style={{
+                padding: '5px 12px', background: copiedReview ? '#f0fdf4' : '#fff',
+                color: copiedReview ? '#166534' : '#374151',
+                border: '1px solid ' + (copiedReview ? '#bbf7d0' : '#e5e7eb'),
+                borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {copiedReview ? 'Copied!' : 'Copy review text'}
+            </button>
           )}
           {booking.status === 'confirmed' && (
             <button
