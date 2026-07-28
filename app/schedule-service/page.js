@@ -48,6 +48,18 @@ const BRAND_PLACEHOLDER = {
 
 const BOX_SHIP_ESTIMATE_TEXT = "Box & ship pricing depends on the bike and destination. We'll quote after discussing the details.";
 
+function TextUsFooter() {
+  return (
+    <div style={{ textAlign: 'center', margin: '8px auto 24px', padding: '16px 16px 0', borderTop: '1px solid #e5e7eb', maxWidth: 640 }}>
+      <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 2px' }}>Rather just text us?</p>
+      <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 2px' }}>Send a photo and tell us what's going on. We'll handle the rest.</p>
+      <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
+        Text us: <a href="sms:8602817888" style={{ color: '#9ca3af', textDecoration: 'underline' }}>(860) 281-7888</a>
+      </p>
+    </div>
+  );
+}
+
 function itemDisplayLabel(type) {
   switch (type) {
     case 'wheelset': return 'Wheel';
@@ -1000,6 +1012,8 @@ export default function ScheduleService() {
           onDone={(id, pref, assembly) => { setBookingId(id); setContactPreference(pref); setBookingIsAssembly(!!assembly); setStep('done'); }}
         />
       )}
+
+      {step !== 'welcome-back' && <TextUsFooter />}
     </main>
   );
 }

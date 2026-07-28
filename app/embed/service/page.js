@@ -46,6 +46,18 @@ const BRAND_PLACEHOLDER = {
 
 const BOX_SHIP_ESTIMATE_TEXT = "Box & ship pricing depends on the bike and destination. We'll quote after discussing the details.";
 
+function TextUsFooter() {
+  return (
+    <div style={{ textAlign: 'center', margin: '8px 0 4px', paddingTop: 16, borderTop: '1px solid var(--ol-border)' }}>
+      <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', margin: '0 0 2px' }}>Rather just text us?</p>
+      <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', margin: '0 0 2px' }}>Send a photo and tell us what's going on. We'll handle the rest.</p>
+      <p style={{ fontSize: 12, color: 'var(--ol-text-hint)', margin: 0 }}>
+        Text us: <a href="sms:8602817888" style={{ color: 'var(--ol-text-hint)', textDecoration: 'underline' }}>(860) 281-7888</a>
+      </p>
+    </div>
+  );
+}
+
 function itemDisplayLabel(type) {
   switch (type) {
     case 'wheelset': return 'Wheel';
@@ -484,6 +496,7 @@ export default function EmbedService() {
             Continue
           </button>
         )}
+        <TextUsFooter />
       </div>
     );
   }
@@ -548,6 +561,7 @@ export default function EmbedService() {
         <button type="button" onClick={() => setStep('map')} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--ol-text-hint)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}>
           Back: change location
         </button>
+        <TextUsFooter />
       </div>
     );
   }
@@ -698,6 +712,7 @@ export default function EmbedService() {
         <button type="button" onClick={() => setStep('contact')} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--ol-text-hint)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}>
           Back
         </button>
+        <TextUsFooter />
       </div>
     );
   }
@@ -743,6 +758,7 @@ export default function EmbedService() {
         <button type="button" onClick={() => setStep('service')} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--ol-text-hint)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}>
           Back
         </button>
+        <TextUsFooter />
       </div>
     );
   }
@@ -827,6 +843,7 @@ export default function EmbedService() {
       <button type="button" onClick={() => setStep('schedule')} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--ol-text-hint)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}>
         Back
       </button>
+      <TextUsFooter />
     </div>
   );
 }
