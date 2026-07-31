@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { isInServiceArea } from '../../../lib/serviceArea';
 import { uploadMessagePhoto } from '../../../lib/uploadMessagePhoto';
 import { getCarrierTrackingUrl } from '../../../lib/shippingTracking';
+import { GOOGLE_REVIEW_URL } from '../../../lib/config';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
 
@@ -1074,25 +1075,27 @@ export default function BookingStatusPage({ params }) {
           <DeliveryConfirmSection booking={booking} bookingId={id} onUpdated={loadData} />
         )}
 
+        {/* Review ask — shown for any completed booking, independent of payment status */}
+        {['complete', 'done', 'delivered'].includes(booking.status) && (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <p style={{ fontSize: 13, color: '#166534', margin: '0 0 6px', lineHeight: 1.5 }}>
+              Glad we could help. If you have a sec, a review means a lot.
+            </p>
+            <a
+              href={GOOGLE_REVIEW_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 13, fontWeight: 600, color: '#166534', textDecoration: 'underline' }}
+            >
+              Leave a review →
+            </a>
+          </div>
+        )}
+
         {/* Payment section */}
         {booking.payment_status === 'paid' ? (
           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>Paid. Thanks!</p>
-            {['complete', 'done', 'delivered'].includes(booking.status) && (
-              <>
-                <p style={{ fontSize: 13, color: '#166534', margin: '10px 0 6px', lineHeight: 1.5 }}>
-                  Glad we could help. If you have a sec, a review means a lot.
-                </p>
-                <a
-                  href="https://g.page/r/CcxU4IBQHy7QEBM/review"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: 13, fontWeight: 600, color: '#166534', textDecoration: 'underline' }}
-                >
-                  Leave a review →
-                </a>
-              </>
-            )}
           </div>
         ) : (booking.invoice_amount != null || booking.payment_link) ? (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 }}>

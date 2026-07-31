@@ -4,7 +4,10 @@ import {
   sendPickupConfirmedAdminEmail,
   sendDeliveryConfirmedAdminEmail,
 } from '../../../../lib/email';
+import { notifyCustomerReviewAsk } from '../../../../lib/notify';
 import { pushToAdmin } from '../../../../lib/push';
+
+const COMPLETED_STATUSES = ['complete', 'done', 'delivered'];
 
 const VALID_STATUSES = [
   'new', 'confirmed', 'picked_up', 'in_progress', 'ready', 'out_for_delivery', 'complete', 'cancelled', 'no_show',
@@ -46,7 +49,8 @@ export async function PATCH(request, { params }) {
                    'lat', 'lng', 'shop_photos', 'bikes', 'payment_status',
                    'estimate_amount', 'estimate_notes', 'estimate_photo',
                    'reminder_sent', 'confirmed_by_customer', 'customer_confirmed_at',
-                   'service_type', 'shipping_destination', 'shipping_carrier', 'tracking_number', 'include_disassembly'];
+                   'service_type', 'shipping_destination', 'shipping_carrier', 'tracking_number', 'include_disassembly',
+                   'review_ask_sent_at'];
   const update = {};
   for (const key of allowed) {
     if (body[key] !== undefined) update[key] = body[key];
@@ -72,6 +76,31 @@ export async function PATCH(request, { params }) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Automatic Google review ask — fires as soon as a booking is both
+  // complete and paid (whichever field flipped last), for email-preference
+  // customers only. Text/phone customers never get an automated send
+  // (Twilio isn't reliable yet) — admin uses the "Copy review text" button
+  // instead, which sets review_ask_sent_at itself once actually sent so
+  // this doesn't double-fire.
+  if (
+    COMPLETED_STATUSES.includes(data.status) &&
+    data.payment_status === 'paid' &&
+    !data.review_ask_sent_at &&
+    data.contact_preference === 'email'
+  ) {
+    (async () => {
+      const { error: stampErr } = await supabaseAdmin
+        .from('service_bookings')
+        .update({ review_ask_sent_at: new Date().toISOString() })
+        .eq('id', id);
+      if (stampErr) {
+        console.error('[bookings/[id]] failed to stamp review_ask_sent_at:', stampErr.message);
+        return;
+      }
+      await notifyCustomerReviewAsk(data);
+    })().catch(err => console.error('[bookings/[id]] review ask email failed:', err?.message || err));
+  }
 
   // Notify admin when customer cancels
   if (update.status === 'cancelled') {

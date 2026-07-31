@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { createClient } from '@supabase/supabase-js';
+import { GOOGLE_REVIEW_URL } from '../../../lib/config';
 
 const RouteMap = dynamic(() => import('../../components/RouteMap'), { ssr: false });
 const PhotoUpload = dynamic(() => import('../../components/PhotoUpload'), { ssr: false });
@@ -715,6 +716,7 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   const [inspSaved, setInspSaved] = useState(false);
   const [inspSaveErr, setInspSaveErr] = useState('');
   const [paymentStatus, setPaymentStatus] = useState(booking.payment_status || '');
+  const [reviewAskSentAt, setReviewAskSentAt] = useState(booking.review_ask_sent_at || null);
   const [receiptUrl, setReceiptUrl] = useState(booking.receipt_url || '');
   const [bookingBikes, setBookingBikes] = useState(booking.bikes?.length > 0 ? booking.bikes : null);
   const [bikesSaving, setBikesSaving] = useState(false);
@@ -1041,20 +1043,29 @@ function BookingCard({ booking, onRefresh, unreadCount = 0, onMarkRead, onRebook
   function copyThankYouText() {
     const firstName = (booking.name || 'there').split(' ')[0];
     const membershipLink = 'https://oneloveoutdoors.org/membership';
-    const reviewLink = 'https://g.page/r/CcxU4IBQHy7QEBM/review';
-    const text = `Hi ${firstName}, thanks for trusting us. Your bike should be riding great. Know someone who needs service? Send them to oneloveoutdoors.org. And if you're interested in priority service and preferred pricing, check out our membership: ${membershipLink} — One Love\n\nIf you have a moment, a Google review helps other riders find us: ${reviewLink}`;
+    const text = `Hi ${firstName}, thanks for trusting us. Your bike should be riding great. Know someone who needs service? Send them to oneloveoutdoors.org. And if you're interested in priority service and preferred pricing, check out our membership: ${membershipLink} — One Love\n\nIf you have a moment, a Google review helps other riders find us: ${GOOGLE_REVIEW_URL}`;
     navigator.clipboard.writeText(text).catch(() => {});
     setCopiedThanks(true);
     setTimeout(() => setCopiedThanks(false), 2000);
   }
 
-  function copyReviewRequestText() {
+  async function copyReviewRequestText() {
     const firstName = (booking.name || 'there').split(' ')[0];
-    const reviewLink = 'https://g.page/r/CcxU4IBQHy7QEBM/review';
-    const text = `Hey ${firstName}, hope everything is riding great. If you have a sec, a Google review would mean a lot — helps other riders find us: ${reviewLink} — One Love`;
+    const text = `Hey ${firstName}, hope everything is riding great. If you have a sec, a Google review would mean a lot — helps other riders find us: ${GOOGLE_REVIEW_URL} — One Love`;
     navigator.clipboard.writeText(text).catch(() => {});
     setCopiedReview(true);
     setTimeout(() => setCopiedReview(false), 2000);
+    // Mark the review ask as sent so the "needs text" badge clears and the
+    // automatic email path (see PATCH /api/bookings/[id]) doesn't also fire.
+    if (!reviewAskSentAt) {
+      const sentAt = new Date().toISOString();
+      setReviewAskSentAt(sentAt);
+      await fetch('/api/bookings/' + booking.id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_ask_sent_at: sentAt }),
+      });
+    }
   }
 
   // Silent save — updates a field without triggering a full list refresh.
@@ -2007,6 +2018,30 @@ async function handleNoShow() {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {['complete', 'done', 'delivered'].includes(booking.status) &&
+           (booking.contact_preference === 'text' || booking.contact_preference === 'phone') && (
+            <button
+              type="button"
+              onClick={copyReviewRequestText}
+              style={{
+                padding: '7px 16px',
+                background: copiedReview ? '#166534' : '#16a34a',
+                color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'inherit',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {copiedReview ? 'Copied!' : 'Copy review text'}
+              {!reviewAskSentAt && !copiedReview && (
+                <span style={{
+                  background: '#fff', color: '#166534', borderRadius: 10,
+                  padding: '1px 6px', fontSize: 10, fontWeight: 800, letterSpacing: '0.03em',
+                }}>
+                  NEEDS TEXT
+                </span>
+              )}
+            </button>
+          )}
           {action && (
             <button
               onClick={advance}
@@ -2166,21 +2201,6 @@ async function handleNoShow() {
                 Mark paid
               </button>
             )
-          )}
-          {['complete', 'done', 'delivered'].includes(booking.status) &&
-           (booking.contact_preference === 'text' || booking.contact_preference === 'phone') && (
-            <button
-              type="button"
-              onClick={copyReviewRequestText}
-              style={{
-                padding: '5px 12px', background: copiedReview ? '#f0fdf4' : '#fff',
-                color: copiedReview ? '#166534' : '#374151',
-                border: '1px solid ' + (copiedReview ? '#bbf7d0' : '#e5e7eb'),
-                borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              {copiedReview ? 'Copied!' : 'Copy review text'}
-            </button>
           )}
           {booking.status === 'confirmed' && (
             <button
