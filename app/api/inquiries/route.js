@@ -1,6 +1,38 @@
 import { supabaseAdmin } from '../../../lib/supabase';
 import { sendNewInquiryAdminEmail } from '../../../lib/email';
 
+// GET /api/inquiries
+export async function GET() {
+  if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+
+  const { data, error } = await supabaseAdmin
+    .from('service_inquiries')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  return Response.json({ inquiries: data || [] });
+}
+
+// DELETE /api/inquiries with { id } — used by admin "Dismiss"
+export async function DELETE(request) {
+  if (!supabaseAdmin) return Response.json({ error: 'Admin client unavailable' }, { status: 500 });
+
+  const { id } = await request.json();
+  if (!id) return Response.json({ error: 'id required' }, { status: 400 });
+
+  const { error } = await supabaseAdmin
+    .from('service_inquiries')
+    .delete()
+    .eq('id', id);
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  return Response.json({ ok: true });
+}
+
 // POST /api/inquiries
 export async function POST(request) {
   if (!supabaseAdmin) {

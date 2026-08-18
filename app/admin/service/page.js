@@ -3703,6 +3703,82 @@ function PhoneLeadsView({ onCreateBooking, refreshKey }) {
   );
 }
 
+function InquiriesView({ onCreateBooking, refreshKey }) {
+  const [inquiries, setInquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+
+  async function loadInquiries() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/inquiries');
+      const data = await res.json();
+      setInquiries(data.inquiries || []);
+    } catch {}
+    setLoading(false);
+  }
+
+  useEffect(() => { loadInquiries(); }, [refreshKey]);
+
+  async function handleDismiss(id) {
+    setBusyId(id);
+    setInquiries(prev => prev.filter(i => i.id !== id));
+    await fetch('/api/inquiries', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    }).catch(() => {});
+    setBusyId(null);
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+      timeZone: 'America/New_York', timeZoneName: 'short',
+    });
+  }
+
+  if (loading) {
+    return <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>;
+  }
+
+  return (
+    <div>
+      {inquiries.length === 0 && (
+        <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>No inquiries.</p>
+      )}
+      {inquiries.map(inquiry => (
+        <div key={inquiry.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <p style={{ fontSize: 14, color: '#111827', margin: '0 0 6px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                {inquiry.message}
+              </p>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(inquiry.created_at)}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'stretch' }}>
+              <button
+                onClick={() => onCreateBooking({ notes: inquiry.message })}
+                style={{ padding: '10px 20px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Create Booking
+              </button>
+              <button
+                onClick={() => handleDismiss(inquiry.id)}
+                disabled={busyId === inquiry.id}
+                style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 7, fontSize: 12, cursor: busyId === inquiry.id ? 'default' : 'pointer' }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function NewBookingModal({ onClose, onCreated, prefill }) {
   const [name, setName] = useState(prefill?.name || '');
   const [phone, setPhone] = useState(prefill?.phone || '');
@@ -4534,6 +4610,7 @@ export default function AdminServicePage() {
             { key: 'plan',        label: 'Plan Route',       short: 'Route',    badge: 0 },
             { key: 'members',     label: 'Member Messages',  short: 'Members',  badge: memberUnread },
             { key: 'phone_leads', label: 'Phone Leads',      short: 'Leads',    badge: 0 },
+            { key: 'inquiries',   label: 'Inquiries',        short: 'Inquiries', badge: 0 },
             { key: 'email',       label: 'Send Email',       short: 'Email',    badge: 0 },
             { key: 'rides',       label: 'Rides',            short: 'Rides',    badge: 0 },
           ].map(t => (
@@ -4682,6 +4759,12 @@ export default function AdminServicePage() {
         {activeTab === 'email' && <SendEmailView />}
         {activeTab === 'phone_leads' && (
           <PhoneLeadsView
+            onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
+            refreshKey={leadsRefreshKey}
+          />
+        )}
+        {activeTab === 'inquiries' && (
+          <InquiriesView
             onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
             refreshKey={leadsRefreshKey}
           />
