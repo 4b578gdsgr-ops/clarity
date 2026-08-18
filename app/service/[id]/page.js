@@ -1535,7 +1535,7 @@ export default function BookingStatusPage({ params }) {
 
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginTop: 20, textAlign: 'center' }}>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 12px' }}>
-            Know someone who rides? Tell them about us.
+            Enjoying the service? A quick review helps other riders find us.
           </p>
           <a
             href={GOOGLE_REVIEW_URL}
