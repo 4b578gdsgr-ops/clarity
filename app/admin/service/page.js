@@ -4578,7 +4578,7 @@ export default function AdminServicePage() {
           }
           .admin-tab-bar {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 4px;
             width: 100%;
           }
@@ -4603,6 +4603,7 @@ export default function AdminServicePage() {
             { key: 'plan',        label: 'Plan Route',       short: 'Route',    badge: 0 },
             { key: 'members',     label: 'Member Messages',  short: 'Members',  badge: memberUnread },
             { key: 'email',       label: 'Send Email',       short: 'Email',    badge: 0 },
+            { key: 'rides',       label: 'Rides',            short: 'Rides',    badge: 0 },
           ].map(t => (
             <button
               key={t.key}
@@ -4757,6 +4758,7 @@ export default function AdminServicePage() {
           <MemberMessagesView messages={memberMessages} bookings={bookings} onRefresh={load} onMarkRead={handleMemberMarkRead} />
         )}
         {activeTab === 'email' && <SendEmailView />}
+        {activeTab === 'rides' && <RidesAdminView />}
       </div>
 
       {newBookingOpen && (
