@@ -41,15 +41,17 @@ export async function POST(request) {
   }
 
   const body = await request.json();
+  const name = (body?.name || '').trim();
+  const phone = (body?.phone || '').trim();
   const message = (body?.message || '').trim();
 
-  if (!message) {
-    return Response.json({ error: 'Message is required' }, { status: 400 });
+  if (!name || !phone || !message) {
+    return Response.json({ error: 'Name, phone, and message are required' }, { status: 400 });
   }
 
   const { data, error } = await supabaseAdmin
     .from('service_inquiries')
-    .insert([{ message }])
+    .insert([{ name, phone, message }])
     .select()
     .single();
 

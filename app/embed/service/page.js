@@ -24,9 +24,12 @@ function saveContact() {
 }
 
 export default function EmbedService() {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState({});
+  const [submitErr, setSubmitErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [done, setDone] = useState(false);
 
   // Auto-resize: send height to parent frame
@@ -41,25 +44,38 @@ export default function EmbedService() {
     return () => ro.disconnect();
   }, []);
 
+  function setField(setter, key) {
+    return e => {
+      setter(e.target.value);
+      setErrors(er => ({ ...er, [key]: '' }));
+    };
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!message.trim()) { setError('Tell us a bit about what you need.'); return; }
+    const errs = {};
+    if (!name.trim()) errs.name = 'Required';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) errs.phone = digits.length === 0 ? 'Required' : 'At least 10 digits';
+    if (!message.trim()) errs.message = "Tell us what's going on.";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
     setSubmitting(true);
-    setError('');
+    setSubmitErr('');
     try {
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message.trim() }),
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim(), message: message.trim() }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Something went wrong. Please try again.');
+        setSubmitErr(data.error || 'Something went wrong. Please try again.');
         return;
       }
       setDone(true);
     } catch {
-      setError('Network error. Please try again.');
+      setSubmitErr('Network error. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -122,24 +138,67 @@ export default function EmbedService() {
       </p>
 
       <form onSubmit={handleSubmit}>
-        <textarea
-          value={message}
-          onChange={e => { setMessage(e.target.value); setError(''); }}
-          placeholder="Tell us your name, address, and what's going on with your bike."
-          rows={4}
-          style={{
-            width: '100%', padding: '13px 14px', border: error ? '2px solid var(--ol-border-error)' : '1px solid var(--ol-border)',
-            borderRadius: 'var(--ol-radius-md)', fontSize: 15, outline: 'none', boxSizing: 'border-box',
-            fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', background: 'var(--ol-bg-input)', color: 'var(--ol-text)',
-          }}
-        />
-        {error && <span style={{ fontSize: 12, color: 'var(--ol-border-error)', marginTop: 3, display: 'block' }}>{error}</span>}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ol-text-muted)', marginBottom: 4, letterSpacing: '0.01em' }}>
+            Your name
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={setField(setName, 'name')}
+            placeholder="Your name"
+            style={{
+              width: '100%', padding: '11px 14px', border: errors.name ? '2px solid var(--ol-border-error)' : '1px solid var(--ol-border)',
+              borderRadius: 'var(--ol-radius-md)', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+              fontFamily: 'inherit', background: 'var(--ol-bg-input)', color: 'var(--ol-text)',
+            }}
+          />
+          {errors.name && <span style={{ fontSize: 12, color: 'var(--ol-border-error)', marginTop: 3, display: 'block' }}>{errors.name}</span>}
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ol-text-muted)', marginBottom: 4, letterSpacing: '0.01em' }}>
+            Phone number
+          </label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={setField(setPhone, 'phone')}
+            placeholder="(xxx) xxx-xxxx"
+            style={{
+              width: '100%', padding: '11px 14px', border: errors.phone ? '2px solid var(--ol-border-error)' : '1px solid var(--ol-border)',
+              borderRadius: 'var(--ol-radius-md)', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+              fontFamily: 'inherit', background: 'var(--ol-bg-input)', color: 'var(--ol-text)',
+            }}
+          />
+          {errors.phone && <span style={{ fontSize: 12, color: 'var(--ol-border-error)', marginTop: 3, display: 'block' }}>{errors.phone}</span>}
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ol-text-muted)', marginBottom: 4, letterSpacing: '0.01em' }}>
+            {"What's going on with your bike?"}
+          </label>
+          <textarea
+            value={message}
+            onChange={setField(setMessage, 'message')}
+            placeholder="Squeaky brakes, needs a tune, flat tire — whatever it is."
+            rows={4}
+            style={{
+              width: '100%', padding: '13px 14px', border: errors.message ? '2px solid var(--ol-border-error)' : '1px solid var(--ol-border)',
+              borderRadius: 'var(--ol-radius-md)', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+              fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', background: 'var(--ol-bg-input)', color: 'var(--ol-text)',
+            }}
+          />
+          {errors.message && <span style={{ fontSize: 12, color: 'var(--ol-border-error)', marginTop: 3, display: 'block' }}>{errors.message}</span>}
+        </div>
+
+        {submitErr && <p style={{ fontSize: 12, color: 'var(--ol-border-error)', marginBottom: 10 }}>{submitErr}</p>}
 
         <button
           type="submit"
           disabled={submitting}
           style={{
-            width: '100%', padding: '13px 0', marginTop: 14,
+            width: '100%', padding: '13px 0',
             background: submitting ? 'var(--ol-btn-disabled)' : 'var(--ol-btn-bg)', color: 'var(--ol-btn-text)', border: 'none',
             borderRadius: 'var(--ol-radius-md)', fontSize: 15, fontWeight: 600, cursor: submitting ? 'default' : 'pointer',
             fontFamily: 'inherit', letterSpacing: '0.04em',

@@ -24,30 +24,46 @@ function saveContact() {
 }
 
 export default function ScheduleService() {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState({});
+  const [submitErr, setSubmitErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  function setField(setter, key) {
+    return e => {
+      setter(e.target.value);
+      setErrors(er => ({ ...er, [key]: '' }));
+    };
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!message.trim()) { setError('Tell us a bit about what you need.'); return; }
+    const errs = {};
+    if (!name.trim()) errs.name = 'Required';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) errs.phone = digits.length === 0 ? 'Required' : 'At least 10 digits';
+    if (!message.trim()) errs.message = "Tell us what's going on.";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
     setSubmitting(true);
-    setError('');
+    setSubmitErr('');
     try {
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message.trim() }),
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim(), message: message.trim() }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Something went wrong. Please try again.');
+        setSubmitErr(data.error || 'Something went wrong. Please try again.');
         return;
       }
       setDone(true);
     } catch {
-      setError('Network error. Please try again.');
+      setSubmitErr('Network error. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -102,24 +118,65 @@ export default function ScheduleService() {
         </h1>
 
         <form onSubmit={handleSubmit}>
-          <textarea
-            value={message}
-            onChange={e => { setMessage(e.target.value); setError(''); }}
-            placeholder="Tell us your name, address, and what's going on with your bike."
-            rows={4}
-            style={{
-              width: '100%', padding: '14px 16px', border: error ? '2px solid #dc2626' : '1px solid #d1d5db',
-              borderRadius: 12, fontSize: 16, outline: 'none', boxSizing: 'border-box',
-              fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', background: '#fff',
-            }}
-          />
-          {error && <p style={{ fontSize: 13, color: '#dc2626', marginTop: 6 }}>{error}</p>}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 14, color: '#374151', marginBottom: 4, fontWeight: 500 }}>
+              Your name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={setField(setName, 'name')}
+              placeholder="Your name"
+              style={{
+                width: '100%', padding: '12px 14px', border: errors.name ? '2px solid #dc2626' : '1px solid #d1d5db',
+                borderRadius: 10, fontSize: 16, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#fff',
+              }}
+            />
+            {errors.name && <p style={{ fontSize: 13, color: '#dc2626', marginTop: 6 }}>{errors.name}</p>}
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 14, color: '#374151', marginBottom: 4, fontWeight: 500 }}>
+              Phone number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={setField(setPhone, 'phone')}
+              placeholder="(xxx) xxx-xxxx"
+              style={{
+                width: '100%', padding: '12px 14px', border: errors.phone ? '2px solid #dc2626' : '1px solid #d1d5db',
+                borderRadius: 10, fontSize: 16, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#fff',
+              }}
+            />
+            {errors.phone && <p style={{ fontSize: 13, color: '#dc2626', marginTop: 6 }}>{errors.phone}</p>}
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 14, color: '#374151', marginBottom: 4, fontWeight: 500 }}>
+              {"What's going on with your bike?"}
+            </label>
+            <textarea
+              value={message}
+              onChange={setField(setMessage, 'message')}
+              placeholder="Squeaky brakes, needs a tune, flat tire — whatever it is."
+              rows={4}
+              style={{
+                width: '100%', padding: '14px 16px', border: errors.message ? '2px solid #dc2626' : '1px solid #d1d5db',
+                borderRadius: 12, fontSize: 16, outline: 'none', boxSizing: 'border-box',
+                fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', background: '#fff',
+              }}
+            />
+            {errors.message && <p style={{ fontSize: 13, color: '#dc2626', marginTop: 6 }}>{errors.message}</p>}
+          </div>
+
+          {submitErr && <p style={{ fontSize: 13, color: '#dc2626', marginBottom: 12 }}>{submitErr}</p>}
 
           <button
             type="submit"
             disabled={submitting}
             style={{
-              width: '100%', padding: '15px 0', marginTop: 16,
+              width: '100%', padding: '15px 0',
               background: submitting ? '#9ca3af' : '#1a3328', color: '#fff', border: 'none',
               borderRadius: 10, fontSize: 17, fontWeight: 600, cursor: submitting ? 'default' : 'pointer',
               fontFamily: 'inherit',

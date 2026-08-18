@@ -3752,6 +3752,10 @@ function InquiriesView({ onCreateBooking, refreshKey }) {
         <div key={inquiry.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 220 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{inquiry.name || 'Unknown'}</span>
+                {inquiry.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{inquiry.phone}</span>}
+              </div>
               <p style={{ fontSize: 14, color: '#111827', margin: '0 0 6px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                 {inquiry.message}
               </p>
@@ -3759,7 +3763,7 @@ function InquiriesView({ onCreateBooking, refreshKey }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'stretch' }}>
               <button
-                onClick={() => onCreateBooking({ notes: inquiry.message })}
+                onClick={() => onCreateBooking({ name: inquiry.name || '', phone: inquiry.phone || '', notes: inquiry.message })}
                 style={{ padding: '10px 20px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 Create Booking
