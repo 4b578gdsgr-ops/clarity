@@ -2831,9 +2831,95 @@ const STATUS_LABELS = {
   cancelled: 'Cancelled', booked: 'Booked', done: 'Done', delivered: 'Delivered',
 };
 
-function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, onRebook }) {
+function AllRequestsView({ bookings, phoneLeads = [], inquiries = [], onRefresh, unreadCounts = {}, onMarkRead, onRebook, onCreateBooking, lastViewedAt }) {
   const [filter, setFilter] = useState('new');
   const [search, setSearch] = useState('');
+  const [expandedLeadId, setExpandedLeadId] = useState(null);
+  const [busyInquiryId, setBusyInquiryId] = useState(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState('');
+
+  const activeLeads = phoneLeads.filter(l => !['dismissed', 'junk', 'converted'].includes(l.status));
+
+  async function dismissLead(id) {
+    await fetch('/api/phone-leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: 'dismissed' }),
+    }).catch(() => {});
+    onRefresh();
+  }
+
+  async function bulkUpdateLeadStatus(ids, status) {
+    await Promise.all(ids.map(id => fetch('/api/phone-leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    }).catch(() => {})));
+    onRefresh();
+  }
+
+  async function dismissInquiry(id) {
+    setBusyInquiryId(id);
+    await fetch('/api/inquiries', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    }).catch(() => {});
+    onRefresh();
+    setBusyInquiryId(null);
+  }
+
+  async function handleClearJunk() {
+    const junkIds = activeLeads.filter(isLikelyJunkLead).map(l => l.id);
+    if (junkIds.length === 0) {
+      setBulkMessage('No junk leads found.');
+      setTimeout(() => setBulkMessage(''), 3000);
+      return;
+    }
+    setBulkBusy(true);
+    await bulkUpdateLeadStatus(junkIds, 'junk');
+    setBulkBusy(false);
+    setBulkMessage('Cleared ' + junkIds.length + ' junk lead' + (junkIds.length === 1 ? '' : 's'));
+    setTimeout(() => setBulkMessage(''), 4000);
+  }
+
+  async function handleDismissAllLeads() {
+    if (activeLeads.length === 0) return;
+    if (!window.confirm('Dismiss all ' + activeLeads.length + ' visible phone lead' + (activeLeads.length === 1 ? '' : 's') + '?')) return;
+    const ids = activeLeads.map(l => l.id);
+    setBulkBusy(true);
+    await bulkUpdateLeadStatus(ids, 'dismissed');
+    setBulkBusy(false);
+    setBulkMessage('Dismissed ' + ids.length + ' lead' + (ids.length === 1 ? '' : 's'));
+    setTimeout(() => setBulkMessage(''), 4000);
+  }
+
+  async function handleAutoReview() {
+    setBulkBusy(true);
+    setBulkMessage('Reviewing transcripts...');
+    try {
+      const res = await fetch('/api/phone-leads/auto-review', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Auto-review failed');
+      setBulkMessage(
+        'Reviewed ' + data.reviewed + ' — ' + data.updated + ' updated, ' + data.junked + ' junked, ' + data.dismissed + ' dismissed' +
+        (data.failed ? ', ' + data.failed + ' failed' : '') + '.'
+      );
+      onRefresh();
+    } catch (err) {
+      setBulkMessage('Error: ' + err.message);
+    } finally {
+      setBulkBusy(false);
+      setTimeout(() => setBulkMessage(''), 6000);
+    }
+  }
+
+  const lastVisit = lastViewedAt ? new Date(lastViewedAt) : new Date(0);
+  const newSinceVisitCount =
+    bookings.filter(b => b.status === 'new' && new Date(b.created_at) > lastVisit).length +
+    activeLeads.filter(l => new Date(l.created_at) > lastVisit).length +
+    inquiries.filter(i => new Date(i.created_at) > lastVisit).length;
 
   const FILTERS = [
     { key: 'new',             label: 'New'             },
@@ -2935,8 +3021,24 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
             ? bookings.filter(b => b.status === 'cancelled')
             : bookings.filter(b => b.status === filter && b.status !== 'no_show' && b.status !== 'cancelled' && b.service_type !== 'box_ship');
 
+  // In the New tab, phone leads and inquiries merge in alongside new bookings,
+  // newest first — this is the whole point of consolidating the tabs.
+  const newMerged = filter === 'new'
+    ? [
+        ...filtered.map(b => ({ type: 'booking', created_at: b.created_at, data: b })),
+        ...activeLeads.map(l => ({ type: 'phone_lead', created_at: l.created_at, data: l })),
+        ...inquiries.map(i => ({ type: 'inquiry', created_at: i.created_at, data: i })),
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    : null;
+
   return (
     <div>
+      {newSinceVisitCount > 0 && (
+        <p style={{ fontSize: 14, fontWeight: 700, color: '#dc2626', margin: '0 0 12px' }}>
+          {newSinceVisitCount} new
+        </p>
+      )}
+
       <input
         value={search}
         onChange={e => setSearch(e.target.value)}
@@ -2949,6 +3051,7 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
             : f.key === 'box_ship' ? bookings.filter(b => b.service_type === 'box_ship' && !['complete', 'cancelled'].includes(b.status)).length
             : f.key === 'in_progress' ? bookings.filter(b => (b.status === 'in_progress' || b.status === 'picked_up') && b.service_type !== 'box_ship').length
             : f.key === 'no_show' || f.key === 'cancelled' ? (counts[f.key] || 0)
+            : f.key === 'new' ? bookings.filter(b => b.status === 'new' && b.service_type !== 'box_ship').length + activeLeads.length + inquiries.length
             : bookings.filter(b => b.status === f.key && b.service_type !== 'box_ship').length;
           const active = filter === f.key;
           return (
@@ -2969,20 +3072,86 @@ function AllRequestsView({ bookings, onRefresh, unreadCounts = {}, onMarkRead, o
         })}
       </div>
 
-      {filtered.length === 0 && (
-        <p style={{ color: '#9ca3af', fontSize: 14 }}>
-          {filter === 'all' ? 'No bookings yet.' : 'No ' + filter + ' bookings.'}
-        </p>
+      {filter === 'new' && activeLeads.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+          <button
+            onClick={handleAutoReview}
+            disabled={bulkBusy}
+            style={{ padding: '7px 14px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
+          >
+            Auto-review
+          </button>
+          <button
+            onClick={handleClearJunk}
+            disabled={bulkBusy}
+            style={{ padding: '7px 14px', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
+          >
+            Clear junk
+          </button>
+          <button
+            onClick={handleDismissAllLeads}
+            disabled={bulkBusy}
+            style={{ padding: '7px 14px', background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
+          >
+            Dismiss all leads
+          </button>
+          {bulkMessage && <span style={{ fontSize: 13, color: '#6b7280' }}>{bulkMessage}</span>}
+        </div>
       )}
 
-      {filtered.map(b => {
-        const prevNoShow = b.status !== 'no_show'
-          ? (noShowByContact[b.phone] || noShowByContact[b.email] || null)
-          : null;
-        return (
-          <BookingCard key={b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} onRebook={onRebook} previousNoShow={prevNoShow} />
-        );
-      })}
+      {filter === 'new' ? (
+        <>
+          {newMerged.length === 0 && (
+            <p style={{ color: '#9ca3af', fontSize: 14 }}>Nothing new.</p>
+          )}
+          {newMerged.map(item => {
+            if (item.type === 'phone_lead') {
+              return (
+                <PhoneLeadCard
+                  key={'lead-' + item.data.id}
+                  lead={item.data}
+                  expanded={expandedLeadId === item.data.id}
+                  onToggleExpand={() => setExpandedLeadId(id => id === item.data.id ? null : item.data.id)}
+                  onCreateBooking={onCreateBooking}
+                  onDismiss={() => dismissLead(item.data.id)}
+                />
+              );
+            }
+            if (item.type === 'inquiry') {
+              return (
+                <InquiryCard
+                  key={'inquiry-' + item.data.id}
+                  inquiry={item.data}
+                  onCreateBooking={onCreateBooking}
+                  onDismiss={() => dismissInquiry(item.data.id)}
+                  busy={busyInquiryId === item.data.id}
+                />
+              );
+            }
+            const b = item.data;
+            const prevNoShow = noShowByContact[b.phone] || noShowByContact[b.email] || null;
+            return (
+              <BookingCard key={'booking-' + b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} onRebook={onRebook} previousNoShow={prevNoShow} />
+            );
+          })}
+        </>
+      ) : (
+        <>
+          {filtered.length === 0 && (
+            <p style={{ color: '#9ca3af', fontSize: 14 }}>
+              {filter === 'all' ? 'No bookings yet.' : 'No ' + filter + ' bookings.'}
+            </p>
+          )}
+          {filtered.map(b => {
+            const prevNoShow = b.status !== 'no_show'
+              ? (noShowByContact[b.phone] || noShowByContact[b.email] || null)
+              : null;
+            return (
+              <BookingCard key={b.id} booking={b} onRefresh={onRefresh} unreadCount={unreadCounts[b.id] || 0} onMarkRead={onMarkRead} onRebook={onRebook} previousNoShow={prevNoShow} />
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }
@@ -3491,294 +3660,96 @@ function isLikelyJunkLead(lead) {
   return false;
 }
 
-function PhoneLeadsView({ onCreateBooking, refreshKey }) {
-  console.log('PHONE LEADS TAB RENDERED');
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
-  const [bulkBusy, setBulkBusy] = useState(false);
-  const [bulkMessage, setBulkMessage] = useState('');
+function fmtLeadOrInquiryTime(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    timeZone: 'America/New_York', timeZoneName: 'short',
+  });
+}
 
-  async function loadLeads() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/phone-leads');
-      const data = await res.json();
-      setLeads(data.leads || []);
-    } catch {}
-    setLoading(false);
-  }
-
-  async function updateStatus(id, status) {
-    // Optimistic — Dismiss should feel instant, no confirmation dialog.
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
-    await fetch('/api/phone-leads', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status }),
-    }).catch(() => {});
-  }
-
-  async function bulkUpdateStatus(ids, status) {
-    setLeads(prev => prev.map(l => ids.includes(l.id) ? { ...l, status } : l));
-    await Promise.all(ids.map(id => fetch('/api/phone-leads', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status }),
-    }).catch(() => {})));
-  }
-
-  useEffect(() => { loadLeads(); }, [refreshKey]);
-
-  const active = leads.filter(l => !['dismissed', 'junk', 'converted'].includes(l.status));
-  const archived = leads.filter(l => ['dismissed', 'junk', 'converted'].includes(l.status));
-
-  function fmtTime(ts) {
-    if (!ts) return '';
-    return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  }
-
-  async function handleClearJunk() {
-    const junkIds = active.filter(isLikelyJunkLead).map(l => l.id);
-    if (junkIds.length === 0) {
-      setBulkMessage('No junk leads found.');
-      setTimeout(() => setBulkMessage(''), 3000);
-      return;
-    }
-    setBulkBusy(true);
-    await bulkUpdateStatus(junkIds, 'junk');
-    setBulkBusy(false);
-    setBulkMessage('Cleared ' + junkIds.length + ' junk lead' + (junkIds.length === 1 ? '' : 's'));
-    setTimeout(() => setBulkMessage(''), 4000);
-  }
-
-  async function handleDismissAll() {
-    if (active.length === 0) return;
-    if (!window.confirm('Dismiss all ' + active.length + ' visible lead' + (active.length === 1 ? '' : 's') + '?')) return;
-    const ids = active.map(l => l.id);
-    setBulkBusy(true);
-    await bulkUpdateStatus(ids, 'dismissed');
-    setBulkBusy(false);
-    setBulkMessage('Dismissed ' + ids.length + ' lead' + (ids.length === 1 ? '' : 's'));
-    setTimeout(() => setBulkMessage(''), 4000);
-  }
-
-  async function handleAutoReview() {
-    setBulkBusy(true);
-    setBulkMessage('Reviewing transcripts...');
-    try {
-      const res = await fetch('/api/phone-leads/auto-review', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Auto-review failed');
-      setBulkMessage(
-        'Reviewed ' + data.reviewed + ' — ' + data.updated + ' updated, ' + data.junked + ' junked, ' + data.dismissed + ' dismissed' +
-        (data.failed ? ', ' + data.failed + ' failed' : '') + '.'
-      );
-      await loadLeads();
-    } catch (err) {
-      setBulkMessage('Error: ' + err.message);
-    } finally {
-      setBulkBusy(false);
-      setTimeout(() => setBulkMessage(''), 6000);
-    }
-  }
-
-  const bigRedAutoReviewButton = (
-    <button
-      onClick={handleAutoReview}
-      style={{ display: 'block', width: '100%', padding: '18px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 10, fontSize: 18, fontWeight: 800, letterSpacing: '0.03em', cursor: 'pointer', marginBottom: 16 }}
-    >
-      AUTO-REVIEW
-    </button>
-  );
-
-  if (loading) {
-    return (
-      <div>
-        {bigRedAutoReviewButton}
-        <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>
-      </div>
-    );
-  }
-
+function PhoneLeadCard({ lead, expanded, onToggleExpand, onCreateBooking, onDismiss }) {
   return (
-    <div>
-      {bigRedAutoReviewButton}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-        <button
-          onClick={handleAutoReview}
-          disabled={bulkBusy}
-          style={{ padding: '7px 14px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
-        >
-          Auto-review
-        </button>
-        <button
-          onClick={handleClearJunk}
-          disabled={bulkBusy}
-          style={{ padding: '7px 14px', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
-        >
-          Clear junk
-        </button>
-        <button
-          onClick={handleDismissAll}
-          disabled={bulkBusy}
-          style={{ padding: '7px 14px', background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: bulkBusy ? 'default' : 'pointer' }}
-        >
-          Dismiss all
-        </button>
-        {bulkMessage && <span style={{ fontSize: 13, color: '#6b7280' }}>{bulkMessage}</span>}
-      </div>
-
-      {active.length === 0 && (
-        <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>No active phone leads.</p>
-      )}
-      {active.map(lead => (
-        <div key={lead.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                {lead.status === 'new' && (
-                  <span style={{ fontSize: 10, fontWeight: 700, background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: 10, padding: '2px 8px' }}>NEW</span>
-                )}
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{lead.name || 'Unknown caller'}</span>
-                {lead.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.phone}</span>}
-              </div>
-              {lead.bike_issue && <p style={{ fontSize: 13, color: '#374151', margin: '0 0 3px', lineHeight: 1.4 }}><span style={{ fontWeight: 600 }}>Issue:</span> {lead.bike_issue}</p>}
-              {lead.address && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>{lead.address}</p>}
-              {lead.preferred_day && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>Prefers: {lead.preferred_day}</p>}
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(lead.created_at)}</span>
-              {lead.transcript && (
-                <div style={{ marginTop: 8 }}>
-                  <button
-                    onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
-                    style={{ fontSize: 12, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                  >
-                    {expandedId === lead.id ? 'Hide transcript' : 'Show transcript'}
-                  </button>
-                  {expandedId === lead.id && (
-                    <pre style={{ fontSize: 12, color: '#374151', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, marginTop: 6, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                      {lead.transcript}
-                    </pre>
-                  )}
-                </div>
+    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 10, padding: '2px 8px' }}>PHONE LEAD</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{lead.name || 'Unknown caller'}</span>
+            {lead.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.phone}</span>}
+          </div>
+          {(lead.summary || lead.bike_issue) && (
+            <p style={{ fontSize: 13, color: '#374151', margin: '0 0 3px', lineHeight: 1.4 }}>{lead.summary || lead.bike_issue}</p>
+          )}
+          {lead.address && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>{lead.address}</p>}
+          {lead.preferred_day && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 3px' }}>Prefers: {lead.preferred_day}</p>}
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtLeadOrInquiryTime(lead.created_at)}</span>
+          {lead.transcript && (
+            <div style={{ marginTop: 8 }}>
+              <button
+                onClick={onToggleExpand}
+                style={{ fontSize: 12, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                {expanded ? 'Hide transcript' : 'Show transcript'}
+              </button>
+              {expanded && (
+                <pre style={{ fontSize: 12, color: '#374151', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, marginTop: 6, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                  {lead.transcript}
+                </pre>
               )}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'stretch' }}>
-              <button
-                onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', email: lead.email || '', address: lead.address || '', notes: [lead.bike_issue, lead.preferred_day ? 'Prefers ' + lead.preferred_day : null, lead.summary].filter(Boolean).join(' | ') || '', leadId: lead.id })}
-                style={{ padding: '10px 20px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Create Booking
-              </button>
-              <button
-                onClick={() => updateStatus(lead.id, 'dismissed')}
-                style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-      ))}
-      {archived.length > 0 && (
-        <details style={{ marginTop: 16 }}>
-          <summary style={{ fontSize: 12, color: '#9ca3af', cursor: 'pointer', userSelect: 'none' }}>
-            {archived.length} dismissed / junk / converted
-          </summary>
-          <div style={{ marginTop: 8 }}>
-            {archived.map(lead => (
-              <div key={lead.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f9fafb', borderRadius: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', background: '#f3f4f6', borderRadius: 8, padding: '2px 7px' }}>
-                  {lead.status === 'junk' ? 'JUNK' : lead.status === 'converted' ? 'BOOKED' : 'DISMISSED'}
-                </span>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>{lead.name || 'Unknown'}</span>
-                {lead.phone && <span style={{ fontSize: 12, color: '#9ca3af' }}>{lead.phone}</span>}
-                <span style={{ fontSize: 11, color: '#d1d5db', marginLeft: 'auto' }}>{fmtTime(lead.created_at)}</span>
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'stretch' }}>
+          <button
+            onClick={() => onCreateBooking({ name: lead.name || '', phone: lead.phone || '', email: lead.email || '', address: lead.address || '', notes: [lead.bike_issue, lead.preferred_day ? 'Prefers ' + lead.preferred_day : null, lead.summary].filter(Boolean).join(' | ') || '', leadId: lead.id })}
+            style={{ padding: '10px 20px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Create Booking
+          </button>
+          <button
+            onClick={onDismiss}
+            style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function InquiriesView({ onCreateBooking, refreshKey }) {
-  const [inquiries, setInquiries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState(null);
-
-  async function loadInquiries() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/inquiries');
-      const data = await res.json();
-      setInquiries(data.inquiries || []);
-    } catch {}
-    setLoading(false);
-  }
-
-  useEffect(() => { loadInquiries(); }, [refreshKey]);
-
-  async function handleDismiss(id) {
-    setBusyId(id);
-    setInquiries(prev => prev.filter(i => i.id !== id));
-    await fetch('/api/inquiries', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    }).catch(() => {});
-    setBusyId(null);
-  }
-
-  function fmtTime(ts) {
-    if (!ts) return '';
-    return new Date(ts).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-      timeZone: 'America/New_York', timeZoneName: 'short',
-    });
-  }
-
-  if (loading) {
-    return <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>Loading...</p>;
-  }
-
+function InquiryCard({ inquiry, onCreateBooking, onDismiss, busy }) {
   return (
-    <div>
-      {inquiries.length === 0 && (
-        <p style={{ color: '#9ca3af', fontSize: 14, padding: 16 }}>No inquiries.</p>
-      )}
-      {inquiries.map(inquiry => (
-        <div key={inquiry.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{inquiry.name || 'Unknown'}</span>
-                {inquiry.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{inquiry.phone}</span>}
-              </div>
-              <p style={{ fontSize: 14, color: '#111827', margin: '0 0 6px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                {inquiry.message}
-              </p>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtTime(inquiry.created_at)}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'stretch' }}>
-              <button
-                onClick={() => onCreateBooking({ name: inquiry.name || '', phone: inquiry.phone || '', notes: inquiry.message })}
-                style={{ padding: '10px 20px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Create Booking
-              </button>
-              <button
-                onClick={() => handleDismiss(inquiry.id)}
-                disabled={busyId === inquiry.id}
-                style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 7, fontSize: 12, cursor: busyId === inquiry.id ? 'default' : 'pointer' }}
-              >
-                Dismiss
-              </button>
-            </div>
+    <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: 10, padding: '2px 8px' }}>INQUIRY</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{inquiry.name || 'Unknown'}</span>
+            {inquiry.phone && <span style={{ fontSize: 13, color: '#6b7280' }}>{inquiry.phone}</span>}
           </div>
+          <p style={{ fontSize: 14, color: '#111827', margin: '0 0 6px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+            {inquiry.message}
+          </p>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>{fmtLeadOrInquiryTime(inquiry.created_at)}</span>
         </div>
-      ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'stretch' }}>
+          <button
+            onClick={() => onCreateBooking({ name: inquiry.name || '', phone: inquiry.phone || '', notes: inquiry.message })}
+            style={{ padding: '10px 20px', background: '#4ade80', color: '#0f1a14', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Create Booking
+          </button>
+          <button
+            onClick={onDismiss}
+            disabled={busy}
+            style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 7, fontSize: 12, cursor: busy ? 'default' : 'pointer' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -4408,8 +4379,12 @@ function RidesAdminView() {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+const ADMIN_LAST_VIEWED_KEY = 'ol_admin_requests_last_viewed';
+
 export default function AdminServicePage() {
   const [bookings, setBookings] = useState([]);
+  const [phoneLeads, setPhoneLeads] = useState([]);
+  const [inquiries, setInquiries] = useState([]);
   const [memberMessages, setMemberMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -4426,7 +4401,7 @@ export default function AdminServicePage() {
   const [isPwa, setIsPwa] = useState(false);
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [cleanupResult, setCleanupResult] = useState('');
-  const [leadsRefreshKey, setLeadsRefreshKey] = useState(0);
+  const [lastViewedAt, setLastViewedAt] = useState(null);
 
   function handleRebook(booking) {
     setPrefillLead({
@@ -4444,17 +4419,23 @@ export default function AdminServicePage() {
     setLoading(true);
     setError('');
     try {
-      const [bRes, uRes, mmRes] = await Promise.all([
+      const [bRes, uRes, mmRes, plRes, inqRes] = await Promise.all([
         fetch('/api/bookings'),
         fetch('/api/messages/unread'),
         fetch('/api/member-messages'),
+        fetch('/api/phone-leads'),
+        fetch('/api/inquiries'),
       ]);
       const bData = await bRes.json();
       const uData = uRes.ok ? await uRes.json() : { total: 0, counts: {} };
       const mmData = mmRes.ok ? await mmRes.json() : { messages: [] };
+      const plData = plRes.ok ? await plRes.json() : { leads: [] };
+      const inqData = inqRes.ok ? await inqRes.json() : { inquiries: [] };
       if (!bRes.ok) { setError(bData.error || 'Failed to load'); return; }
       const loadedBookings = bData.bookings || [];
       setBookings(loadedBookings);
+      setPhoneLeads(plData.leads || []);
+      setInquiries(inqData.inquiries || []);
       setUnreadCounts({ total: uData.total || 0, counts: uData.counts || {} });
 
       // Backfill lat/lng for bookings with address but no coordinates
@@ -4511,6 +4492,13 @@ export default function AdminServicePage() {
     if (standalone && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       setPushEnabled(true);
     }
+    // Read the previous visit's timestamp for the "N new" badge, then stamp
+    // this visit as "now" so next time only shows what's arrived since.
+    try {
+      const stored = localStorage.getItem(ADMIN_LAST_VIEWED_KEY);
+      setLastViewedAt(stored || new Date(0).toISOString());
+      localStorage.setItem(ADMIN_LAST_VIEWED_KEY, new Date().toISOString());
+    } catch {}
   }, []);
 
   function urlBase64ToUint8Array(base64String) {
@@ -4546,7 +4534,8 @@ export default function AdminServicePage() {
     }
   }
 
-  const newCount = bookings.filter(b => b.status === 'new').length;
+  const activeLeadCount = phoneLeads.filter(l => !['dismissed', 'junk', 'converted'].includes(l.status)).length;
+  const newCount = bookings.filter(b => b.status === 'new').length + activeLeadCount + inquiries.length;
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafaf7', paddingBottom: 60 }}>
@@ -4589,7 +4578,7 @@ export default function AdminServicePage() {
           }
           .admin-tab-bar {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 4px;
             width: 100%;
           }
@@ -4613,10 +4602,7 @@ export default function AdminServicePage() {
             { key: 'requests',    label: 'All Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), short: 'Requests' + (newCount > 0 ? ' (' + newCount + ')' : ''), badge: unreadCounts.total },
             { key: 'plan',        label: 'Plan Route',       short: 'Route',    badge: 0 },
             { key: 'members',     label: 'Member Messages',  short: 'Members',  badge: memberUnread },
-            { key: 'phone_leads', label: 'Phone Leads',      short: 'Leads',    badge: 0 },
-            { key: 'inquiries',   label: 'Inquiries',        short: 'Inquiries', badge: 0 },
             { key: 'email',       label: 'Send Email',       short: 'Email',    badge: 0 },
-            { key: 'rides',       label: 'Rides',            short: 'Rides',    badge: 0 },
           ].map(t => (
             <button
               key={t.key}
@@ -4755,31 +4741,28 @@ export default function AdminServicePage() {
           <PlanRouteView allBookings={bookings} onRefresh={load} />
         )}
         {!loading && activeTab === 'requests' && (
-          <AllRequestsView bookings={bookings} onRefresh={load} unreadCounts={unreadCounts.counts} onMarkRead={handleMarkRead} onRebook={handleRebook} />
+          <AllRequestsView
+            bookings={bookings}
+            phoneLeads={phoneLeads}
+            inquiries={inquiries}
+            onRefresh={load}
+            unreadCounts={unreadCounts.counts}
+            onMarkRead={handleMarkRead}
+            onRebook={handleRebook}
+            onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
+            lastViewedAt={lastViewedAt}
+          />
         )}
         {!loading && activeTab === 'members' && (
           <MemberMessagesView messages={memberMessages} bookings={bookings} onRefresh={load} onMarkRead={handleMemberMarkRead} />
         )}
         {activeTab === 'email' && <SendEmailView />}
-        {activeTab === 'phone_leads' && (
-          <PhoneLeadsView
-            onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
-            refreshKey={leadsRefreshKey}
-          />
-        )}
-        {activeTab === 'inquiries' && (
-          <InquiriesView
-            onCreateBooking={(data) => { setPrefillLead(data); setNewBookingOpen(true); }}
-            refreshKey={leadsRefreshKey}
-          />
-        )}
-        {activeTab === 'rides' && <RidesAdminView />}
       </div>
 
       {newBookingOpen && (
         <NewBookingModal
-          onClose={() => { setNewBookingOpen(false); setPrefillLead(null); setLeadsRefreshKey(k => k + 1); }}
-          onCreated={() => { setNewBookingOpen(false); setPrefillLead(null); load(); setLeadsRefreshKey(k => k + 1); }}
+          onClose={() => { setNewBookingOpen(false); setPrefillLead(null); }}
+          onCreated={() => { setNewBookingOpen(false); setPrefillLead(null); load(); }}
           prefill={prefillLead}
         />
       )}
