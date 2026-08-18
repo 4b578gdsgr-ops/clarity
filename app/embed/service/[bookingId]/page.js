@@ -1050,22 +1050,6 @@ export default function EmbedBookingStatusPage({ params }) {
         <DeliveryConfirmSection booking={booking} bookingId={bookingId} onUpdated={loadData} />
       )}
 
-      {/* Review ask — shown for any completed booking, independent of payment status */}
-      {['complete', 'done', 'delivered'].includes(booking.status) && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 13, color: '#166534', margin: '0 0 6px', lineHeight: 1.5 }}>
-            Glad we could help. If you have a sec, a review means a lot.
-          </p>
-          <a
-            href={GOOGLE_REVIEW_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: 13, fontWeight: 600, color: '#166534', textDecoration: 'underline' }}
-          >
-            Leave a review →
-          </a>
-        </div>
-      )}
 
       {/* Payment */}
       {booking.payment_status === 'paid' ? (
@@ -1431,6 +1415,20 @@ export default function EmbedBookingStatusPage({ params }) {
       <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
         {'Bookmark this page to check your status anytime.'}
       </p>
+
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 20, marginTop: 16, textAlign: 'center' }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#166534', margin: '0 0 12px' }}>
+          Know someone who rides? Tell them about us.
+        </p>
+        <a
+          href={GOOGLE_REVIEW_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'block', padding: '13px 0', background: '#1a3328', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}
+        >
+          Leave a review →
+        </a>
+      </div>
     </div>
   );
 }

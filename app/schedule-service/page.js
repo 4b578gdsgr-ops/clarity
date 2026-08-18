@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { GOOGLE_REVIEW_URL } from '../../lib/config';
 
 function saveContact() {
   const vcard = [
@@ -73,6 +74,20 @@ export default function ScheduleService() {
             >
               Save our contact
             </button>
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 12 }}>
+              While you wait — if a friend&apos;s bike needs love, send them our way.
+            </p>
+            <a
+              href={GOOGLE_REVIEW_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'block', padding: '13px 0', background: '#1a3328', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}
+            >
+              Leave a review →
+            </a>
           </div>
         </div>
       </main>

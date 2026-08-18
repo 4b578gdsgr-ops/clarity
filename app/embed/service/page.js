@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { GOOGLE_REVIEW_URL } from '../../../lib/config';
 
 function saveContact() {
   const vcard = [
@@ -94,6 +95,20 @@ export default function EmbedService() {
             >
               Save our contact
             </button>
+          </div>
+
+          <div style={{ marginTop: 20, textAlign: 'left' }}>
+            <p style={{ fontSize: 13, color: 'var(--ol-text-muted)', marginBottom: 10 }}>
+              While you wait — if a friend&apos;s bike needs love, send them our way.
+            </p>
+            <a
+              href={GOOGLE_REVIEW_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'block', padding: '13px 0', background: 'var(--ol-btn-bg)', color: 'var(--ol-btn-text)', borderRadius: 'var(--ol-radius-md)', fontSize: 14, fontWeight: 600, textDecoration: 'none', textAlign: 'center', letterSpacing: '0.02em' }}
+            >
+              Leave a review →
+            </a>
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { isInServiceArea } from '../../../lib/serviceArea';
 import { validateBooking } from '../../../lib/bookingValidation';
 import { getProfile } from '../../../lib/pwaProfile';
 import { saveBookingId } from '../../../lib/pwaBookings';
+import { GOOGLE_REVIEW_URL } from '../../../lib/config';
 import PhotoUpload from '../../components/PhotoUpload';
 
 const ServiceMap = dynamic(() => import('../../components/ServiceMap'), { ssr: false });
@@ -788,6 +789,19 @@ function DoneStep({ bookingId, contactPreference, isAssembly, onReset, pwaMode =
         >
           Save contact
         </button>
+      </div>
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 10 }}>
+          While you wait — if a friend&apos;s bike needs love, send them our way.
+        </p>
+        <a
+          href={GOOGLE_REVIEW_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'block', padding: '13px 0', background: '#1a3328', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}
+        >
+          Leave a review →
+        </a>
       </div>
       {pwaMode ? (
         <a
